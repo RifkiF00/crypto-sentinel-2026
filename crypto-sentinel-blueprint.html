@@ -1,0 +1,2763 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crypto-Sentinel 2026 — Project Blueprint</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #030609;
+    --bg-deep: #060d14;
+    --bg-surface: #0a1520;
+    --bg-card: #0d1c2a;
+    --bg-card-hover: #112233;
+    --accent-primary: #00f5c8;
+    --accent-secondary: #0088ff;
+    --accent-danger: #ff3b5c;
+    --accent-warning: #ffb800;
+    --accent-success: #00e676;
+    --accent-purple: #b24bff;
+    --text-primary: #e8f4f8;
+    --text-secondary: #7ab8cc;
+    --text-muted: #3d6070;
+    --text-code: #00f5c8;
+    --border-primary: #00f5c81a;
+    --border-accent: #00f5c840;
+    --border-bright: #00f5c8;
+    --glow-primary: 0 0 20px #00f5c830, 0 0 40px #00f5c815;
+    --glow-danger: 0 0 20px #ff3b5c30;
+    --glow-blue: 0 0 20px #0088ff30;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg-void);
+    color: var(--text-primary);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* SCANLINE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,245,200,0.012) 2px, rgba(0,245,200,0.012) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* GRID BACKGROUND */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(0,245,200,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,200,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: rgba(3,6,9,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-accent);
+    padding: 0 40px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1000;
+  }
+
+  .nav-logo {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    color: var(--accent-primary);
+    letter-spacing: 2px;
+    text-shadow: var(--glow-primary);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 24px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--accent-primary); }
+
+  /* MAIN CONTENT */
+  main {
+    position: relative;
+    z-index: 1;
+    padding-top: 60px;
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 80px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg-glow {
+    position: absolute;
+    top: 20%;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(0,245,200,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-bg-glow2 {
+    position: absolute;
+    bottom: 10%;
+    left: -100px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(0,136,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent-primary);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    border: 1px solid var(--accent-primary);
+    padding: 6px 16px;
+    margin-bottom: 32px;
+    display: inline-block;
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 5px rgba(0,245,200,0.3); }
+    50% { box-shadow: 0 0 20px rgba(0,245,200,0.6), 0 0 40px rgba(0,245,200,0.2); }
+  }
+
+  .hero-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(48px, 7vw, 96px);
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 8px;
+    letter-spacing: -1px;
+  }
+
+  .hero-title .t1 { color: var(--text-primary); }
+  .hero-title .t2 {
+    color: var(--accent-primary);
+    text-shadow: 0 0 30px rgba(0,245,200,0.5), 0 0 60px rgba(0,245,200,0.2);
+  }
+
+  .hero-year {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    color: var(--accent-secondary);
+    letter-spacing: 8px;
+    margin-bottom: 24px;
+  }
+
+  .hero-tagline {
+    font-size: 18px;
+    color: var(--text-secondary);
+    max-width: 680px;
+    margin-bottom: 48px;
+    font-weight: 400;
+    line-height: 1.7;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 48px;
+    margin-bottom: 48px;
+  }
+
+  .stat-item { text-align: left; }
+  .stat-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 32px;
+    color: var(--accent-primary);
+    line-height: 1;
+    text-shadow: var(--glow-primary);
+  }
+  .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .hero-team {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  .hero-team span { color: var(--accent-primary); }
+
+  /* SECTION */
+  section {
+    padding: 100px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .section-header {
+    margin-bottom: 64px;
+  }
+
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent-primary);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.7;
+  }
+
+  .section-title {
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  .section-title em {
+    color: var(--accent-primary);
+    font-style: normal;
+  }
+
+  .section-desc {
+    font-size: 16px;
+    color: var(--text-secondary);
+    max-width: 700px;
+    line-height: 1.7;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border-primary);
+    margin: 0 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    padding: 32px;
+    position: relative;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .card:hover {
+    border-color: var(--border-accent);
+    box-shadow: var(--glow-primary);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--accent-primary);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  .card-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border: 1px solid;
+    display: inline-block;
+    margin-bottom: 16px;
+  }
+
+  .tag-green { color: var(--accent-primary); border-color: var(--accent-primary); }
+  .tag-blue { color: var(--accent-secondary); border-color: var(--accent-secondary); }
+  .tag-red { color: var(--accent-danger); border-color: var(--accent-danger); }
+  .tag-yellow { color: var(--accent-warning); border-color: var(--accent-warning); }
+  .tag-purple { color: var(--accent-purple); border-color: var(--accent-purple); }
+
+  .card-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+
+  .card-body {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  /* ARCHITECTURE */
+  .arch-diagram {
+    background: var(--bg-deep);
+    border: 1px solid var(--border-accent);
+    padding: 60px 40px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--glow-primary);
+  }
+
+  .arch-layers {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+
+  .arch-layer {
+    display: grid;
+    align-items: center;
+    padding: 24px 32px;
+    border: 1px solid;
+    position: relative;
+    transition: all 0.3s;
+  }
+
+  .arch-layer-client {
+    grid-template-columns: 180px 1fr;
+    border-color: #00f5c840;
+    background: rgba(0,245,200,0.03);
+  }
+
+  .arch-layer-sentinel {
+    grid-template-columns: 180px 1fr;
+    border-color: #ff3b5c40;
+    background: rgba(255,59,92,0.05);
+    border-width: 2px;
+    box-shadow: 0 0 30px rgba(255,59,92,0.1);
+    margin: 4px 0;
+  }
+
+  .arch-layer-backend {
+    grid-template-columns: 180px 1fr;
+    border-color: #0088ff40;
+    background: rgba(0,136,255,0.03);
+  }
+
+  .arch-layer-data {
+    grid-template-columns: 180px 1fr;
+    border-color: #b24bff40;
+    background: rgba(178,75,255,0.03);
+  }
+
+  .layer-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding-right: 32px;
+    border-right: 1px solid var(--border-primary);
+  }
+
+  .layer-content {
+    padding-left: 32px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .arch-block {
+    padding: 10px 18px;
+    border: 1px solid;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    text-align: center;
+    position: relative;
+  }
+
+  .block-green { border-color: var(--accent-primary); color: var(--accent-primary); }
+  .block-red { border-color: var(--accent-danger); color: var(--accent-danger); }
+  .block-blue { border-color: var(--accent-secondary); color: var(--accent-secondary); }
+  .block-purple { border-color: var(--accent-purple); color: var(--accent-purple); }
+  .block-yellow { border-color: var(--accent-warning); color: var(--accent-warning); }
+
+  .arch-arrow {
+    text-align: center;
+    padding: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  .sentinel-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent-danger);
+    color: #000;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    padding: 3px 12px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* TECH STACK GRID */
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border-primary);
+    border: 1px solid var(--border-primary);
+  }
+
+  .stack-cell {
+    background: var(--bg-card);
+    padding: 24px;
+  }
+
+  .stack-category {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .stack-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .stack-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 7px;
+  }
+
+  .dot-green { background: var(--accent-primary); box-shadow: 0 0 8px var(--accent-primary); }
+  .dot-blue { background: var(--accent-secondary); box-shadow: 0 0 8px var(--accent-secondary); }
+  .dot-red { background: var(--accent-danger); box-shadow: 0 0 8px var(--accent-danger); }
+  .dot-purple { background: var(--accent-purple); box-shadow: 0 0 8px var(--accent-purple); }
+  .dot-yellow { background: var(--accent-warning); box-shadow: 0 0 8px var(--accent-warning); }
+
+  .stack-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+
+  .stack-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* INDICATORS */
+  .indicator-groups {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .indicator-group {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    overflow: hidden;
+  }
+
+  .group-header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border-primary);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .group-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    opacity: 0.15;
+  }
+
+  .group-info {}
+
+  .group-name {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .group-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    opacity: 0.6;
+    text-transform: uppercase;
+  }
+
+  .indicator-list {
+    padding: 20px 28px;
+  }
+
+  .indicator-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .indicator-item:last-child { border-bottom: none; }
+
+  .ind-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .ind-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .complexity-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border: 1px solid;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .priority-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .p-critical { background: var(--accent-danger); color: #000; }
+  .p-high { background: var(--accent-warning); color: #000; }
+  .p-medium { background: var(--accent-secondary); color: #fff; }
+  .p-roadmap { background: var(--text-muted); color: #000; }
+
+  .c-low { color: var(--accent-success); border-color: var(--accent-success); }
+  .c-medium { color: var(--accent-warning); border-color: var(--accent-warning); }
+  .c-high { color: var(--accent-danger); border-color: var(--accent-danger); }
+  .c-very-high { color: var(--accent-purple); border-color: var(--accent-purple); }
+
+  /* API SPECS */
+  .api-block {
+    background: var(--bg-deep);
+    border: 1px solid var(--border-primary);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .api-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--bg-card);
+  }
+
+  .method {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    border-radius: 0;
+  }
+
+  .method-post { background: var(--accent-success); color: #000; }
+  .method-get { background: var(--accent-secondary); color: #fff; }
+  .method-delete { background: var(--accent-danger); color: #fff; }
+
+  .api-path {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+
+  .api-desc {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: auto;
+    letter-spacing: 1px;
+  }
+
+  .api-body {
+    padding: 28px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .api-section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  pre, .code-block {
+    background: #020c12;
+    border: 1px solid var(--border-primary);
+    padding: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-code);
+    overflow-x: auto;
+    line-height: 1.6;
+    white-space: pre;
+  }
+
+  .code-key { color: #7dd3fc; }
+  .code-string { color: #86efac; }
+  .code-num { color: #fb923c; }
+  .code-bool { color: #c084fc; }
+  .code-comment { color: #3d6070; font-style: italic; }
+  .code-null { color: #f87171; }
+
+  /* AI STAGES */
+  .stage-track {
+    display: flex;
+    gap: 0;
+    position: relative;
+  }
+
+  .stage-track::before {
+    content: '';
+    position: absolute;
+    top: 40px;
+    left: 80px;
+    right: 80px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    z-index: 0;
+  }
+
+  .stage-card {
+    flex: 1;
+    padding: 0 20px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stage-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    background: var(--bg-void);
+    position: relative;
+    z-index: 1;
+  }
+
+  .s1 { border-color: var(--accent-primary); color: var(--accent-primary); box-shadow: 0 0 20px rgba(0,245,200,0.3); }
+  .s2 { border-color: var(--accent-secondary); color: var(--accent-secondary); box-shadow: 0 0 20px rgba(0,136,255,0.3); }
+  .s3 { border-color: var(--accent-warning); color: var(--accent-warning); box-shadow: 0 0 20px rgba(255,184,0,0.3); }
+  .s4 { border-color: var(--accent-danger); color: var(--accent-danger); box-shadow: 0 0 20px rgba(255,59,92,0.3); }
+
+  .stage-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .stage-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+
+  .stage-body {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    text-align: left;
+  }
+
+  .stage-body li {
+    list-style: none;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border-primary);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+  }
+
+  .stage-body li::before {
+    content: '→ ';
+    color: var(--accent-primary);
+    opacity: 0.5;
+  }
+
+  /* TIMELINE */
+  .timeline {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 0;
+    position: relative;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 120px;
+    width: 1px;
+    background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary), var(--accent-danger));
+    z-index: 0;
+  }
+
+  .tl-month {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 24px 24px 24px 0;
+    text-align: right;
+    border-right: none;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tl-content {
+    padding: 20px 0 20px 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tl-content::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 30px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    box-shadow: 0 0 10px var(--accent-primary);
+  }
+
+  .tl-milestone {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent-primary);
+    margin-bottom: 8px;
+  }
+
+  .tl-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tl-tasks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .tl-task {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 4px 12px;
+    border: 1px solid var(--border-accent);
+    color: var(--text-secondary);
+  }
+
+  .tl-task.aam { border-color: rgba(0,245,200,0.4); color: var(--accent-primary); }
+  .tl-task.rifki { border-color: rgba(0,136,255,0.4); color: var(--accent-secondary); }
+  .tl-task.desta { border-color: rgba(255,184,0,0.4); color: var(--accent-warning); }
+  .tl-task.billy { border-color: rgba(178,75,255,0.4); color: var(--accent-purple); }
+
+  .tl-deadline {
+    display: inline-block;
+    margin-top: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    background: var(--accent-danger);
+    color: #000;
+    font-weight: 500;
+  }
+
+  /* DATA SCHEMA */
+  .schema-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    margin-bottom: 24px;
+  }
+
+  .schema-table th {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .schema-table td {
+    border: 1px solid var(--border-primary);
+    padding: 10px 16px;
+    color: var(--text-secondary);
+    vertical-align: top;
+  }
+
+  .schema-table tr:hover td { background: var(--bg-card); }
+
+  .field-name { color: var(--accent-primary); }
+  .field-type { color: var(--accent-secondary); }
+  .field-pk { color: var(--accent-danger); font-size: 10px; }
+  .field-fk { color: var(--accent-warning); font-size: 10px; }
+
+  /* FLOW DIAGRAM */
+  .flow-diagram {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 40px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-accent);
+    overflow-x: auto;
+    justify-content: center;
+  }
+
+  .flow-node {
+    min-width: 140px;
+    padding: 16px 20px;
+    border: 1px solid;
+    text-align: center;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .flow-node-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    opacity: 0.6;
+  }
+
+  .flow-node-name {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .fn-green { border-color: var(--accent-primary); color: var(--accent-primary); }
+  .fn-red { border-color: var(--accent-danger); color: var(--accent-danger); box-shadow: 0 0 20px rgba(255,59,92,0.2); }
+  .fn-blue { border-color: var(--accent-secondary); color: var(--accent-secondary); }
+  .fn-yellow { border-color: var(--accent-warning); color: var(--accent-warning); }
+  .fn-purple { border-color: var(--accent-purple); color: var(--accent-purple); }
+
+  .flow-arrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    color: var(--text-muted);
+    padding: 0 8px;
+    flex-shrink: 0;
+  }
+
+  .flow-split {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 8px;
+    align-items: center;
+  }
+
+  .flow-label-sm {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-align: center;
+    padding: 2px 6px;
+  }
+
+  /* TEAM SECTION */
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border-primary);
+    border: 1px solid var(--border-primary);
+  }
+
+  .team-card {
+    background: var(--bg-card);
+    padding: 32px 28px;
+  }
+
+  .team-role {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .team-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .team-title {
+    font-size: 13px;
+    color: var(--accent-primary);
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+
+  .team-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .team-tech {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border: 1px solid var(--border-accent);
+    color: var(--text-muted);
+  }
+
+  .team-resp {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* GLOW BG */
+  .bg-glow-section {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px; height: 400px;
+    background: radial-gradient(ellipse, rgba(0,245,200,0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--bg-deep);
+    border-top: 1px solid var(--border-primary);
+    padding: 40px 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1;
+  }
+
+  .footer-logo {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+    color: var(--accent-primary);
+    text-shadow: var(--glow-primary);
+  }
+
+  .footer-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: right;
+    line-height: 1.8;
+  }
+
+  /* UTILS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+  .mt-24 { margin-top: 24px; }
+  .mt-48 { margin-top: 48px; }
+  .mt-64 { margin-top: 64px; }
+  .text-green { color: var(--accent-primary); }
+  .text-blue { color: var(--accent-secondary); }
+  .text-red { color: var(--accent-danger); }
+  .text-yellow { color: var(--accent-warning); }
+  .text-purple { color: var(--accent-purple); }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .highlight-box {
+    border: 1px solid var(--accent-primary);
+    background: rgba(0,245,200,0.03);
+    padding: 24px 32px;
+    margin-top: 24px;
+  }
+
+  .warning-box {
+    border: 1px solid var(--accent-danger);
+    background: rgba(255,59,92,0.05);
+    padding: 24px 32px;
+    margin-top: 24px;
+  }
+
+  .warning-box .warn-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--accent-danger);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 1024px) {
+    section, .hero { padding: 60px 40px; }
+    .divider { margin: 0 40px; }
+    .stack-grid { grid-template-columns: repeat(2, 1fr); }
+    .indicator-groups { grid-template-columns: 1fr; }
+    .team-grid { grid-template-columns: repeat(2, 1fr); }
+    .stage-track { flex-direction: column; }
+    .stage-track::before { display: none; }
+    .flow-diagram { flex-direction: column; }
+    .flow-arrow { transform: rotate(90deg); }
+    nav { padding: 0 20px; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">◈ CRYPTO-SENTINEL / v1.0.0</div>
+  <ul class="nav-links">
+    <li><a href="#arsitektur">Arsitektur</a></li>
+    <li><a href="#techstack">Tech Stack</a></li>
+    <li><a href="#indikator">Indikator</a></li>
+    <li><a href="#api">API Spec</a></li>
+    <li><a href="#ai-stages">AI Dev</a></li>
+    <li><a href="#database">Database</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#tim">Tim</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════ HERO -->
+<section class="hero" id="top">
+  <div class="hero-bg-glow"></div>
+  <div class="hero-bg-glow2"></div>
+
+  <div class="hero-badge">PIDI DIGDAYA × HACKATHON 2026 — PROJECT BLUEPRINT</div>
+
+  <h1 class="hero-title">
+    <div class="t1">CRYPTO</div>
+    <div class="t2">SENTINEL</div>
+  </h1>
+  <div class="hero-year">2 0 2 6</div>
+
+  <p class="hero-tagline">
+    Protokol Pertahanan Finansial Proaktif untuk Mitigasi Fraud Real-Time dan
+    Pelarian Dana ke Ekosistem Kripto. Security Middleware Layer berbasis
+    Graph Neural Networks dan Smart Circuit Breaker.
+  </p>
+
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-num">&lt;50ms</div>
+      <div class="stat-label">Target Latensi</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">15</div>
+      <div class="stat-label">Sub-Indikator</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">4</div>
+      <div class="stat-label">Signal Groups</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">800T</div>
+      <div class="stat-label">Dana Terancam (IDR)</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">>95%</div>
+      <div class="stat-label">Target F1-Score</div>
+    </div>
+  </div>
+
+  <div class="hero-team">
+    Tim <span>EXPRESSO</span> — Universitas Kuningan &nbsp;|&nbsp;
+    Billy · Rifki · Desta · <span>Aam</span> &nbsp;|&nbsp;
+    Semester 4 — Essential Training Phase
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════ OVERVIEW -->
+<section id="overview">
+  <div class="section-header">
+    <div class="section-num">00 — Overview</div>
+    <h2 class="section-title">Apa Itu <em>Crypto-Sentinel?</em></h2>
+    <p class="section-desc">
+      Crypto-Sentinel bukan pengganti Core Banking. Ia adalah <strong>lapisan penjaga</strong>
+      yang duduk di antara aplikasi nasabah dan database bank — memotong setiap transaksi
+      mencurigakan sebelum dana keluar dari ekosistem perbankan Indonesia.
+    </p>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-tag tag-red">The Brain</div>
+      <div class="card-title">Graph Neural Network</div>
+      <div class="card-body">
+        Arsitektur ST-GCN (Spatio-Temporal GCN) yang memetakan jaringan rekening
+        seperti "jaring laba-laba". Mendeteksi pola smurfing, layering, dan fraud ring
+        dalam hitungan milidetik menggunakan analitik relasional.
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-tag tag-yellow">The Enforcer</div>
+      <div class="card-title">Smart Circuit Breaker</div>
+      <div class="card-body">
+        Mekanisme interupsi otomatis berbasis API SNAP BI. Jika Risk Score &gt;85,
+        transaksi ditahan sebelum dana keluar. Latensi target &lt;50ms — lebih cepat
+        dari kedipan mata manusia.
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-tag tag-blue">The Interface</div>
+      <div class="card-title">Forensic Dashboard</div>
+      <div class="card-body">
+        Antarmuka Explainable AI berbasis SHAP yang menampilkan visualisasi graf
+        jaringan fraud secara real-time. Auto-generate draf Suspicious Transaction
+        Report (STR) untuk PPATK/OJK.
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight-box mt-24">
+    <div class="label">Velocity Gap — Masalah Inti</div>
+    <p style="color: var(--text-secondary); font-size: 15px; line-height: 1.7; margin-top: 8px;">
+      BI-FAST menyelesaikan transaksi dalam <strong class="text-green">T+0 (detik)</strong>,
+      namun FDS konvensional masih bekerja secara reaktif dalam <strong class="text-red">T+1 (berkala)</strong>.
+      Sindikat kejahatan mengeksploitasi celah ini untuk memecah dana ke jaringan mule account dan
+      mengonversinya ke kripto internasional sebelum sistem sempat bereaksi — kerugian tercatat
+      <strong class="text-red">Rp800 miliar di delapan bank</strong> (PPATK, 2024).
+    </p>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════ ARSITEKTUR -->
+<section id="arsitektur">
+  <div class="section-header">
+    <div class="section-num">01 — Architecture</div>
+    <h2 class="section-title">Arsitektur <em>Sistem Lengkap</em></h2>
+    <p class="section-desc">
+      Lima layer terstruktur dari aplikasi nasabah hingga database mock.
+      Sentinel berperan sebagai middleware — ia bukan bank, ia adalah pintu gerbang keamanannya.
+    </p>
+  </div>
+
+  <div class="arch-diagram">
+    <div class="arch-layers">
+
+      <!-- LAYER 1: CLIENT -->
+      <div class="arch-layer arch-layer-client">
+        <div class="layer-label text-green">
+          <div class="label">Layer 1</div>
+          <div style="font-size:14px; font-weight:600; color: var(--accent-primary);">CLIENT</div>
+          <div style="font-size:11px; color: var(--text-muted); margin-top:4px;">Tugas: Aam</div>
+        </div>
+        <div class="layer-content">
+          <div class="arch-block block-green">📱 Mobile Banking App<br><small style="font-size:10px; opacity:0.6">React.js / Flutter</small></div>
+          <div class="arch-block block-green">🎯 Attack Simulator<br><small style="font-size:10px; opacity:0.6">Python Script</small></div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">↓ HTTP POST /transaction (JSON — ISO 20022 format) ↓</div>
+
+      <!-- LAYER 2: SENTINEL -->
+      <div class="arch-layer arch-layer-sentinel">
+        <div class="sentinel-badge">🛡 CRYPTO-SENTINEL ENGINE</div>
+        <div class="layer-label text-red">
+          <div class="label">Layer 2</div>
+          <div style="font-size:14px; font-weight:600; color: var(--accent-danger);">MIDDLEWARE</div>
+          <div style="font-size:11px; color: var(--text-muted); margin-top:4px;">Tugas: Rifki + Desta</div>
+        </div>
+        <div class="layer-content">
+          <div class="arch-block block-red">🧠 GNN Engine<br><small style="font-size:10px; opacity:0.6">PyTorch Geometric</small></div>
+          <div class="arch-block block-red">⚡ Risk Scorer<br><small style="font-size:10px; opacity:0.6">Score 0–100</small></div>
+          <div class="arch-block block-red">🔌 Circuit Breaker<br><small style="font-size:10px; opacity:0.6">BLOCK / ALLOW</small></div>
+          <div class="arch-block block-yellow">📊 SHAP Explainer<br><small style="font-size:10px; opacity:0.6">XAI Output</small></div>
+          <div class="arch-block block-yellow">📋 STR Generator<br><small style="font-size:10px; opacity:0.6">Auto-Draft</small></div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">↓ ALLOW: Forward ke Core Banking &nbsp; | &nbsp; BLOCK: Halt + Notify Dashboard ↓</div>
+
+      <!-- LAYER 3: BACKEND -->
+      <div class="arch-layer arch-layer-backend">
+        <div class="layer-label text-blue">
+          <div class="label">Layer 3</div>
+          <div style="font-size:14px; font-weight:600; color: var(--accent-secondary);">MOCK CORE BANKING</div>
+          <div style="font-size:11px; color: var(--text-muted); margin-top:4px;">Tugas: Desta</div>
+        </div>
+        <div class="layer-content">
+          <div class="arch-block block-blue">🏦 FastAPI Server<br><small style="font-size:10px; opacity:0.6">Python 3.11</small></div>
+          <div class="arch-block block-blue">💳 Account Manager<br><small style="font-size:10px; opacity:0.6">CRUD Saldo</small></div>
+          <div class="arch-block block-blue">📑 Transaction Logger<br><small style="font-size:10px; opacity:0.6">Audit Trail</small></div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">↓ Read/Write via SQLAlchemy ORM ↓</div>
+
+      <!-- LAYER 4: DATA -->
+      <div class="arch-layer arch-layer-data">
+        <div class="layer-label text-purple">
+          <div class="label">Layer 4</div>
+          <div style="font-size:14px; font-weight:600; color: var(--accent-purple);">DATA LAYER</div>
+          <div style="font-size:11px; color: var(--text-muted); margin-top:4px;">Shared</div>
+        </div>
+        <div class="layer-content">
+          <div class="arch-block block-purple">🗄 PostgreSQL<br><small style="font-size:10px; opacity:0.6">Saldo & Transaksi</small></div>
+          <div class="arch-block block-purple">🕸 NetworkX Graph<br><small style="font-size:10px; opacity:0.6">Account Relations</small></div>
+          <div class="arch-block block-purple">🚫 Blacklist DB<br><small style="font-size:10px; opacity:0.6">Crypto Wallets</small></div>
+          <div class="arch-block block-green">📦 PaySim Dataset<br><small style="font-size:10px; opacity:0.6">Training Data</small></div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">↑ Real-time Push via WebSocket ↑</div>
+
+      <!-- LAYER 5: DASHBOARD -->
+      <div class="arch-layer arch-layer-client">
+        <div class="layer-label text-green">
+          <div class="label">Layer 5</div>
+          <div style="font-size:14px; font-weight:600; color: var(--accent-primary);">FORENSIC DASHBOARD</div>
+          <div style="font-size:11px; color: var(--text-muted); margin-top:4px;">Tugas: Aam</div>
+        </div>
+        <div class="layer-content">
+          <div class="arch-block block-green">🕸 GNN Graph Viz<br><small style="font-size:10px; opacity:0.6">React Flow / D3.js</small></div>
+          <div class="arch-block block-green">📉 Risk Monitor<br><small style="font-size:10px; opacity:0.6">Recharts</small></div>
+          <div class="arch-block block-green">🔍 Alert Panel<br><small style="font-size:10px; opacity:0.6">Real-time Feed</small></div>
+          <div class="arch-block block-green">📄 STR Export<br><small style="font-size:10px; opacity:0.6">PDF Generator</small></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FLOW DIAGRAM -->
+  <div class="mt-48">
+    <div class="label">Alur Proses Transaksi — End to End</div>
+    <div class="flow-diagram mt-24">
+      <div class="flow-node fn-green">
+        <div class="flow-node-label">Start</div>
+        <div class="flow-node-name">Nasabah<br>Inisiasi Transfer</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node fn-blue">
+        <div class="flow-node-label">Input</div>
+        <div class="flow-node-name">Extract 15<br>Sub-Indikator</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node fn-red">
+        <div class="flow-node-label">GNN Engine</div>
+        <div class="flow-node-name">Kalkulasi<br>Risk Score</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node fn-yellow">
+        <div class="flow-node-label">Decision</div>
+        <div class="flow-node-name">Risk Score<br>&gt; 85?</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-split">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="flow-label-sm text-red">YA →</div>
+          <div class="flow-node fn-red" style="min-width:120px;">
+            <div class="flow-node-label">BLOCKED</div>
+            <div class="flow-node-name">Circuit<br>Breaker</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="flow-label-sm text-green">TIDAK →</div>
+          <div class="flow-node fn-green" style="min-width:120px;">
+            <div class="flow-node-label">ALLOWED</div>
+            <div class="flow-node-name">Core Banking<br>Execute</div>
+          </div>
+        </div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node fn-purple">
+        <div class="flow-node-label">Output</div>
+        <div class="flow-node-name">Dashboard<br>+ STR Draft</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════ TECH STACK -->
+<section id="techstack">
+  <div class="section-header">
+    <div class="section-num">02 — Tech Stack</div>
+    <h2 class="section-title">Teknologi yang <em>Digunakan</em></h2>
+    <p class="section-desc">
+      Stack yang dipilih berdasarkan ekosistem AI/ML terbaik, kemudahan integrasi, dan
+      kecepatan pengembangan untuk konteks hackathon mahasiswa semester 4.
+    </p>
+  </div>
+
+  <div class="stack-grid">
+    <!-- AAM — FRONTEND -->
+    <div class="stack-cell">
+      <div class="stack-category text-green">Frontend — Aam Setiana</div>
+      <div class="stack-item">
+        <div class="stack-dot dot-green"></div>
+        <div>
+          <div class="stack-name">React.js</div>
+          <div class="stack-desc">UI Framework utama — component-based</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-green"></div>
+        <div>
+          <div class="stack-name">React Flow</div>
+          <div class="stack-desc">Visualisasi GNN graf dinamis</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-green"></div>
+        <div>
+          <div class="stack-name">Recharts</div>
+          <div class="stack-desc">Chart dashboard & monitoring</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-green"></div>
+        <div>
+          <div class="stack-name">Tailwind CSS</div>
+          <div class="stack-desc">Styling cepat & profesional</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-green"></div>
+        <div>
+          <div class="stack-name">Axios + Zustand</div>
+          <div class="stack-desc">HTTP client + state management</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-green"></div>
+        <div>
+          <div class="stack-name">Socket.IO Client</div>
+          <div class="stack-desc">Real-time feed dari backend</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIFKI — AI -->
+    <div class="stack-cell">
+      <div class="stack-category text-blue">AI/ML — Rifki Firmansyah</div>
+      <div class="stack-item">
+        <div class="stack-dot dot-blue"></div>
+        <div>
+          <div class="stack-name">Python 3.11</div>
+          <div class="stack-desc">Bahasa utama AI pipeline</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-blue"></div>
+        <div>
+          <div class="stack-name">PyTorch + PyG</div>
+          <div class="stack-desc">PyTorch Geometric — GNN library</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-blue"></div>
+        <div>
+          <div class="stack-name">NetworkX</div>
+          <div class="stack-desc">Graf konstruksi & analisis lokal</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-blue"></div>
+        <div>
+          <div class="stack-name">XGBoost (Fallback)</div>
+          <div class="stack-desc">Model cadangan jika GNN belum siap</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-blue"></div>
+        <div>
+          <div class="stack-name">SHAP Library</div>
+          <div class="stack-desc">Explainable AI — feature importance</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-blue"></div>
+        <div>
+          <div class="stack-name">Pandas + Scikit-learn</div>
+          <div class="stack-desc">Data processing & preprocessing</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESTA — BACKEND -->
+    <div class="stack-cell">
+      <div class="stack-category text-yellow">Backend — Desta Erlangga</div>
+      <div class="stack-item">
+        <div class="stack-dot dot-yellow"></div>
+        <div>
+          <div class="stack-name">FastAPI (Python)</div>
+          <div class="stack-desc">REST API framework — async, cepat</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-yellow"></div>
+        <div>
+          <div class="stack-name">PostgreSQL</div>
+          <div class="stack-desc">Database utama — akun & transaksi</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-yellow"></div>
+        <div>
+          <div class="stack-name">SQLAlchemy</div>
+          <div class="stack-desc">ORM — Python to PostgreSQL</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-yellow"></div>
+        <div>
+          <div class="stack-name">Redis (Cache)</div>
+          <div class="stack-desc">Blacklist cache — ultra-fast lookup</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-yellow"></div>
+        <div>
+          <div class="stack-name">Socket.IO Server</div>
+          <div class="stack-desc">Push notif ke dashboard real-time</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-yellow"></div>
+        <div>
+          <div class="stack-name">Docker Compose</div>
+          <div class="stack-desc">Orkestrasi semua service sekaligus</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA & INFRA -->
+    <div class="stack-cell">
+      <div class="stack-category text-purple">Data & Infrastruktur — Tim</div>
+      <div class="stack-item">
+        <div class="stack-dot dot-purple"></div>
+        <div>
+          <div class="stack-name">PaySim Dataset (Kaggle)</div>
+          <div class="stack-desc">Training data utama — fraud synthetic</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-purple"></div>
+        <div>
+          <div class="stack-name">IEEE-CIS Fraud Dataset</div>
+          <div class="stack-desc">Dataset tambahan — lebih kaya fitur</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-purple"></div>
+        <div>
+          <div class="stack-name">SDV (Synthetic Data Vault)</div>
+          <div class="stack-desc">Generate data custom sesuai schema</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-purple"></div>
+        <div>
+          <div class="stack-name">GitHub + GitHub Actions</div>
+          <div class="stack-desc">Version control & CI/CD sederhana</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-purple"></div>
+        <div>
+          <div class="stack-name">Postman</div>
+          <div class="stack-desc">Testing & dokumentasi API</div>
+        </div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot dot-red"></div>
+        <div>
+          <div class="stack-name">Jupyter Notebook</div>
+          <div class="stack-desc">Eksplorasi data & model training</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="warning-box">
+    <div class="warn-title">⚠ Catatan Strategis — Jangan Gunakan Ini untuk Hackathon</div>
+    <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.7;">
+      <strong class="text-red">Neo4j</strong> (ganti dengan NetworkX lokal) —
+      <strong class="text-red">Kubernetes</strong> (cukup Docker Compose) —
+      <strong class="text-red">Vertex AI</strong> (gunakan PyTorch lokal, lebih stabil saat demo) —
+      <strong class="text-red">mTLS + AES-256</strong> (sebutkan sebagai roadmap produksi).
+      Fokus pada demo yang stabil, bukan infrastruktur yang kompleks.
+    </p>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════ INDIKATOR -->
+<section id="indikator">
+  <div class="section-header">
+    <div class="section-num">03 — Signal Groups</div>
+    <h2 class="section-title">15 Sub-Indikator <em>Deteksi</em></h2>
+    <p class="section-desc">
+      Empat kelompok sinyal yang diproses Sentinel secara paralel. Setiap transaksi dievaluasi
+      dari semua dimensi ini untuk menghasilkan Risk Score 0–100.
+    </p>
+  </div>
+
+  <div class="indicator-groups">
+
+    <!-- GROUP 1: BEHAVIORAL -->
+    <div class="indicator-group">
+      <div class="group-header">
+        <div class="group-num text-green">01</div>
+        <div class="group-info">
+          <div class="group-name text-green">Behavioral Signals</div>
+          <div class="group-sub">Sinyal Perilaku Nasabah</div>
+        </div>
+      </div>
+      <div class="indicator-list">
+        <div class="indicator-item">
+          <div>
+            <div class="ind-name">Transaction Velocity</div>
+            <div class="ind-desc">Frekuensi transfer tinggi dalam waktu singkat (mis: 50x/30 menit)</div>
+          </div>
+          <div class="complexity-badge c-low">LOW</div>
+          <div class="priority-badge p-critical">WAJIB</div>
+        </div>
+        <div class="indicator-item">
+          <div>
+            <div class="ind-name">Odd-Hour Activity</div>
+            <div class="ind-desc">Transaksi besar di jam 01:00–04:00 ("jam setan")</div>
+          </div>
+          <div class="complexity-badge c-low">LOW</div>
+          <div class="priority-badge p-critical">WAJIB</div>
+        </div>
+        <div class="indicator-item">
+          <div>
+            <div class="ind-name">Dormant Account Activation</div>
+            <div class="ind-desc">Rekening pasif tiba-tiba aktif dan langsung transfer keluar besar</div>
+          </div>
+          <div class="complexity-badge c-medium">MEDIUM</div>
+          <div class="priority-badge p-high">PENTING</div>
+        </div>
+        <div class="indicator-item">
+          <div>
+            <div class="ind-name">Anomali Profil</div>
+            <div class="ind-desc">Nilai transaksi tidak sesuai profil pendapatan (mahasiswa transfer ratusan juta)</div>
+          </div>
+          <div class="complexity-badge c-medium">MEDIUM</div>
+          <div class="priority-badge p-high">PENTING</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROUP 2: RELATIONAL GRAPH -->
+    <div class="indicator-group">
+      <div class="group-header">
+        <div class="group-num text-red">02</div>
+        <div class="group-info">
+          <div class="group-name text-red">Relational Graph Intelligence</div>
+          <div class="group-sub">Jantung GNN — Deteksi Fraud Ring</div>
+        </div>
+      </div>
+      <div class="indicator-list">
+        <div class="indicator-item">
+          <div>
+            <div class="ind-name">Mule Rings (Spider Web)</div>
+            <div class="ind-desc">Banyak rekening kirim dana serentak ke satu mule account (pola bintang)</div>
+          </div>
+          <div class="complexity-badge c-very-high">VERY HIGH</div>
+          <div class="priority-badge p-critical">WAJIB</div>
+        </div>
+        <div class="indicator-item">
+          <div>
+            <div class="ind-name">Layering / Chain Transactions</div>
+            <div class="ind-desc">Dana berpindah &gt;3 lapis rekening dalam &lt;5 menit untuk mengaburkan jejak</div>
+          </div>
+          <div class="complexity-badge c-high">HIGH</div>
+          <div class="priority-badge p-high">PENTING</div>
+        </div>
+        <div class="indicator-item">
+          <div>
+            <div class="ind-name">Blacklisted Wallet Linkage</div>
+            <div class="ind-desc">Tujuan transfer terkait alamat dompet kripto dalam daftar hitam global/OJK</div>
+          </div>
+          <div class="complexity-badge c-low">LOW</div>
+          <div class="priority-badge p-high">PENTING</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROUP 3: PURPOSE MISMATCH -->
+    <div class="indicator-group">
+      <div class="group-header">
+        <div class="group-num text-yellow">03</div>
+        <div class="group-info">
+          <div class="group-name text-yellow">Purpose Mismatch</div>
+          <div class="group-sub">Ketidaksesuaian Konteks — Data ISO 20022</div>
+        </div>
+      </div>
+      <div class="indicator-list">
+        <div class="indicator-item">
+          <div>
+            <div class="ind-name">Purpose vs Destination</div>
+            <div class="ind-desc">Berita "Bayar Hutang" tapi tujuan ke crypto exchange internasional</div>
+          </div>
+          <div class="complexity-badge c-low">LOW</div>
+          <div class="priority-badge p-critical">WAJIB</div>
+        </div>
+        <div class="indicator-item">
+          <div>
+            <div class="ind-name">Ledger Mismatch</div>
+            <div class="ind-desc">Instruksi debit tidak sinkron dengan pembukuan internal bank</div>
+          </div>
+          <div class="complexity-badge c-medium">MEDIUM</div>
+          <div class="priority-badge p-medium">OPSIONAL</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROUP 4: TECHNICAL -->
+    <div class="indicator-group">
+      <div class="group-header">
+        <div class="group-num text-blue">04</div>
+        <div class="group-info">
+          <div class="group-name text-blue">Technical Signals</div>
+          <div class="group-sub">Jejak Digital Perangkat & Lokasi</div>
+        </div>
+      </div>
+      <div class="indicator-list">
+        <div class="indicator-item">
+          <div>
+            <div class="ind-name">Impossible Travel</div>
+            <div class="ind-desc">Login Jakarta, 10 menit kemudian transaksi dari IP luar negeri</div>
+          </div>
+          <div class="complexity-badge c-medium">MEDIUM</div>
+          <div class="priority-badge p-high">PENTING</div>
+        </div>
+        <div class="indicator-item">
+          <div>
+            <div class="ind-name">Geolocation Anomaly</div>
+            <div class="ind-desc">Lokasi perangkat yang belum pernah digunakan nasabah untuk transaksi</div>
+          </div>
+          <div class="complexity-badge c-medium">MEDIUM</div>
+          <div class="priority-badge p-high">PENTING</div>
+        </div>
+        <div class="indicator-item">
+          <div>
+            <div class="ind-name">Device Integrity (VPN/Emulator)</div>
+            <div class="ind-desc">Deteksi penggunaan VPN, emulator, atau perangkat yang di-root</div>
+          </div>
+          <div class="complexity-badge c-high">HIGH</div>
+          <div class="priority-badge p-roadmap">ROADMAP</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="mt-48">
+    <div class="label">Risk Score Kalkulasi Formula</div>
+    <pre class="mt-24">
+<span class="code-comment">// Risk Score Aggregation — Weighted Sum (0–100)</span>
+
+<span class="code-key">RiskScore</span> = (
+  <span class="code-comment">// Group 1: Behavioral (bobot 20%)</span>
+  <span class="code-key">W_velocity</span>   × <span class="code-num">score_velocity</span>       +   <span class="code-comment">// 0.08</span>
+  <span class="code-key">W_odd_hour</span>    × <span class="code-num">score_odd_hour</span>       +   <span class="code-comment">// 0.05</span>
+  <span class="code-key">W_dormant</span>     × <span class="code-num">score_dormant</span>        +   <span class="code-comment">// 0.04</span>
+  <span class="code-key">W_profile</span>     × <span class="code-num">score_profile_anomaly</span>+   <span class="code-comment">// 0.03</span>
+
+  <span class="code-comment">// Group 2: Graph Intelligence (bobot 45% — paling kritis)</span>
+  <span class="code-key">W_mule_ring</span>   × <span class="code-num">score_mule_ring</span>      +   <span class="code-comment">// 0.25</span>
+  <span class="code-key">W_layering</span>    × <span class="code-num">score_layering</span>       +   <span class="code-comment">// 0.12</span>
+  <span class="code-key">W_blacklist</span>   × <span class="code-num">score_blacklist_hit</span>  +   <span class="code-comment">// 0.08</span>
+
+  <span class="code-comment">// Group 3: Purpose Mismatch (bobot 20%)</span>
+  <span class="code-key">W_purpose</span>     × <span class="code-num">score_purpose_mismatch</span>+  <span class="code-comment">// 0.15</span>
+  <span class="code-key">W_ledger</span>      × <span class="code-num">score_ledger_mismatch</span>+   <span class="code-comment">// 0.05</span>
+
+  <span class="code-comment">// Group 4: Technical (bobot 15%)</span>
+  <span class="code-key">W_travel</span>      × <span class="code-num">score_impossible_travel</span>+  <span class="code-comment">// 0.10</span>
+  <span class="code-key">W_geo</span>         × <span class="code-num">score_geolocation</span>    +   <span class="code-comment">// 0.05</span>
+  <span class="code-key">W_device</span>      × <span class="code-num">score_device_integrity</span>    <span class="code-comment">// 0.00 (roadmap)</span>
+)
+
+<span class="code-comment">// DECISION LOGIC</span>
+<span class="code-key">if</span> (RiskScore > <span class="code-num">85</span>)  → <span class="code-string">"BLOCK"</span>   <span class="code-comment">// Circuit Breaker aktif</span>
+<span class="code-key">if</span> (RiskScore > <span class="code-num">60</span>)  → <span class="code-string">"REVIEW"</span>  <span class="code-comment">// Flag untuk analis</span>
+<span class="code-key">if</span> (RiskScore ≤ <span class="code-num">60</span>)  → <span class="code-string">"ALLOW"</span>   <span class="code-comment">// Teruskan ke core banking</span></pre>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════ API SPEC -->
+<section id="api">
+  <div class="section-header">
+    <div class="section-num">04 — API Specification</div>
+    <h2 class="section-title">Spesifikasi <em>API Lengkap</em></h2>
+    <p class="section-desc">
+      Kontrak API yang harus disepakati seluruh tim sebelum coding dimulai.
+      Ini adalah "bahasa bersama" antara Frontend (Aam), Backend (Desta), dan AI Engine (Rifki).
+    </p>
+  </div>
+
+  <!-- API 1: ANALYZE TRANSACTION -->
+  <div class="api-block">
+    <div class="api-header">
+      <span class="method method-post">POST</span>
+      <span class="api-path">/api/v1/sentinel/analyze</span>
+      <span class="api-desc">ENDPOINT UTAMA — Jantung Crypto-Sentinel</span>
+    </div>
+    <div class="api-body">
+      <div>
+        <div class="api-section-title">Request Body</div>
+        <pre>{
+  <span class="code-key">"transaction_id"</span>: <span class="code-string">"TXN-20260506-001"</span>,
+  <span class="code-key">"sender_account"</span>: <span class="code-string">"0123456789"</span>,
+  <span class="code-key">"receiver_account"</span>: <span class="code-string">"9876543210"</span>,
+  <span class="code-key">"amount"</span>: <span class="code-num">250000000</span>,
+  <span class="code-key">"currency"</span>: <span class="code-string">"IDR"</span>,
+  <span class="code-key">"timestamp"</span>: <span class="code-string">"2026-05-06T02:30:00Z"</span>,
+  <span class="code-key">"purpose_code"</span>: <span class="code-string">"DEBT"</span>,
+  <span class="code-key">"description"</span>: <span class="code-string">"Bayar Hutang"</span>,
+  <span class="code-key">"destination_type"</span>: <span class="code-string">"CRYPTO_EXCHANGE"</span>,
+  <span class="code-key">"device_info"</span>: {
+    <span class="code-key">"device_id"</span>: <span class="code-string">"dev-abc-123"</span>,
+    <span class="code-key">"ip_address"</span>: <span class="code-string">"185.220.101.1"</span>,
+    <span class="code-key">"country"</span>: <span class="code-string">"NL"</span>,
+    <span class="code-key">"latitude"</span>: <span class="code-num">52.3702</span>,
+    <span class="code-key">"longitude"</span>: <span class="code-num">4.8952</span>
+  }
+}</pre>
+      </div>
+      <div>
+        <div class="api-section-title">Response 200 OK</div>
+        <pre>{
+  <span class="code-key">"transaction_id"</span>: <span class="code-string">"TXN-20260506-001"</span>,
+  <span class="code-key">"decision"</span>: <span class="code-string">"BLOCK"</span>,
+  <span class="code-key">"risk_score"</span>: <span class="code-num">94.7</span>,
+  <span class="code-key">"risk_level"</span>: <span class="code-string">"CRITICAL"</span>,
+  <span class="code-key">"processing_time_ms"</span>: <span class="code-num">38</span>,
+  <span class="code-key">"triggered_indicators"</span>: [
+    <span class="code-string">"odd_hour_activity"</span>,
+    <span class="code-string">"purpose_destination_mismatch"</span>,
+    <span class="code-string">"impossible_travel"</span>,
+    <span class="code-string">"mule_ring_detected"</span>
+  ],
+  <span class="code-key">"shap_explanation"</span>: {
+    <span class="code-key">"mule_ring"</span>: <span class="code-num">0.38</span>,
+    <span class="code-key">"purpose_mismatch"</span>: <span class="code-num">0.29</span>,
+    <span class="code-key">"impossible_travel"</span>: <span class="code-num">0.21</span>,
+    <span class="code-key">"odd_hour"</span>: <span class="code-num">0.12</span>
+  },
+  <span class="code-key">"graph_snapshot"</span>: {
+    <span class="code-key">"nodes"</span>: <span class="code-num">12</span>,
+    <span class="code-key">"edges"</span>: <span class="code-num">18</span>,
+    <span class="code-key">"cluster_id"</span>: <span class="code-string">"CLUSTER-FR-009"</span>
+  },
+  <span class="code-key">"str_draft_id"</span>: <span class="code-string">"STR-2026-0042"</span>
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- API 2: TRANSFER -->
+  <div class="api-block">
+    <div class="api-header">
+      <span class="method method-post">POST</span>
+      <span class="api-path">/api/v1/banking/transfer</span>
+      <span class="api-desc">Mock Core Banking — Eksekusi Transfer</span>
+    </div>
+    <div class="api-body">
+      <div>
+        <div class="api-section-title">Request Body</div>
+        <pre>{
+  <span class="code-key">"sender_account"</span>: <span class="code-string">"0123456789"</span>,
+  <span class="code-key">"receiver_account"</span>: <span class="code-string">"1111222233"</span>,
+  <span class="code-key">"amount"</span>: <span class="code-num">500000</span>,
+  <span class="code-key">"currency"</span>: <span class="code-string">"IDR"</span>,
+  <span class="code-key">"purpose_code"</span>: <span class="code-string">"SALA"</span>,
+  <span class="code-key">"description"</span>: <span class="code-string">"Gaji Freelance"</span>,
+  <span class="code-key">"device_info"</span>: { ... },
+  <span class="code-comment">// Token dari sesi login nasabah</span>
+  <span class="code-key">"session_token"</span>: <span class="code-string">"eyJhbGciOiJIUzI1..."</span>
+}</pre>
+      </div>
+      <div>
+        <div class="api-section-title">Response (ALLOW case)</div>
+        <pre>{
+  <span class="code-key">"status"</span>: <span class="code-string">"SUCCESS"</span>,
+  <span class="code-key">"transaction_id"</span>: <span class="code-string">"TXN-20260506-002"</span>,
+  <span class="code-key">"sentinel_decision"</span>: <span class="code-string">"ALLOW"</span>,
+  <span class="code-key">"risk_score"</span>: <span class="code-num">12.3</span>,
+  <span class="code-key">"sender_balance_after"</span>: <span class="code-num">4500000</span>,
+  <span class="code-key">"receiver_balance_after"</span>: <span class="code-num">1500000</span>,
+  <span class="code-key">"message"</span>: <span class="code-string">"Transaksi berhasil diproses"</span>
+}
+
+<span class="code-comment">// Response (BLOCK case)</span>
+{
+  <span class="code-key">"status"</span>: <span class="code-string">"BLOCKED"</span>,
+  <span class="code-key">"transaction_id"</span>: <span class="code-string">"TXN-20260506-003"</span>,
+  <span class="code-key">"sentinel_decision"</span>: <span class="code-string">"BLOCK"</span>,
+  <span class="code-key">"risk_score"</span>: <span class="code-num">94.7</span>,
+  <span class="code-key">"message"</span>: <span class="code-string">"Transaksi ditahan. Hubungi bank."</span>,
+  <span class="code-key">"str_reference"</span>: <span class="code-string">"STR-2026-0042"</span>
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- API 3: DASHBOARD FEED -->
+  <div class="api-block">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/dashboard/alerts</span>
+      <span class="api-desc">Dashboard Forensik — Feed Alert</span>
+    </div>
+    <div class="api-body">
+      <div>
+        <div class="api-section-title">Query Parameters</div>
+        <pre>?<span class="code-key">limit</span>=<span class="code-num">20</span>
+&<span class="code-key">risk_level</span>=<span class="code-string">CRITICAL,HIGH</span>
+&<span class="code-key">from</span>=<span class="code-string">2026-05-06T00:00:00Z</span>
+&<span class="code-key">status</span>=<span class="code-string">BLOCKED</span></pre>
+        <div class="api-section-title" style="margin-top:20px;">Query Parameters</div>
+        <pre>GET <span class="code-string">/api/v1/dashboard/graph/{cluster_id}</span>
+<span class="code-comment">// Ambil data graf untuk visualisasi React Flow</span>
+
+GET <span class="code-string">/api/v1/banking/account/{account_id}</span>
+<span class="code-comment">// Info akun & saldo</span>
+
+GET <span class="code-string">/api/v1/sentinel/str/{str_id}</span>
+<span class="code-comment">// Ambil draf STR untuk di-review analis</span>
+
+POST <span class="code-string">/api/v1/attack/simulate</span>
+<span class="code-comment">// Trigger Attack Simulator — smurfing scenario</span></pre>
+      </div>
+      <div>
+        <div class="api-section-title">Response Alerts</div>
+        <pre>{
+  <span class="code-key">"alerts"</span>: [
+    {
+      <span class="code-key">"id"</span>: <span class="code-string">"ALERT-001"</span>,
+      <span class="code-key">"timestamp"</span>: <span class="code-string">"2026-05-06T02:30:38Z"</span>,
+      <span class="code-key">"risk_score"</span>: <span class="code-num">94.7</span>,
+      <span class="code-key">"risk_level"</span>: <span class="code-string">"CRITICAL"</span>,
+      <span class="code-key">"decision"</span>: <span class="code-string">"BLOCK"</span>,
+      <span class="code-key">"amount"</span>: <span class="code-num">250000000</span>,
+      <span class="code-key">"indicator_flags"</span>: [
+        <span class="code-string">"mule_ring"</span>,
+        <span class="code-string">"purpose_mismatch"</span>
+      ],
+      <span class="code-key">"cluster_id"</span>: <span class="code-string">"CLUSTER-FR-009"</span>
+    }
+  ],
+  <span class="code-key">"total"</span>: <span class="code-num">37</span>,
+  <span class="code-key">"dana_diselamatkan"</span>: <span class="code-num">5800000000</span>
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- API 4: ATTACK SIM -->
+  <div class="api-block">
+    <div class="api-header">
+      <span class="method method-post">POST</span>
+      <span class="api-path">/api/v1/attack/simulate</span>
+      <span class="api-desc">Attack Simulator — Smurfing Bot</span>
+    </div>
+    <div class="api-body">
+      <div>
+        <div class="api-section-title">Request Body</div>
+        <pre>{
+  <span class="code-key">"scenario"</span>: <span class="code-string">"smurfing_ring"</span>,
+  <span class="code-comment">// Skenario: "smurfing_ring" | "layering" | "odd_hour"</span>
+  <span class="code-key">"num_transactions"</span>: <span class="code-num">100</span>,
+  <span class="code-key">"target_account"</span>: <span class="code-string">"MULE-MASTER-001"</span>,
+  <span class="code-key">"total_amount"</span>: <span class="code-num">500000000</span>,
+  <span class="code-key">"speed_ms"</span>: <span class="code-num">200</span>
+  <span class="code-comment">// Kirim 1 transaksi setiap 200ms</span>
+}</pre>
+      </div>
+      <div>
+        <div class="api-section-title">Response Simulation</div>
+        <pre>{
+  <span class="code-key">"simulation_id"</span>: <span class="code-string">"SIM-2026-007"</span>,
+  <span class="code-key">"status"</span>: <span class="code-string">"RUNNING"</span>,
+  <span class="code-key">"transactions_sent"</span>: <span class="code-num">100</span>,
+  <span class="code-key">"transactions_blocked"</span>: <span class="code-num">98</span>,
+  <span class="code-key">"transactions_allowed"</span>: <span class="code-num">2</span>,
+  <span class="code-key">"block_rate"</span>: <span class="code-num">98.0</span>,
+  <span class="code-key">"dana_diselamatkan"</span>: <span class="code-num">490000000</span>,
+  <span class="code-key">"avg_response_ms"</span>: <span class="code-num">34</span>,
+  <span class="code-key">"clusters_detected"</span>: <span class="code-num">3</span>
+}</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════ AI STAGES -->
+<section id="ai-stages">
+  <div class="section-header">
+    <div class="section-num">05 — AI Development Stages</div>
+    <h2 class="section-title">Tahapan Pengembangan <em>AI Engine</em></h2>
+    <p class="section-desc">
+      Rifki membangun AI dalam 4 tahap progresif. Setiap tahap menghasilkan model yang bisa
+      diintegrasikan, sehingga prototype tetap bisa berjalan bahkan jika GNN belum sempurna.
+    </p>
+  </div>
+
+  <div class="stage-track">
+    <div class="stage-card">
+      <div class="stage-circle s1">01</div>
+      <div class="stage-label">Minggu 1–2</div>
+      <div class="stage-name">Rule-Based Baseline</div>
+      <ul class="stage-body">
+        <li>Load PaySim dataset (Kaggle)</li>
+        <li>EDA — Exploratory Data Analysis</li>
+        <li>Implementasi 4 rule sederhana</li>
+        <li>Threshold-based decision logic</li>
+        <li>Output: Risk Score versi awal</li>
+        <li>Target: System berjalan end-to-end</li>
+      </ul>
+    </div>
+    <div class="stage-card">
+      <div class="stage-circle s2">02</div>
+      <div class="stage-label">Minggu 3–4</div>
+      <div class="stage-name">ML Classifier</div>
+      <ul class="stage-body">
+        <li>Feature engineering 15 indikator</li>
+        <li>Training XGBoost / LightGBM</li>
+        <li>Handle class imbalance (SMOTE)</li>
+        <li>Cross-validation & tuning</li>
+        <li>Integrasi SHAP library</li>
+        <li>Target: F1-Score &gt;90% di PaySim</li>
+      </ul>
+    </div>
+    <div class="stage-card">
+      <div class="stage-circle s3">03</div>
+      <div class="stage-label">Minggu 5–6</div>
+      <div class="stage-name">GNN Integration</div>
+      <ul class="stage-body">
+        <li>Bangun graf dari transaksi history</li>
+        <li>NetworkX → PyTorch Geometric</li>
+        <li>Node features: akun attributes</li>
+        <li>Edge features: tx amount, timing</li>
+        <li>Training GCN / GraphSAGE model</li>
+        <li>Target: Graf visual bergerak di demo</li>
+      </ul>
+    </div>
+    <div class="stage-card">
+      <div class="stage-circle s4">04</div>
+      <div class="stage-label">Minggu 7–8</div>
+      <div class="stage-name">Hybrid Ensemble</div>
+      <ul class="stage-body">
+        <li>Kombinasi GNN + XGBoost score</li>
+        <li>Weighted ensemble output</li>
+        <li>Optimasi latensi &lt;50ms</li>
+        <li>SHAP visualization final</li>
+        <li>STR auto-draft generator</li>
+        <li>Target: Demo stabil + F1 &gt;95%</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mt-48">
+    <div class="label">Detail Teknis — Konstruksi Graf GNN</div>
+    <pre class="mt-24">
+<span class="code-comment">## STRUKTUR GRAF TRANSAKSI</span>
+<span class="code-comment">## Node = Rekening Bank | Edge = Aliran Dana</span>
+
+<span class="code-key">import</span> networkx <span class="code-key">as</span> nx
+<span class="code-key">import</span> torch
+<span class="code-key">from</span> torch_geometric.data <span class="code-key">import</span> Data
+<span class="code-key">from</span> torch_geometric.nn <span class="code-key">import</span> GCNConv
+
+<span class="code-comment"># 1. BANGUN GRAF DARI DATA TRANSAKSI</span>
+G = nx.DiGraph()
+
+<span class="code-comment"># Tambah node (setiap rekening unik)</span>
+<span class="code-key">for</span> account <span class="code-key">in</span> accounts:
+    G.add_node(account.id, features=[
+        account.balance,           <span class="code-comment"># Saldo</span>
+        account.transaction_count, <span class="code-comment"># Frekuensi</span>
+        account.age_days,          <span class="code-comment"># Usia rekening</span>
+        account.is_dormant         <span class="code-comment"># Status pasif</span>
+    ])
+
+<span class="code-comment"># Tambah edge (setiap transfer = koneksi)</span>
+<span class="code-key">for</span> tx <span class="code-key">in</span> transactions:
+    G.add_edge(tx.sender, tx.receiver, weight=tx.amount,
+               timestamp=tx.ts, is_fraud=tx.label)
+
+<span class="code-comment"># 2. KONVERSI KE PYTORCH GEOMETRIC FORMAT</span>
+edge_index = torch.tensor(list(G.edges())).t().contiguous()
+x = torch.tensor(node_features, dtype=torch.float)
+y = torch.tensor(labels, dtype=torch.long)
+
+data = Data(x=x, edge_index=edge_index, y=y)
+
+<span class="code-comment"># 3. DEFINISI MODEL GCN</span>
+<span class="code-key">class</span> FraudGNN(torch.nn.Module):
+    <span class="code-key">def</span> __init__(self, in_channels, hidden, out_channels):
+        super().__init__()
+        self.conv1 = GCNConv(in_channels, hidden)
+        self.conv2 = GCNConv(hidden, out_channels)
+
+    <span class="code-key">def</span> forward(self, data):
+        x, edge_index = data.x, data.edge_index
+        x = self.conv1(x, edge_index).relu()
+        x = F.dropout(x, training=self.training)
+        x = self.conv2(x, edge_index)
+        <span class="code-key">return</span> F.log_softmax(x, dim=<span class="code-num">1</span>)
+
+<span class="code-comment"># 4. INFERENCE UNTUK TRANSAKSI BARU (&lt;50ms target)</span>
+<span class="code-key">def</span> analyze_transaction(tx_data):
+    start = time.time()
+    graph = build_subgraph(tx_data)           <span class="code-comment"># Ambil subgraf lokal</span>
+    node_embedding = model(graph)              <span class="code-comment"># GNN inference</span>
+    risk_score = ensemble_score(node_embedding) <span class="code-comment"># Gabung dengan XGBoost</span>
+    elapsed = (time.time() - start) * <span class="code-num">1000</span>   <span class="code-comment"># ms</span>
+    <span class="code-key">return</span> { <span class="code-string">"risk_score"</span>: risk_score, <span class="code-string">"latency_ms"</span>: elapsed }</pre>
+  </div>
+
+  <div class="mt-48">
+    <div class="label">Dataset Strategy — PaySim vs Real Data</div>
+    <div class="grid-2 mt-24">
+      <div class="card">
+        <div class="card-tag tag-green">PaySim (Kaggle) — Primary</div>
+        <div class="card-title">6.3 Juta Transaksi Sintetis</div>
+        <div class="card-body">
+          Mensimulasikan mobile money transactions dengan injeksi pola fraud (transfer to mule → cash-out).
+          Fitur: step, type, amount, nameOrig, nameDest, isFraud.
+          <br><br>
+          <code style="font-family:var(--font-mono, monospace); font-size:12px; color:var(--accent-primary)">
+            kaggle datasets download -d ealaxi/paysim1
+          </code>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-tag tag-blue">SDV Library — Custom Data</div>
+        <div class="card-title">Generate Data Sesuai Schema Kita</div>
+        <div class="card-body">
+          Synthetic Data Vault memungkinkan generate data transaksi dengan struktur custom
+          sesuai 15 indikator Sentinel — termasuk metadata kripto, device info, dan geolokasi.
+          <br><br>
+          <code style="font-family:var(--font-mono, monospace); font-size:12px; color:var(--accent-secondary)">
+            pip install sdv — from sdv.tabular import CTGAN
+          </code>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════ DATABASE -->
+<section id="database">
+  <div class="section-header">
+    <div class="section-num">06 — Database Schema</div>
+    <h2 class="section-title">Skema <em>Database</em></h2>
+    <p class="section-desc">
+      Struktur tabel PostgreSQL yang digunakan oleh Mock Core Banking dan Sentinel Engine.
+      Desain minimal tapi cukup untuk demo end-to-end yang mulus.
+    </p>
+  </div>
+
+  <div class="label">Table: accounts</div>
+  <table class="schema-table mt-24">
+    <thead>
+      <tr>
+        <th>Field</th><th>Type</th><th>Constraint</th><th>Keterangan</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="field-name">account_id</td><td class="field-type">VARCHAR(20)</td><td class="field-pk">PK</td><td>Nomor rekening unik</td></tr>
+      <tr><td class="field-name">owner_name</td><td class="field-type">VARCHAR(100)</td><td>NOT NULL</td><td>Nama nasabah</td></tr>
+      <tr><td class="field-name">balance</td><td class="field-type">BIGINT</td><td>DEFAULT 0</td><td>Saldo dalam satuan rupiah</td></tr>
+      <tr><td class="field-name">risk_profile</td><td class="field-type">VARCHAR(10)</td><td>DEFAULT 'LOW'</td><td>LOW | MEDIUM | HIGH</td></tr>
+      <tr><td class="field-name">is_active</td><td class="field-type">BOOLEAN</td><td>DEFAULT TRUE</td><td>Status rekening aktif/pasif</td></tr>
+      <tr><td class="field-name">is_blocked</td><td class="field-type">BOOLEAN</td><td>DEFAULT FALSE</td><td>Diblokir oleh Sentinel</td></tr>
+      <tr><td class="field-name">last_activity</td><td class="field-type">TIMESTAMP</td><td></td><td>Waktu transaksi terakhir</td></tr>
+      <tr><td class="field-name">created_at</td><td class="field-type">TIMESTAMP</td><td>DEFAULT NOW()</td><td>Tanggal pembukaan rekening</td></tr>
+    </tbody>
+  </table>
+
+  <div class="label mt-48">Table: transactions</div>
+  <table class="schema-table mt-24">
+    <thead>
+      <tr>
+        <th>Field</th><th>Type</th><th>Constraint</th><th>Keterangan</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="field-name">transaction_id</td><td class="field-type">VARCHAR(30)</td><td class="field-pk">PK</td><td>ID unik transaksi</td></tr>
+      <tr><td class="field-name">sender_account</td><td class="field-type">VARCHAR(20)</td><td class="field-fk">FK → accounts</td><td>Rekening pengirim</td></tr>
+      <tr><td class="field-name">receiver_account</td><td class="field-type">VARCHAR(20)</td><td class="field-fk">FK → accounts</td><td>Rekening penerima</td></tr>
+      <tr><td class="field-name">amount</td><td class="field-type">BIGINT</td><td>NOT NULL</td><td>Nominal dalam rupiah</td></tr>
+      <tr><td class="field-name">purpose_code</td><td class="field-type">VARCHAR(10)</td><td></td><td>Kode tujuan transfer (ISO 20022)</td></tr>
+      <tr><td class="field-name">description</td><td class="field-type">TEXT</td><td></td><td>Berita transfer dari nasabah</td></tr>
+      <tr><td class="field-name">destination_type</td><td class="field-type">VARCHAR(20)</td><td></td><td>DOMESTIC | CRYPTO_EXCHANGE | etc</td></tr>
+      <tr><td class="field-name">ip_address</td><td class="field-type">INET</td><td></td><td>IP saat transaksi</td></tr>
+      <tr><td class="field-name">country_code</td><td class="field-type">VARCHAR(5)</td><td></td><td>Negara berdasarkan IP</td></tr>
+      <tr><td class="field-name">latitude</td><td class="field-type">FLOAT</td><td></td><td>Koordinat lokasi perangkat</td></tr>
+      <tr><td class="field-name">longitude</td><td class="field-type">FLOAT</td><td></td><td>Koordinat lokasi perangkat</td></tr>
+      <tr><td class="field-name">timestamp</td><td class="field-type">TIMESTAMP</td><td>NOT NULL</td><td>Waktu inisiasi transaksi</td></tr>
+      <tr><td class="field-name">sentinel_score</td><td class="field-type">FLOAT</td><td></td><td>Risk Score 0.0 – 100.0</td></tr>
+      <tr><td class="field-name">sentinel_decision</td><td class="field-type">VARCHAR(10)</td><td></td><td>ALLOW | BLOCK | REVIEW</td></tr>
+      <tr><td class="field-name">status</td><td class="field-type">VARCHAR(15)</td><td>DEFAULT 'PENDING'</td><td>PENDING | SUCCESS | BLOCKED</td></tr>
+    </tbody>
+  </table>
+
+  <div class="label mt-48">Table: sentinel_alerts & str_drafts</div>
+  <div class="grid-2 mt-24">
+    <table class="schema-table">
+      <thead><tr><th>Field</th><th>Type</th><th>Keterangan</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">alert_id</td><td class="field-type">SERIAL PK</td><td>Auto-increment</td></tr>
+        <tr><td class="field-name">transaction_id</td><td class="field-type">VARCHAR FK</td><td>Ref ke transaksi</td></tr>
+        <tr><td class="field-name">risk_score</td><td class="field-type">FLOAT</td><td>Skor risiko</td></tr>
+        <tr><td class="field-name">indicators_json</td><td class="field-type">JSONB</td><td>15 indikator yang triggered</td></tr>
+        <tr><td class="field-name">shap_values_json</td><td class="field-type">JSONB</td><td>SHAP explanation output</td></tr>
+        <tr><td class="field-name">cluster_id</td><td class="field-type">VARCHAR(30)</td><td>ID cluster fraud ring</td></tr>
+        <tr><td class="field-name">resolved</td><td class="field-type">BOOLEAN</td><td>Sudah ditindak analis?</td></tr>
+      </tbody>
+    </table>
+    <table class="schema-table">
+      <thead><tr><th>Field</th><th>Type</th><th>Keterangan</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">str_id</td><td class="field-type">VARCHAR PK</td><td>Nomor STR</td></tr>
+        <tr><td class="field-name">alert_id</td><td class="field-type">INT FK</td><td>Ref ke alert</td></tr>
+        <tr><td class="field-name">summary_text</td><td class="field-type">TEXT</td><td>Narasi otomatis AI</td></tr>
+        <tr><td class="field-name">risk_factors</td><td class="field-type">JSONB</td><td>Faktor risiko untuk PPATK</td></tr>
+        <tr><td class="field-name">status</td><td class="field-type">VARCHAR</td><td>DRAFT | REVIEWED | SENT</td></tr>
+        <tr><td class="field-name">analyst_id</td><td class="field-type">VARCHAR FK</td><td>Analis yang approve</td></tr>
+        <tr><td class="field-name">created_at</td><td class="field-type">TIMESTAMP</td><td>Dibuat otomatis</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════ ROADMAP -->
+<section id="roadmap">
+  <div class="section-header">
+    <div class="section-num">07 — Development Roadmap</div>
+    <h2 class="section-title">Roadmap <em>8 Minggu</em></h2>
+    <p class="section-desc">
+      Disesuaikan dengan timeline PIDI 2026. Deadline kritis: Proposal Tahap 2 pada 4 Juni 2026.
+      Setiap anggota tim memiliki deliverable yang jelas per minggu.
+    </p>
+  </div>
+
+  <div style="margin-bottom: 24px; display:flex; gap: 16px; flex-wrap: wrap;">
+    <span class="tl-task aam">■ Aam (Frontend)</span>
+    <span class="tl-task rifki">■ Rifki (AI)</span>
+    <span class="tl-task desta">■ Desta (Backend)</span>
+    <span class="tl-task billy">■ Billy (Strategi)</span>
+  </div>
+
+  <div class="timeline">
+
+    <div class="tl-month">MEI<br>MINGGU 1</div>
+    <div class="tl-content">
+      <div class="tl-milestone">Phase 1 — Foundation</div>
+      <div class="tl-title">Setup Lingkungan & Fondasi</div>
+      <p style="color: var(--text-secondary); font-size:14px;">Semua service harus bisa jalan secara lokal. Fokus pada "sistem hidup" — bukan fitur yang sempurna.</p>
+      <div class="tl-tasks">
+        <span class="tl-task desta">Setup FastAPI + PostgreSQL</span>
+        <span class="tl-task desta">Schema database v1</span>
+        <span class="tl-task rifki">Load PaySim + EDA</span>
+        <span class="tl-task rifki">Rule-based baseline model</span>
+        <span class="tl-task aam">Setup React project</span>
+        <span class="tl-task aam">Layout dashboard awal</span>
+        <span class="tl-task billy">Dokumentasi API contract</span>
+        <span class="tl-task billy">GitHub repo setup</span>
+      </div>
+    </div>
+
+    <div class="tl-month">MEI<br>MINGGU 2</div>
+    <div class="tl-content">
+      <div class="tl-milestone">Phase 1 — Core</div>
+      <div class="tl-title">Core Flow Pertama Kali Berjalan</div>
+      <p style="color: var(--text-secondary); font-size:14px;">Target: satu transaksi bisa mengalir dari Mobile App → Sentinel API → Core Banking → Response.</p>
+      <div class="tl-tasks">
+        <span class="tl-task desta">Endpoint /banking/transfer selesai</span>
+        <span class="tl-task desta">Endpoint /sentinel/analyze (basic)</span>
+        <span class="tl-task rifki">Model XGBoost terintegrasi</span>
+        <span class="tl-task rifki">Output risk_score ke API</span>
+        <span class="tl-task aam">Mobile App — form transfer</span>
+        <span class="tl-task aam">Tampilkan BLOCK/ALLOW di UI</span>
+        <span class="tl-task billy">Persiapan Proposal Tahap 2</span>
+      </div>
+      <div class="tl-deadline">📌 TARGET INTERNAL: End-to-end flow pertama</div>
+    </div>
+
+    <div class="tl-month">MEI<br>MINGGU 3</div>
+    <div class="tl-content">
+      <div class="tl-milestone">Phase 2 — AI Upgrade</div>
+      <div class="tl-title">Graph Intelligence Mulai Dibangun</div>
+      <div class="tl-tasks">
+        <span class="tl-task rifki">NetworkX graf dari PaySim</span>
+        <span class="tl-task rifki">Feature engineering 15 indikator</span>
+        <span class="tl-task rifki">SHAP library integrasi</span>
+        <span class="tl-task desta">Redis blacklist cache</span>
+        <span class="tl-task desta">WebSocket server setup</span>
+        <span class="tl-task aam">Dashboard alert panel</span>
+        <span class="tl-task aam">Real-time feed dari WebSocket</span>
+      </div>
+    </div>
+
+    <div class="tl-month">MEI–JUN<br>MINGGU 4</div>
+    <div class="tl-content">
+      <div class="tl-milestone">Phase 2 — GNN</div>
+      <div class="tl-title">PyTorch Geometric — GNN Pertama</div>
+      <div class="tl-tasks">
+        <span class="tl-task rifki">Training GCN model pertama</span>
+        <span class="tl-task rifki">Evaluasi F1-Score</span>
+        <span class="tl-task aam">React Flow — graf visualisasi</span>
+        <span class="tl-task aam">Node & edge rendering dinamis</span>
+        <span class="tl-task desta">Endpoint /dashboard/graph</span>
+        <span class="tl-task billy">Draft Proposal Tahap 2 selesai</span>
+      </div>
+      <div class="tl-deadline">🚨 DEADLINE PROPOSAL TAHAP 2: 4 Juni 2026</div>
+    </div>
+
+    <div class="tl-month">JUN<br>MINGGU 5</div>
+    <div class="tl-content">
+      <div class="tl-milestone">Phase 3 — Integration</div>
+      <div class="tl-title">Full Integration & Attack Simulator</div>
+      <div class="tl-tasks">
+        <span class="tl-task rifki">Hybrid ensemble GNN + XGBoost</span>
+        <span class="tl-task desta">Attack Simulator script Python</span>
+        <span class="tl-task desta">Stress test API latensi</span>
+        <span class="tl-task aam">SHAP chart di dashboard</span>
+        <span class="tl-task aam">STR draft viewer</span>
+        <span class="tl-task billy">Business pitch deck update</span>
+      </div>
+    </div>
+
+    <div class="tl-month">JUN<br>MINGGU 6</div>
+    <div class="tl-content">
+      <div class="tl-milestone">Phase 3 — Polish</div>
+      <div class="tl-title">Polish UI + STR Auto-Generator</div>
+      <div class="tl-tasks">
+        <span class="tl-task aam">UI/UX final refinement</span>
+        <span class="tl-task aam">Dashboard stats: dana diselamatkan</span>
+        <span class="tl-task rifki">Optimasi model latensi &lt;50ms</span>
+        <span class="tl-task desta">Docker Compose semua service</span>
+        <span class="tl-task billy">Demo script written</span>
+      </div>
+    </div>
+
+    <div class="tl-month">JUN–JUL<br>MINGGU 7</div>
+    <div class="tl-content">
+      <div class="tl-milestone">Phase 4 — Demo Ready</div>
+      <div class="tl-title">Full Rehearsal & Bug Fixing</div>
+      <div class="tl-tasks">
+        <span class="tl-task billy">Demo rehearsal pertama</span>
+        <span class="tl-task billy">Video submission prep</span>
+        <span class="tl-task rifki">Model final training</span>
+        <span class="tl-task aam">Responsive design fix</span>
+        <span class="tl-task desta">Deployment ke cloud (jika perlu)</span>
+      </div>
+      <div class="tl-deadline">📌 DEADLINE VIDEO: 26 Juli 2026</div>
+    </div>
+
+    <div class="tl-month">AGT<br>MINGGU 8</div>
+    <div class="tl-content">
+      <div class="tl-milestone">Phase 4 — Capstone</div>
+      <div class="tl-title">Capstone Project — Demo di Depan Juri</div>
+      <p style="color: var(--text-secondary); font-size:14px;">Workshop, mentoring industri, dan presentasi MVP kepada juri dari BI, OJK, dan perbankan.</p>
+      <div class="tl-tasks">
+        <span class="tl-task billy">Presentasi pitch 10 menit</span>
+        <span class="tl-task aam">Demo live Attack Simulator</span>
+        <span class="tl-task rifki">Backup model jika GNN gagal</span>
+        <span class="tl-task desta">Server siap & stabil</span>
+      </div>
+      <div class="tl-deadline">🏆 PENGUMUMAN FINALIS: 6 Agustus 2026</div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════ DEMO SCRIPT -->
+<section id="demo">
+  <div class="section-header">
+    <div class="section-num">08 — Demo Script</div>
+    <h2 class="section-title">Skenario Demo <em>di Depan Juri</em></h2>
+    <p class="section-desc">
+      Tiga skenario yang harus bisa didemonstrasikan secara live. Urutan ini dirancang
+      untuk membangun ketegangan naratif dan mencapai "wow moment" maksimal.
+    </p>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-tag tag-green">Skenario 1 — Normal</div>
+      <div class="card-title">Transaksi Aman ✓</div>
+      <div class="card-body">
+        Billy transfer Rp500.000 ke rekening teman di siang hari dari IP Jakarta.
+        Sentinel menganalisis → Risk Score <span class="text-green">12</span> →
+        <strong class="text-green">ALLOW</strong> → Dana terkirim → Dashboard menampilkan status hijau.
+        <br><br>
+        <em style="color: var(--text-muted); font-size:13px;">Tujuan: Tunjukkan sistem berjalan normal untuk transaksi biasa.</em>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-tag tag-yellow">Skenario 2 — Suspicious</div>
+      <div class="card-title">Transaksi Mencurigakan ⚠</div>
+      <div class="card-body">
+        Rifki transfer Rp250 juta, jam 02:30 pagi, tujuan "Crypto Exchange",
+        berita "Bayar Hutang". Sentinel menganalisis → Risk Score <span class="text-yellow">94</span> →
+        <strong class="text-red">BLOCKED</strong> → Dashboard alert merah → STR draft otomatis terbentuk.
+        <br><br>
+        <em style="color: var(--text-muted); font-size:13px;">Tujuan: Tunjukkan Circuit Breaker bekerja real-time.</em>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-tag tag-red">Skenario 3 — Attack</div>
+      <div class="card-title">Serangan Smurfing 🎯</div>
+      <div class="card-body">
+        Billy aktifkan Attack Simulator → 100 transaksi kecil dari berbagai akun ke satu mule account
+        dalam 20 detik → Dashboard menampilkan 98 BLOCKED secara live →
+        GNN graf menampilkan "jaring laba-laba" terbentuk visual → <span class="text-green">Rp490 juta diselamatkan</span>.
+        <br><br>
+        <em style="color: var(--text-muted); font-size:13px;">Tujuan: KLIMAKS — momen yang tidak terlupakan juri.</em>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight-box mt-24">
+    <div class="label">💡 Tips Demo Kritis untuk Aam (Frontend)</div>
+    <p style="color: var(--text-secondary); font-size: 15px; line-height: 1.7; margin-top: 8px;">
+      Dashboard adalah <strong class="text-green">senjata visual utama</strong> tim EXPRESSO.
+      Juri akan menghabiskan waktu paling lama melihat layar ini.
+      Pastikan: (1) GNN Graf bergerak dan berubah saat transaksi masuk,
+      (2) Risk Score gauge beranimasi, (3) Alert feed real-time terlihat jelas,
+      (4) Angka "Dana Diselamatkan" ter-update live.
+      Investasikan 40% waktu coding di dashboard ini — return-nya paling tinggi.
+    </p>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════ TIM -->
+<section id="tim">
+  <div class="section-header">
+    <div class="section-num">09 — Team</div>
+    <h2 class="section-title">Tim <em>EXPRESSO</em></h2>
+    <p class="section-desc">
+      Universitas Kuningan — Mahasiswa Semester 4 — PIDI Digdaya × Hackathon 2026
+    </p>
+  </div>
+
+  <div class="team-grid">
+    <div class="team-card">
+      <div class="team-role">Ketua Tim</div>
+      <div class="team-name">Billy Jonathan</div>
+      <div class="team-title">Product Strategy & Regulatory Alignment</div>
+      <div class="team-stack">
+        <span class="team-tech">Product Management</span>
+        <span class="team-tech">Regulasi OJK/BI</span>
+        <span class="team-tech">Business Pitch</span>
+      </div>
+      <div class="team-resp">
+        Memimpin keselarasan proyek dengan regulasi OJK/BI/SNAP BI.
+        Menyusun proposal, pitch deck, dan business model canvas.
+        Mengatur demo script dan presentasi akhir.
+        Koordinasi timeline seluruh tim.
+      </div>
+    </div>
+
+    <div class="team-card">
+      <div class="team-role">AI Architect</div>
+      <div class="team-name">Rifki Firmansyah</div>
+      <div class="team-title">GNN Model & Machine Learning</div>
+      <div class="team-stack">
+        <span class="team-tech">Python</span>
+        <span class="team-tech">PyTorch Geometric</span>
+        <span class="team-tech">NetworkX</span>
+        <span class="team-tech">XGBoost</span>
+        <span class="team-tech">SHAP</span>
+      </div>
+      <div class="team-resp">
+        Membangun seluruh pipeline AI dari data preprocessing hingga GNN inference.
+        Integrasi model ke FastAPI endpoint.
+        Implementasi SHAP explanation output.
+        Optimasi latensi &lt;50ms.
+      </div>
+    </div>
+
+    <div class="team-card">
+      <div class="team-role">Backend Developer</div>
+      <div class="team-name">Desta Erlangga</div>
+      <div class="team-title">API Integration & Core Banking Mock</div>
+      <div class="team-stack">
+        <span class="team-tech">FastAPI</span>
+        <span class="team-tech">PostgreSQL</span>
+        <span class="team-tech">SQLAlchemy</span>
+        <span class="team-tech">Redis</span>
+        <span class="team-tech">Docker</span>
+      </div>
+      <div class="team-resp">
+        Membangun semua REST API endpoint.
+        Mock Core Banking database.
+        WebSocket server untuk real-time feed.
+        Docker Compose orkestrasi.
+        Attack Simulator script.
+      </div>
+    </div>
+
+    <div class="team-card" style="border-left: 3px solid var(--accent-primary);">
+      <div class="team-role">Frontend & Product Lead</div>
+      <div class="team-name">Aam Setiana</div>
+      <div class="team-title" style="color: var(--accent-primary);">Dashboard Forensik & UX</div>
+      <div class="team-stack">
+        <span class="team-tech">React.js</span>
+        <span class="team-tech">React Flow</span>
+        <span class="team-tech">Recharts</span>
+        <span class="team-tech">Tailwind CSS</span>
+        <span class="team-tech">Axios</span>
+      </div>
+      <div class="team-resp">
+        Membangun Mobile Banking App simulasi.
+        Dashboard Forensik dengan GNN visualisasi.
+        Real-time alert feed.
+        SHAP chart & STR viewer.
+        <strong class="text-green">Komponen paling kritis untuk kesan juri.</strong>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════ DOCKER -->
+<section id="deployment">
+  <div class="section-header">
+    <div class="section-num">10 — Deployment</div>
+    <h2 class="section-title">Cara <em>Menjalankan</em> Sistem</div>
+  </div>
+
+  <div class="label">docker-compose.yml — Satu Perintah untuk Semua Service</div>
+  <pre class="mt-24">
+<span class="code-comment"># docker-compose.yml</span>
+<span class="code-comment"># Jalankan: docker-compose up --build</span>
+
+<span class="code-key">version</span>: <span class="code-string">'3.8'</span>
+
+<span class="code-key">services</span>:
+
+  <span class="code-comment"># 1. DATABASE</span>
+  <span class="code-key">postgres</span>:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: <span class="code-string">sentinel_db</span>
+      POSTGRES_USER: <span class="code-string">sentinel_user</span>
+      POSTGRES_PASSWORD: <span class="code-string">sentinel_pass</span>
+    ports: [<span class="code-string">"5432:5432"</span>]
+    volumes: [postgres_data:/var/lib/postgresql/data]
+
+  <span class="code-comment"># 2. REDIS CACHE (Blacklist)</span>
+  <span class="code-key">redis</span>:
+    image: redis:7-alpine
+    ports: [<span class="code-string">"6379:6379"</span>]
+
+  <span class="code-comment"># 3. SENTINEL AI ENGINE (Rifki)</span>
+  <span class="code-key">sentinel-ai</span>:
+    build: ./sentinel-ai
+    ports: [<span class="code-string">"8001:8001"</span>]
+    environment:
+      DB_URL: <span class="code-string">postgresql://sentinel_user:sentinel_pass@postgres/sentinel_db</span>
+      REDIS_URL: <span class="code-string">redis://redis:6379</span>
+    depends_on: [postgres, redis]
+
+  <span class="code-comment"># 4. CORE BANKING MOCK (Desta)</span>
+  <span class="code-key">core-banking</span>:
+    build: ./core-banking
+    ports: [<span class="code-string">"8002:8002"</span>]
+    environment:
+      DB_URL: <span class="code-string">postgresql://sentinel_user:sentinel_pass@postgres/sentinel_db</span>
+      SENTINEL_URL: <span class="code-string">http://sentinel-ai:8001</span>
+    depends_on: [sentinel-ai]
+
+  <span class="code-comment"># 5. DASHBOARD FRONTEND (Aam)</span>
+  <span class="code-key">dashboard</span>:
+    build: ./dashboard-frontend
+    ports: [<span class="code-string">"3000:3000"</span>]
+    environment:
+      REACT_APP_API_URL: <span class="code-string">http://core-banking:8002</span>
+      REACT_APP_WS_URL: <span class="code-string">ws://core-banking:8002/ws</span>
+    depends_on: [core-banking]
+
+<span class="code-key">volumes</span>:
+  postgres_data:
+
+<span class="code-comment">---</span>
+<span class="code-comment">## AKSES SETELAH RUNNING:</span>
+<span class="code-comment">## Mobile Banking App  →  http://localhost:3000/app</span>
+<span class="code-comment">## Forensic Dashboard  →  http://localhost:3000/dashboard</span>
+<span class="code-comment">## Sentinel API Docs   →  http://localhost:8001/docs</span>
+<span class="code-comment">## Core Banking Docs   →  http://localhost:8002/docs</span></pre>
+
+  <div class="label mt-48">Struktur Folder Proyek</div>
+  <pre class="mt-24">
+<span class="code-key">crypto-sentinel-2026/</span>
+├── <span class="code-string">README.md</span>                       <span class="code-comment"># Dokumentasi utama (this blueprint)</span>
+├── <span class="code-string">docker-compose.yml</span>
+│
+├── <span class="code-key">sentinel-ai/</span>                     <span class="code-comment"># 🔴 Rifki — AI Engine</span>
+│   ├── main.py                      <span class="code-comment"># FastAPI app</span>
+│   ├── models/
+│   │   ├── gnn_model.py             <span class="code-comment"># PyTorch Geometric GNN</span>
+│   │   ├── xgboost_model.pkl        <span class="code-comment"># Fallback model</span>
+│   │   └── ensemble.py              <span class="code-comment"># Hybrid scoring</span>
+│   ├── graph/
+│   │   ├── builder.py               <span class="code-comment"># NetworkX graph builder</span>
+│   │   └── analyzer.py              <span class="code-comment"># Mule ring detection</span>
+│   ├── indicators/
+│   │   ├── behavioral.py            <span class="code-comment"># Group 1: 4 indikator</span>
+│   │   ├── relational.py            <span class="code-comment"># Group 2: 3 indikator (GNN)</span>
+│   │   ├── purpose.py               <span class="code-comment"># Group 3: 2 indikator</span>
+│   │   └── technical.py             <span class="code-comment"># Group 4: 3 indikator</span>
+│   ├── explainer/
+│   │   ├── shap_explainer.py        <span class="code-comment"># SHAP values calculator</span>
+│   │   └── str_generator.py         <span class="code-comment"># Auto STR draft</span>
+│   └── notebooks/
+│       ├── 01_eda_paysim.ipynb      <span class="code-comment"># Eksplorasi data</span>
+│       ├── 02_train_xgboost.ipynb   <span class="code-comment"># Training baseline</span>
+│       └── 03_train_gnn.ipynb       <span class="code-comment"># Training GNN</span>
+│
+├── <span class="code-key">core-banking/</span>                    <span class="code-comment"># 🟡 Desta — Mock Bank</span>
+│   ├── main.py                      <span class="code-comment"># FastAPI app</span>
+│   ├── routers/
+│   │   ├── accounts.py              <span class="code-comment"># Account CRUD</span>
+│   │   ├── transfers.py             <span class="code-comment"># Transfer endpoint</span>
+│   │   └── attack_sim.py            <span class="code-comment"># Smurfing simulator</span>
+│   ├── models/
+│   │   └── db_models.py             <span class="code-comment"># SQLAlchemy models</span>
+│   └── websocket/
+│       └── feed.py                  <span class="code-comment"># Real-time WebSocket</span>
+│
+└── <span class="code-key">dashboard-frontend/</span>             <span class="code-comment"># 🟢 Aam — React App</span>
+    ├── src/
+    │   ├── pages/
+    │   │   ├── MobileBanking.jsx    <span class="code-comment"># Simulasi BRImo</span>
+    │   │   └── Dashboard.jsx        <span class="code-comment"># Forensic Dashboard</span>
+    │   ├── components/
+    │   │   ├── GNNGraph.jsx         <span class="code-comment"># React Flow visualizer</span>
+    │   │   ├── RiskGauge.jsx        <span class="code-comment"># Animated score meter</span>
+    │   │   ├── AlertFeed.jsx        <span class="code-comment"># Real-time alerts</span>
+    │   │   ├── SHAPChart.jsx        <span class="code-comment"># SHAP bar chart</span>
+    │   │   └── STRViewer.jsx        <span class="code-comment"># STR draft modal</span>
+    │   └── services/
+    │       └── api.js               <span class="code-comment"># Axios API calls</span>
+    └── package.json</pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ FOOTER -->
+<footer>
+  <div>
+    <div class="footer-logo">◈ CRYPTO-SENTINEL 2026</div>
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-muted); margin-top:8px;">
+      PIDI DIGDAYA × HACKATHON 2026 — Penguatan Ketahanan dan Inovasi Keuangan
+    </div>
+  </div>
+  <div class="footer-meta">
+    Tim EXPRESSO — Universitas Kuningan<br>
+    Billy · Rifki · Desta · Aam Setiana<br>
+    Blueprint v1.0.0 — Generated 2026<br>
+    <span style="color: var(--accent-primary);">◈ Classified: Internal Use Only</span>
+  </div>
+</footer>
+
+</main>
+
+<script>
+  // Smooth scroll + active nav highlighting
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => {
+          link.style.color = link.getAttribute('href') === '#' + entry.target.id
+            ? 'var(--accent-primary)' : '';
+        });
+      }
+    });
+  }, { threshold: 0.3 });
+
+  sections.forEach(s => observer.observe(s));
+
+  // Glitch effect on hero title
+  const title = document.querySelector('.hero-title .t2');
+  if (title) {
+    setInterval(() => {
+      if (Math.random() > 0.97) {
+        title.style.textShadow = '2px 0 #ff3b5c, -2px 0 #0088ff, 0 0 30px rgba(0,245,200,0.5)';
+        setTimeout(() => {
+          title.style.textShadow = '0 0 30px rgba(0,245,200,0.5), 0 0 60px rgba(0,245,200,0.2)';
+        }, 80);
+      }
+    }, 300);
+  }
+
+  // Animate numbers
+  function animateNum(el, target, suffix = '') {
+    let current = 0;
+    const step = target / 60;
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= target) {
+        el.textContent = target + suffix;
+        clearInterval(timer);
+      } else {
+        el.textContent = Math.floor(current) + suffix;
+      }
+    }, 16);
+  }
+
+  const heroObs = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      document.querySelectorAll('.stat-num').forEach(el => {
+        const text = el.textContent;
+        if (text === '15') animateNum(el, 15);
+        else if (text === '4') animateNum(el, 4);
+      });
+      heroObs.disconnect();
+    }
+  }, { threshold: 0.5 });
+
+  const hero = document.querySelector('.hero');
+  if (hero) heroObs.observe(hero);
+</script>
+</body>
+</html>

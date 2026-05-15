@@ -1,0 +1,318 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+from datetime import datetime
+import pandas as pd
+import uuid
+import networkx as nx
+
+
+app = FastAPI(
+    title="Crypto-Sentinel API",
+    description="Security Middleware Layer for Fraud Transaction Detection",
+    version="0.5.0"
+)
+
+
+df = pd.read_csv("data/paysim_sample.csv")
+threat_df = pd.read_csv("data/threat_intel.csv")
+demo_df = pd.read_csv("data/demo_transactions.csv")
+
+transaction_logs = []
+
+
+class Transaction(BaseModel):
+    type: str
+    amount: float
+    oldbalanceOrg: float
+    newbalanceOrig: float
+    destinationAccount: str
+
+
+@app.get("/")
+def root():
+    return {
+        "message": "Crypto-Sentinel API is running",
+        "status": "OK",
+        "version": "0.5.0"
+    }
+
+
+@app.get("/transactions")
+def get_transactions(limit: int = 10):
+    transactions = df.head(limit).to_dict(orient="records")
+
+    return {
+        "total": len(transactions),
+        "data": transactions
+    }
+
+
+@app.get("/threat-intel")
+def get_threat_intel():
+    return {
+        "total": len(threat_df),
+        "data": threat_df.to_dict(orient="records")
+    }
+
+
+@app.post("/analyze-transaction")
+def analyze_transaction(transaction: Transaction):
+    risk_score = 0
+    reasons = []
+    threat_match = None
+
+    if transaction.type in ["TRANSFER", "CASH_OUT"]:
+        risk_score += 30
+        reasons.append("High-risk transaction type")
+
+    if transaction.amount > 1_000_000:
+        risk_score += 25
+        reasons.append("High transaction amount")
+
+    if transaction.oldbalanceOrg > 0 and transaction.newbalanceOrig == 0:
+        risk_score += 35
+        reasons.append("Sender balance drained after transaction")
+
+    match = threat_df[threat_df["account_id"] == transaction.destinationAccount]
+
+    if not match.empty:
+        threat = match.iloc[0].to_dict()
+        threat_match = threat
+
+        if threat["risk_level"] == "HIGH":
+            risk_score += 70
+        elif threat["risk_level"] == "MEDIUM":
+            risk_score += 40
+        else:
+            risk_score += 20
+
+        reasons.append(
+            f"Destination matched threat intelligence: {threat['risk_category']}"
+        )
+
+    risk_score = min(risk_score, 100)
+
+    if risk_score >= 80:
+        decision = "BLOCK"
+        risk_level = "HIGH"
+    elif risk_score >= 50:
+        decision = "REVIEW"
+        risk_level = "MEDIUM"
+    else:
+        decision = "ALLOW"
+        risk_level = "LOW"
+
+    result = {
+        "transaction_id": str(uuid.uuid4()),
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "transaction": transaction.model_dump(),
+        "risk_score": risk_score,
+        "risk_level": risk_level,
+        "decision": decision,
+        "reasons": reasons,
+        "threat_match": threat_match
+    }
+
+    transaction_logs.append(result)
+
+    return result
+
+
+@app.get("/logs")
+def get_logs():
+    return {
+        "total": len(transaction_logs),
+        "data": transaction_logs
+    }
+
+
+@app.get("/alerts")
+def get_alerts():
+    alerts = [
+        log for log in transaction_logs
+        if log["decision"] in ["REVIEW", "BLOCK"]
+    ]
+
+    return {
+        "total": len(alerts),
+        "data": alerts
+    }
+    
+
+@app.get("/velocity-check")
+def velocity_check(limit: int = 1000, threshold: int = 5):
+    sample = df.head(limit)
+
+    sender_counts = (
+        sample.groupby("nameOrig")
+        .size()
+        .reset_index(name="transaction_count")
+        .sort_values(by="transaction_count", ascending=False)
+    )
+
+    suspicious_senders = sender_counts[
+        sender_counts["transaction_count"] >= threshold
+    ]
+
+    return {
+        "checked_transactions": limit,
+        "threshold": threshold,
+        "total_suspicious_senders": len(suspicious_senders),
+        "data": suspicious_senders.to_dict(orient="records")
+    }
+
+
+@app.get("/graph")
+def get_transaction_graph(limit: int = 100):
+    sample = df.head(limit)
+
+    G = nx.DiGraph()
+
+    for _, row in sample.iterrows():
+        sender = row["nameOrig"]
+        receiver = row["nameDest"]
+        amount = row["amount"]
+
+        G.add_node(sender, type="sender")
+        G.add_node(receiver, type="receiver")
+        G.add_edge(
+            sender,
+            receiver,
+            amount=amount,
+            transaction_type=row["type"]
+        )
+    
+
+@app.get("/demo-graph")
+def get_demo_graph():
+    G = nx.DiGraph()
+
+    for _, row in demo_df.iterrows():
+        sender = row["sender"]
+        receiver = row["receiver"]
+
+        G.add_node(sender)
+        G.add_node(receiver)
+        G.add_edge(
+            sender,
+            receiver,
+            amount=row["amount"],
+            transaction_type=row["type"],
+            scenario=row["scenario"]
+        )
+
+    nodes = [
+        {
+            "id": node,
+            "label": node,
+            "degree": G.degree(node),
+            "in_degree": G.in_degree(node),
+            "out_degree": G.out_degree(node)
+        }
+        for node in G.nodes()
+    ]
+
+    edges = [
+        {
+            "source": source,
+            "target": target,
+            "amount": data["amount"],
+            "transaction_type": data["transaction_type"],
+            "scenario": data["scenario"]
+        }
+        for source, target, data in G.edges(data=True)
+    ]
+
+    mule_candidates = [
+        node for node in G.nodes()
+        if G.in_degree(node) >= 3
+    ]
+
+    return {
+        "scenario": "Synthetic crypto laundering demo",
+        "total_nodes": len(nodes),
+        "total_edges": len(edges),
+        "mule_candidates": mule_candidates,
+        "nodes": nodes,
+        "edges": edges
+    }
+    
+    
+@app.get("/statistics")
+def get_statistics():
+    total_logs = len(transaction_logs)
+
+    allow_count = len([log for log in transaction_logs if log["decision"] == "ALLOW"])
+    review_count = len([log for log in transaction_logs if log["decision"] == "REVIEW"])
+    block_count = len([log for log in transaction_logs if log["decision"] == "BLOCK"])
+
+    low_risk = len([log for log in transaction_logs if log["risk_level"] == "LOW"])
+    medium_risk = len([log for log in transaction_logs if log["risk_level"] == "MEDIUM"])
+    high_risk = len([log for log in transaction_logs if log["risk_level"] == "HIGH"])
+
+    return {
+        "total_transactions_analyzed": total_logs,
+        "decision_summary": {
+            "ALLOW": allow_count,
+            "REVIEW": review_count,
+            "BLOCK": block_count
+        },
+        "risk_level_summary": {
+            "LOW": low_risk,
+            "MEDIUM": medium_risk,
+            "HIGH": high_risk
+        }
+    }
+    
+    
+@app.post("/simulate-demo")
+def simulate_demo():
+    simulated_results = []
+
+    for _, row in demo_df.iterrows():
+        transaction = Transaction(
+            type=row["type"],
+            amount=float(row["amount"]),
+            oldbalanceOrg=float(row["amount"]),
+            newbalanceOrig=0,
+            destinationAccount=row["receiver"]
+        )
+
+        result = analyze_transaction(transaction)
+        result["scenario"] = row["scenario"]
+        result["source_account"] = row["sender"]
+        result["destination_account"] = row["receiver"]
+
+        simulated_results.append(result)
+
+    return {
+        "message": "Demo laundering scenario simulated successfully",
+        "total_simulated_transactions": len(simulated_results),
+        "data": simulated_results
+    }
+
+    nodes = [
+        {
+            "id": node,
+            "label": node,
+            "degree": G.degree(node)
+        }
+        for node in G.nodes()
+    ]
+
+    edges = [
+        {
+            "source": source,
+            "target": target,
+            "amount": data["amount"],
+            "transaction_type": data["transaction_type"]
+        }
+        for source, target, data in G.edges(data=True)
+    ]
+
+    return {
+        "total_nodes": len(nodes),
+        "total_edges": len(edges),
+        "nodes": nodes,
+        "edges": edges
+    }

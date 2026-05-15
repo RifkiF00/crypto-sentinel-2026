@@ -1,0 +1,5 @@
+crypto-sentinel-api/data/
+crypto-sentinel-api/venv/
+**/__pycache__/
+*.pyc
+.env
