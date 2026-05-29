@@ -57,6 +57,61 @@ Saat ini, kita sedang berada di **Tahap 8: Integrasi dengan Tim**. *Middleware A
 - [ ] Uji coba *fetch* data ke *Dashboard Forensik* (endpoint `/alerts`, `/statistics`).
 - [ ] Setup *Persistent Database* (SQLite/PostgreSQL) agar log transaksi tidak hilang.
 
+### Tata Cara Integrasi Fase 2
+Urutan integrasi yang disarankan supaya tiap komponen bisa diuji satu per satu:
+
+1. Pastikan API Crypto-Sentinel berjalan dulu secara lokal atau di Render.
+2. Aktifkan CORS untuk domain Dashboard agar frontend bisa memanggil endpoint API.
+3. Samakan format JSON transaksi antara Flutter Mock BRIMO, Mock Banking Server, dan Crypto-Sentinel.
+4. Hubungkan Mock Banking Server ke endpoint `POST /analyze-transaction` sebelum mutasi saldo dilakukan.
+5. Uji endpoint monitoring `GET /alerts`, `GET /statistics`, dan `GET /logs` dari Dashboard.
+6. Setelah alur request stabil, pindahkan penyimpanan log ke SQLite atau PostgreSQL.
+7. Validasi ulang skenario `ALLOW`, `REVIEW`, dan `BLOCK` dengan data transaksi demo.
+
+### Rincian Integrasi per Komponen
+Supaya pembagian kerja lebih jelas, setiap komponen punya peran berikut:
+
+| Komponen | Tugas Utama | Endpoint / Kontrak |
+|---|---|---|
+| Flutter Mock BRIMO | Mengirim request transfer dari UI nasabah | `POST /api/v1/transfer` ke Mock Banking Server |
+| Mock Banking Server | Menjadi penghubung core banking dan middleware keamanan | Memanggil `POST /analyze-transaction` sebelum mutasi saldo |
+| Crypto-Sentinel API | Menghitung risiko dan memberi keputusan `ALLOW`, `REVIEW`, atau `BLOCK` | `POST /analyze-transaction`, `GET /alerts`, `GET /statistics`, `GET /logs` |
+| Dashboard Forensik | Menampilkan alert, statistik, dan grafik transaksi | `GET /alerts`, `GET /statistics`, `GET /graph`, `GET /demo-graph` |
+
+### Format Kontrak JSON yang Dipakai
+Format request ke Crypto-Sentinel harus konsisten seperti ini:
+
+```json
+{
+  "senderAccount": "A001",
+  "destinationAccount": "C666666666",
+  "type": "TRANSFER",
+  "amount": 5000000,
+  "oldbalanceOrg": 5000000,
+  "newbalanceOrig": 0
+}
+```
+
+Format response dari Crypto-Sentinel:
+
+```json
+{
+  "risk_score": 85,
+  "risk_level": "HIGH",
+  "decision": "BLOCK",
+  "reasons": ["Threat Intel Match", "Balance Drained"]
+}
+```
+
+### Checklist Validasi Integrasi
+Sebelum dinyatakan selesai, pastikan poin-poin ini lolos:
+
+1. API bisa diakses dari browser dan dari Render.
+2. Dashboard berhasil memanggil endpoint tanpa error CORS.
+3. Mock Banking Server hanya mutasi saldo jika hasil analisis `ALLOW`.
+4. Endpoint `/alerts` dan `/statistics` menampilkan data setelah ada transaksi uji.
+5. Log transaksi tetap tersimpan setelah service direstart jika database sudah aktif.
+
 ### Deployment Render
 Repository ini sudah disiapkan untuk deploy ke Render sebagai public API.
 
