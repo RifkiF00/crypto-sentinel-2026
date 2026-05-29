@@ -8,6 +8,8 @@ import pandas as pd
 import uuid
 import networkx as nx
 
+from app.rule_engine import evaluate_transaction
+
 
 app = FastAPI(
     title="Crypto-Sentinel API",
@@ -77,65 +79,22 @@ def get_threat_intel():
 
 @app.post("/analyze-transaction")
 def analyze_transaction(transaction: Transaction):
-    risk_score = 0
-    reasons = []
-    threat_match = None
+    result = evaluate_transaction(transaction, threat_df)
 
-    if transaction.type in ["TRANSFER", "CASH_OUT"]:
-        risk_score += 30
-        reasons.append("High-risk transaction type")
-
-    if transaction.amount > 1_000_000:
-        risk_score += 25
-        reasons.append("High transaction amount")
-
-    if transaction.oldbalanceOrg > 0 and transaction.newbalanceOrig == 0:
-        risk_score += 35
-        reasons.append("Sender balance drained after transaction")
-
-    match = threat_df[threat_df["account_id"] == transaction.destinationAccount]
-
-    if not match.empty:
-        threat = match.iloc[0].to_dict()
-        threat_match = threat
-
-        if threat["risk_level"] == "HIGH":
-            risk_score += 70
-        elif threat["risk_level"] == "MEDIUM":
-            risk_score += 40
-        else:
-            risk_score += 20
-
-        reasons.append(
-            f"Destination matched threat intelligence: {threat['risk_category']}"
-        )
-
-    risk_score = min(risk_score, 100)
-
-    if risk_score >= 80:
-        decision = "BLOCK"
-        risk_level = "HIGH"
-    elif risk_score >= 50:
-        decision = "REVIEW"
-        risk_level = "MEDIUM"
-    else:
-        decision = "ALLOW"
-        risk_level = "LOW"
-
-    result = {
+    payload = {
         "transaction_id": str(uuid.uuid4()),
         "timestamp": datetime.now().isoformat(timespec="seconds"),
         "transaction": transaction.model_dump(),
-        "risk_score": risk_score,
-        "risk_level": risk_level,
-        "decision": decision,
-        "reasons": reasons,
-        "threat_match": threat_match
+        "risk_score": result.risk_score,
+        "risk_level": result.risk_level,
+        "decision": result.decision,
+        "reasons": result.reasons,
+        "threat_match": result.threat_match
     }
 
-    transaction_logs.append(result)
+    transaction_logs.append(payload)
 
-    return result
+    return payload
 
 
 @app.get("/logs")
