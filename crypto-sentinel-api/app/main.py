@@ -1,3 +1,4 @@
+from pathlib import Path
 from fastapi import FastAPI
 from pydantic import BaseModel
 from datetime import datetime
@@ -13,9 +14,11 @@ app = FastAPI(
 )
 
 
-df = pd.read_csv("data/paysim_sample.csv")
-threat_df = pd.read_csv("data/threat_intel.csv")
-demo_df = pd.read_csv("data/demo_transactions.csv")
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+df = pd.read_csv(BASE_DIR / "data" / "paysim_sample.csv")
+threat_df = pd.read_csv(BASE_DIR / "data" / "threat_intel.csv")
+demo_df = pd.read_csv(BASE_DIR / "data" / "demo_transactions.csv")
 
 transaction_logs = []
 
@@ -181,6 +184,33 @@ def get_transaction_graph(limit: int = 100):
             amount=amount,
             transaction_type=row["type"]
         )
+
+    nodes = [
+        {
+            "id": node,
+            "label": node,
+            "type": G.nodes[node]["type"],
+            "degree": G.degree(node)
+        }
+        for node in G.nodes()
+    ]
+
+    edges = [
+        {
+            "source": source,
+            "target": target,
+            "amount": data["amount"],
+            "transaction_type": data["transaction_type"]
+        }
+        for source, target, data in G.edges(data=True)
+    ]
+
+    return {
+        "total_nodes": len(nodes),
+        "total_edges": len(edges),
+        "nodes": nodes,
+        "edges": edges
+    }
     
 
 @app.get("/demo-graph")
@@ -289,30 +319,4 @@ def simulate_demo():
         "message": "Demo laundering scenario simulated successfully",
         "total_simulated_transactions": len(simulated_results),
         "data": simulated_results
-    }
-
-    nodes = [
-        {
-            "id": node,
-            "label": node,
-            "degree": G.degree(node)
-        }
-        for node in G.nodes()
-    ]
-
-    edges = [
-        {
-            "source": source,
-            "target": target,
-            "amount": data["amount"],
-            "transaction_type": data["transaction_type"]
-        }
-        for source, target, data in G.edges(data=True)
-    ]
-
-    return {
-        "total_nodes": len(nodes),
-        "total_edges": len(edges),
-        "nodes": nodes,
-        "edges": edges
     }
