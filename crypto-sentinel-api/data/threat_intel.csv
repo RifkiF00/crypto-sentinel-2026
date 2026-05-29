@@ -1,0 +1,6 @@
+account_id,entity_type,risk_category,risk_level,description
+C666666666,mule_account,crypto_laundering,HIGH,Rekening penampung yang terindikasi menerima dana sebelum cash-out ke crypto exchange
+C999999999,suspicious_wallet,mixer_activity,HIGH,Wallet/rekening dummy yang disimulasikan terkait aktivitas pencampuran dana
+C123456789,exchange_wallet,high_risk_exchange,MEDIUM,Rekening tujuan yang disimulasikan terhubung ke exchange berisiko
+C777777777,fraud_receiver,scam_network,HIGH,Rekening penerima yang terindikasi jaringan scam
+C888888888,rapid_transfer_account,layering_pattern,MEDIUM,Rekening yang sering muncul dalam pola transfer berantai

@@ -1,5 +1,12 @@
-crypto-sentinel-api/data/
 crypto-sentinel-api/venv/
 **/__pycache__/
 *.pyc
 .env
+
+crypto-sentinel-api/notebooks/.ipynb_checkpoints/
+
+crypto-sentinel-api/data/*
+!crypto-sentinel-api/data/paysim_sample.csv
+!crypto-sentinel-api/data/threat_intel.csv
+!crypto-sentinel-api/data/demo_transactions.csv
+crypto-sentinel-api/data/paysim.csv
