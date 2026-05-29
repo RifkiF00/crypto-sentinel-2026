@@ -64,6 +64,19 @@ Repository ini sudah disiapkan untuk deploy ke Render sebagai public API.
 2. Render akan membaca [render.yaml](render.yaml) untuk `buildCommand` dan `startCommand`.
 3. Endpoint utama bisa diakses dari `/`, `/analyze-transaction`, `/alerts`, dan `/statistics`.
 
+### Quick Start Lokal
+Kalau ingin menjalankan secara lokal, pakai:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Kalau frontend dashboard ada di domain tertentu, set `CORS_ORIGINS` di environment, misalnya:
+
+```bash
+CORS_ORIGINS=https://dashboard.example.com,https://app.example.com
+```
+
 Jika ingin benar-benar dibuka sebagai open source project, repo ini sudah menyertakan lisensi di [LICENSE](LICENSE).
 
 ### Fase 3: Peningkatan Indikator Risiko (15 Indikator Utama) 📅

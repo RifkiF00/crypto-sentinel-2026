@@ -1,5 +1,7 @@
 from pathlib import Path
+import os
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import datetime
 import pandas as pd
@@ -11,6 +13,21 @@ app = FastAPI(
     title="Crypto-Sentinel API",
     description="Security Middleware Layer for Fraud Transaction Detection",
     version="0.5.0"
+)
+
+
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", "*").split(",")
+    if origin.strip()
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins if allowed_origins != ["*"] else ["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
