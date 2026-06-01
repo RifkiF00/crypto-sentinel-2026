@@ -45,8 +45,8 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`} id="sidebar-nav">
       <div className="sidebar-header">
-        <div className="sidebar-logo">
-          <Shield />
+        <div className="sidebar-logo" style={{ width: '52px', height: '52px', background: 'transparent', boxShadow: 'none', borderRadius: '50%', overflow: 'hidden' }}>
+          <img src="/img/logo.png" alt="CryptoSentinel Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
         <div className="sidebar-brand">
           <h1>CryptoSentinel</h1>

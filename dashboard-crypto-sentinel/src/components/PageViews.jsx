@@ -34,7 +34,13 @@ import {
   Lock,
   RefreshCw,
   Sliders,
-  DollarSign
+  DollarSign,
+  Cpu,
+  Brain,
+  Ban,
+  Building2,
+  ArrowRightLeft,
+  Wallet
 } from 'lucide-react';
 import {
   AreaChart,
@@ -51,7 +57,7 @@ import {
   Pie,
   Legend
 } from 'recharts';
-import { formatCurrency, formatNumber, cryptoExchangeData, topBlockedPatterns } from '../data/mockData';
+import { formatCurrency, formatNumber, cryptoExchangeData, topBlockedPatterns, muleAccountsData, gnnGraphData } from '../data/mockData';
 import { useChartTheme } from '../hooks/useChartTheme';
 import MuleAccountAnalysis from './MuleAccountAnalysis';
 import GNNVisualization from './GNNVisualization';
@@ -541,6 +547,10 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
   const [filterSeverity, setFilterSeverity] = useState('all');
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeDetailTab, setActiveDetailTab] = useState('remediation');
+  const [showFullModal, setShowFullModal] = useState(false);
+  const [modalTab, setModalTab] = useState('gnn');
+  const [mulesList, setMulesList] = useState(muleAccountsData);
 
   const filteredAlerts = alerts.filter(alert => {
     const matchesSearch = alert.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -583,6 +593,60 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
 
     setAlerts(prev => prev.filter(a => a.id !== id));
     setSelectedAlert(null);
+  };
+
+  const getSenderName = (alert) => {
+    if (!alert) return '';
+    const desc = alert.description;
+    if (desc.includes('Ahmad Faisal')) return 'Ahmad Faisal';
+    if (desc.includes('Rizky Hidayat')) return 'Rizky Hidayat';
+    if (desc.includes('Budi Santoso')) return 'Budi Santoso';
+    if (desc.includes('Siti Nurhaliza')) return 'Siti Nurhaliza';
+    if (desc.includes('Maria Kusuma')) return 'Maria Kusuma';
+    return 'Ahmad Faisal';
+  };
+
+  const getLinkedMules = (alert) => {
+    const sender = getSenderName(alert);
+    const mapped = [];
+    if (sender === 'Ahmad Faisal') {
+      const m1 = mulesList.find(m => m.id === 'MULE-001');
+      const m2 = mulesList.find(m => m.id === 'MULE-002');
+      if (m1) mapped.push(m1);
+      if (m2) mapped.push(m2);
+    } else if (sender === 'Budi Santoso') {
+      const m1 = mulesList.find(m => m.id === 'MULE-002');
+      const m2 = mulesList.find(m => m.id === 'MULE-003');
+      if (m1) mapped.push(m1);
+      if (m2) mapped.push(m2);
+    } else if (sender === 'Rizky Hidayat') {
+      const m1 = mulesList.find(m => m.id === 'MULE-003');
+      const m2 = mulesList.find(m => m.id === 'MULE-005');
+      if (m1) mapped.push(m1);
+      if (m2) mapped.push(m2);
+    } else {
+      const m = mulesList.find(m => m.id === 'MULE-004') || mulesList[0];
+      if (m) mapped.push(m);
+    }
+    return mapped;
+  };
+
+  const handleFreezeMule = (id) => {
+    setMulesList(prev => prev.map(m => {
+      if (m.id === id) {
+        const isFrozen = m.status === 'frozen';
+        addToast(isFrozen 
+          ? `🔓 Rekening ${m.name} (${m.account}) dicairkan kembali.`
+          : `🧊 Rekening Mule ${m.name} (${m.account}) DIBEKUKAN oleh OJK!`, isFrozen ? 'warning' : 'error');
+        return { ...m, status: isFrozen ? 'monitored' : 'frozen' };
+      }
+      return m;
+    }));
+  };
+
+  const handleSelectAlert = (alert) => {
+    setSelectedAlert(alert);
+    setActiveDetailTab('remediation');
   };
 
   return (
@@ -658,17 +722,19 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
               filteredAlerts.map(alert => (
                 <div 
                   key={alert.id}
-                  className={`alert-item ${alert.type}`}
+                  className={`alert-item ${alert.type} ${selectedAlert?.id === alert.id ? 'active' : ''}`}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: 18,
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-lg)'
+                    background: selectedAlert?.id === alert.id ? 'var(--accent-primary-subtle)' : 'var(--bg-card)',
+                    border: selectedAlert?.id === alert.id ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-lg)',
+                    cursor: 'pointer',
+                    transition: 'all 0.25s'
                   }}
-                  onClick={() => setSelectedAlert(alert)}
+                  onClick={() => handleSelectAlert(alert)}
                 >
                   <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                     <div className={`alert-icon ${alert.type}`} style={{ width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -714,44 +780,363 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                   <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Remediasi Regulator</h3>
                   <button className="modal-close" onClick={() => setSelectedAlert(null)}><X size={16} /></button>
                 </div>
+
+                {/* Sub-tab Navigation */}
+                <div style={{ display: 'flex', background: 'var(--bg-elevated)', padding: 4, borderRadius: 8, marginBottom: 20, gap: 4 }}>
+                  <button 
+                    onClick={() => setActiveDetailTab('remediation')}
+                    className={`tab ${activeDetailTab === 'remediation' ? 'active' : ''}`}
+                    style={{ 
+                      fontSize: '0.75rem', 
+                      padding: '8px 4px', 
+                      flex: 1, 
+                      textAlign: 'center', 
+                      border: 'none', 
+                      background: activeDetailTab === 'remediation' ? 'var(--bg-card)' : 'transparent',
+                      color: activeDetailTab === 'remediation' ? 'var(--text-primary)' : 'var(--text-muted)',
+                      borderRadius: 6,
+                      fontWeight: activeDetailTab === 'remediation' ? 700 : 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    🛡️ Tindakan
+                  </button>
+                  <button 
+                    onClick={() => setActiveDetailTab('mule')}
+                    className={`tab ${activeDetailTab === 'mule' ? 'active' : ''}`}
+                    style={{ 
+                      fontSize: '0.75rem', 
+                      padding: '8px 4px', 
+                      flex: 1, 
+                      textAlign: 'center', 
+                      border: 'none', 
+                      background: activeDetailTab === 'mule' ? 'var(--bg-card)' : 'transparent',
+                      color: activeDetailTab === 'mule' ? 'var(--text-primary)' : 'var(--text-muted)',
+                      borderRadius: 6,
+                      fontWeight: activeDetailTab === 'mule' ? 700 : 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    🏦 Mule Acc
+                  </button>
+                  <button 
+                    onClick={() => setActiveDetailTab('gnn')}
+                    className={`tab ${activeDetailTab === 'gnn' ? 'active' : ''}`}
+                    style={{ 
+                      fontSize: '0.75rem', 
+                      padding: '8px 4px', 
+                      flex: 1, 
+                      textAlign: 'center', 
+                      border: 'none', 
+                      background: activeDetailTab === 'gnn' ? 'var(--bg-card)' : 'transparent',
+                      color: activeDetailTab === 'gnn' ? 'var(--text-primary)' : 'var(--text-muted)',
+                      borderRadius: 6,
+                      fontWeight: activeDetailTab === 'gnn' ? 700 : 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    🧠 GNN Flow
+                  </button>
+                </div>
                 
-                <div style={{ marginBottom: 20 }}>
-                  <span className={`badge badge-${selectedAlert.type === 'critical' ? 'blocked' : selectedAlert.type === 'warning' ? 'flagged' : 'pending'}`} style={{ marginBottom: 12 }}>
-                    Threat Level: {selectedAlert.type.toUpperCase()}
-                  </span>
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>{selectedAlert.title}</h4>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, background: 'var(--bg-input)', padding: 12, borderRadius: 8 }}>
-                    {selectedAlert.description}
-                  </p>
-                </div>
+                {activeDetailTab === 'remediation' && (
+                  <>
+                    <div style={{ marginBottom: 20 }}>
+                      <span className={`badge badge-${selectedAlert.type === 'critical' ? 'blocked' : selectedAlert.type === 'warning' ? 'flagged' : 'pending'}`} style={{ marginBottom: 12 }}>
+                        Threat Level: {selectedAlert.type.toUpperCase()}
+                      </span>
+                      <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>{selectedAlert.title}</h4>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, background: 'var(--bg-input)', padding: 12, borderRadius: 8 }}>
+                        {selectedAlert.description}
+                      </p>
+                    </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>REMEDIASI OJK COMPLIANCE</div>
-                  
-                  <button 
-                    className="btn btn-primary"
-                    style={{ background: 'var(--gradient-danger)', justifyContent: 'center' }}
-                    onClick={() => handleResolveAlert(selectedAlert.id, 'block')}
-                  >
-                    🛡️ Blokir Rekening & Wallet Crypto
-                  </button>
-                  
-                  <button 
-                    className="btn btn-ghost" 
-                    style={{ justifyContent: 'center' }}
-                    onClick={() => handleResolveAlert(selectedAlert.id, 'investigate')}
-                  >
-                    📂 Kirim Tim Investigasi AML
-                  </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>REMEDIASI OJK COMPLIANCE</div>
+                      
+                      <button 
+                        className="btn btn-primary"
+                        style={{ background: 'var(--gradient-danger)', justifyContent: 'center' }}
+                        onClick={() => handleResolveAlert(selectedAlert.id, 'block')}
+                      >
+                        🛡️ Blokir Rekening & Wallet Crypto
+                      </button>
+                      
+                      <button 
+                        className="btn btn-ghost" 
+                        style={{ justifyContent: 'center' }}
+                        onClick={() => handleResolveAlert(selectedAlert.id, 'investigate')}
+                      >
+                        📂 Kirim Tim Investigasi AML
+                      </button>
 
-                  <button 
-                    className="btn btn-ghost"
-                    style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', justifyContent: 'center' }}
-                    onClick={() => handleResolveAlert(selectedAlert.id, 'dismiss')}
-                  >
-                    Abaikan & Tandai Aman
-                  </button>
-                </div>
+                      <button 
+                        className="btn btn-ghost"
+                        style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', justifyContent: 'center' }}
+                        onClick={() => handleResolveAlert(selectedAlert.id, 'dismiss')}
+                      >
+                        Abaikan & Tandai Aman
+                      </button>
+
+                      <button 
+                        className="btn btn-primary"
+                        style={{ 
+                          background: 'var(--gradient-primary)', 
+                          justifyContent: 'center', 
+                          marginTop: 12,
+                          boxShadow: 'var(--shadow-glow)'
+                        }}
+                        onClick={() => {
+                          setShowFullModal(true);
+                          setModalTab('gnn');
+                        }}
+                      >
+                        🔍 Investigasi Diagnostik OJK
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {activeDetailTab === 'mule' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: -4 }}>
+                      REKENING PENAMPUNG TERKAIT SENDER
+                    </div>
+                    {getLinkedMules(selectedAlert).map((mule) => (
+                      <div 
+                        key={mule.id} 
+                        style={{ 
+                          background: 'var(--bg-input)', 
+                          padding: 14, 
+                          borderRadius: 10,
+                          border: '1px solid var(--border-color)',
+                          position: 'relative'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                          <div>
+                            <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-primary)', letterSpacing: 0.5 }}>{mule.id}</span>
+                            <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: 2 }}>{mule.name}</h4>
+                          </div>
+                          <span style={{ 
+                            fontSize: '0.7rem', 
+                            padding: '2px 8px', 
+                            borderRadius: 'var(--radius-full)', 
+                            fontWeight: 700, 
+                            background: mule.status === 'frozen' ? 'var(--status-info-bg)' : 'var(--status-danger-bg)',
+                            color: mule.status === 'frozen' ? 'var(--status-info)' : 'var(--status-danger)',
+                            border: `1px solid ${mule.status === 'frozen' ? 'var(--status-info-border)' : 'var(--status-danger-border)'}`
+                          }}>
+                            {mule.status === 'frozen' ? '🧊 BEKU' : '🔴 AKTIF'}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
+                          <div>
+                            <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem' }}>Bank & Rekening:</span>
+                            <strong>{mule.bank} - {mule.account}</strong>
+                          </div>
+                          <div>
+                            <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem' }}>Skor Risiko:</span>
+                            <strong style={{ color: mule.riskScore >= 90 ? 'var(--status-danger)' : 'var(--status-warning)' }}>
+                              {mule.riskScore}%
+                            </strong>
+                          </div>
+                          <div>
+                            <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem' }}>Peran:</span>
+                            <strong>{mule.role}</strong>
+                          </div>
+                          <div>
+                            <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem' }}>Dana Mengalir:</span>
+                            <strong style={{ color: 'var(--status-danger)', fontFamily: 'var(--font-mono)' }}>{formatCurrency(mule.totalInflow || mule.inflow)}</strong>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 8, borderTop: '1px solid var(--border-color)', paddingTop: 10 }}>
+                          <button 
+                            className={`btn btn-sm ${mule.status === 'frozen' ? 'btn-ghost' : 'btn-primary'}`}
+                            style={{ 
+                              flex: 1, 
+                              justifyContent: 'center', 
+                              fontSize: '0.75rem',
+                              padding: '6px',
+                              background: mule.status === 'frozen' ? 'transparent' : 'var(--gradient-danger)',
+                              color: mule.status === 'frozen' ? 'var(--text-primary)' : 'white'
+                            }}
+                            onClick={() => handleFreezeMule(mule.id)}
+                          >
+                            {mule.status === 'frozen' ? '🔓 Cairkan' : '🧊 Bekukan Rekening'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button 
+                      className="btn btn-ghost btn-sm"
+                      style={{ justifyContent: 'center', marginTop: 4 }}
+                      onClick={() => {
+                        setShowFullModal(true);
+                        setModalTab('mule');
+                      }}
+                    >
+                      🏦 Lihat Detail Rekening Mule OJK
+                    </button>
+                  </div>
+                )}
+
+                {activeDetailTab === 'gnn' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: -4 }}>
+                      ALIRAN DANA DETEKSI GNN (PIPELINE)
+                    </div>
+                    
+                    {/* Visual Vertical Flow Chart */}
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center', 
+                      position: 'relative',
+                      background: 'rgba(0, 0, 0, 0.25)', 
+                      padding: '20px 14px', 
+                      borderRadius: 12,
+                      border: '1px solid var(--border-color)'
+                    }}>
+                      
+                      {/* Node 1: Sender Bank */}
+                      <div style={{ 
+                        width: '100%', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 12, 
+                        background: 'var(--bg-card)', 
+                        padding: 10, 
+                        borderRadius: 8,
+                        border: '1px solid var(--status-info-border)',
+                        boxShadow: 'var(--shadow-sm)'
+                      }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--status-info-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--status-info)' }}>
+                          <Building2 size={16} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>SUMBER DANA (NASABAH)</span>
+                          <h5 style={{ fontSize: '0.82rem', fontWeight: 700, margin: 0 }}>{getSenderName(selectedAlert)}</h5>
+                        </div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--status-info)', fontFamily: 'var(--font-mono)' }}>90% Risk</span>
+                      </div>
+
+                      {/* Connective Line */}
+                      <div style={{ height: 24, width: 2, background: 'linear-gradient(180deg, var(--status-info) 0%, var(--status-danger) 100%)', position: 'relative' }}>
+                        <div style={{ 
+                          position: 'absolute', 
+                          top: '50%', 
+                          left: '50%', 
+                          transform: 'translate(-50%, -50%)', 
+                          width: 6, 
+                          height: 6, 
+                          background: 'var(--status-danger)', 
+                          borderRadius: '50%',
+                          animation: 'ping 1s infinite'
+                        }} />
+                      </div>
+
+                      {/* Node 2: Mule Accounts */}
+                      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {getLinkedMules(selectedAlert).map((mule, idx) => (
+                          <div key={idx} style={{ 
+                            width: '100%', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 12, 
+                            background: 'var(--bg-card)', 
+                            padding: 10, 
+                            borderRadius: 8,
+                            border: '1px solid var(--status-danger-border)',
+                            boxShadow: 'var(--shadow-sm)'
+                          }}>
+                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--status-danger-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--status-danger)' }}>
+                              <Users size={16} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>REKENING MULE PENAMPUNG</span>
+                              <h5 style={{ fontSize: '0.82rem', fontWeight: 700, margin: 0 }}>{mule.name}</h5>
+                            </div>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--status-danger)', fontFamily: 'var(--font-mono)' }}>{mule.riskScore}% Risk</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Connective Line */}
+                      <div style={{ height: 24, width: 2, background: 'linear-gradient(180deg, var(--status-danger) 0%, var(--accent-purple) 100%)' }} />
+
+                      {/* Node 3: Crypto Wallets */}
+                      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {getLinkedMules(selectedAlert).flatMap(m => m.linkedCryptoWallets || []).map((w, idx) => (
+                          <div key={idx} style={{ 
+                            width: '100%', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 12, 
+                            background: 'var(--bg-card)', 
+                            padding: 10, 
+                            borderRadius: 8,
+                            border: '1px solid rgba(168, 85, 247, 0.2)',
+                            boxShadow: 'var(--shadow-sm)'
+                          }}>
+                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(168, 85, 247, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-purple)' }}>
+                              <Wallet size={16} style={{ width: 14, height: 14 }} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>ALAMAT WALLET CRYPTO SUSPEK</span>
+                              <h5 style={{ fontSize: '0.78rem', fontWeight: 700, margin: 0, fontFamily: 'var(--font-mono)' }}>
+                                {w.includes('...') ? w : `${w.substring(0, 8)}...${w.substring(w.length - 6)}`}
+                              </h5>
+                            </div>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-purple)', fontFamily: 'var(--font-mono)' }}>85% Risk</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Connective Line */}
+                      <div style={{ height: 24, width: 2, background: 'linear-gradient(180deg, var(--accent-purple) 0%, var(--accent-tertiary) 100%)' }} />
+
+                      {/* Node 4: Target Exchange */}
+                      <div style={{ 
+                        width: '100%', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 12, 
+                        background: 'var(--bg-card)', 
+                        padding: 10, 
+                        borderRadius: 8,
+                        border: '1px solid rgba(245, 158, 11, 0.2)',
+                        boxShadow: 'var(--shadow-sm)'
+                      }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(245, 158, 11, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-tertiary)' }}>
+                          <Globe size={16} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>TUJUAN AKHIR EXCHANGE</span>
+                          <h5 style={{ fontSize: '0.82rem', fontWeight: 700, margin: 0 }}>Binance</h5>
+                        </div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-tertiary)', fontFamily: 'var(--font-mono)' }}>85% Risk</span>
+                      </div>
+
+                    </div>
+
+                    <button 
+                      className="btn btn-primary btn-sm"
+                      style={{ background: 'var(--gradient-primary)', justifyContent: 'center', marginTop: 4 }}
+                      onClick={() => {
+                        setShowFullModal(true);
+                        setModalTab('gnn');
+                      }}
+                    >
+                      🧠 Buka Peta Jaringan GNN Interaktif
+                    </button>
+                  </div>
+                )}
               </motion.div>
             ) : (
               <div className="card" style={{ padding: 30, borderStyle: 'dashed', textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -763,6 +1148,107 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Dynamic full screen blur modal */}
+      {showFullModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(3, 7, 18, 0.85)',
+          backdropFilter: 'blur(16px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          padding: 24
+        }}>
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ 
+              maxWidth: '90vw', 
+              width: '1280px', 
+              height: '88vh', 
+              background: 'var(--bg-secondary)', 
+              border: '1px solid var(--border-accent)', 
+              borderRadius: 'var(--radius-lg)', 
+              padding: 24, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              boxShadow: 'var(--shadow-xl)',
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottom: '1px solid var(--border-color)', paddingBottom: 16 }}>
+              <div>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 10, margin: 0 }}>
+                  <Brain style={{ color: 'var(--accent-primary)' }} /> Investigasi Diagnostik OJK Compliance
+                </h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: 4, margin: 0 }}>
+                  Analisis Jaringan GNN & Deteksi Rekening Mule untuk alert: <strong>{selectedAlert?.title}</strong> ({getSenderName(selectedAlert)})
+                </p>
+              </div>
+              <button 
+                className="btn btn-ghost" 
+                style={{ borderRadius: '50%', width: 36, height: 36, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={() => setShowFullModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Navigation Tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: 20, gap: 12 }}>
+              <button 
+                className={`tab ${modalTab === 'gnn' ? 'active' : ''}`}
+                style={{ 
+                  padding: '10px 20px', 
+                  fontSize: '0.9rem', 
+                  border: 'none', 
+                  background: 'transparent',
+                  color: modalTab === 'gnn' ? 'var(--accent-primary)' : 'var(--text-muted)',
+                  borderBottom: modalTab === 'gnn' ? '2px solid var(--accent-primary)' : 'none',
+                  cursor: 'pointer',
+                  fontWeight: modalTab === 'gnn' ? 700 : 500
+                }}
+                onClick={() => setModalTab('gnn')}
+              >
+                🧠 Peta Jaringan GNN
+              </button>
+              <button 
+                className={`tab ${modalTab === 'mule' ? 'active' : ''}`}
+                style={{ 
+                  padding: '10px 20px', 
+                  fontSize: '0.9rem', 
+                  border: 'none', 
+                  background: 'transparent',
+                  color: modalTab === 'mule' ? 'var(--accent-primary)' : 'var(--text-muted)',
+                  borderBottom: modalTab === 'mule' ? '2px solid var(--accent-primary)' : 'none',
+                  cursor: 'pointer',
+                  fontWeight: modalTab === 'mule' ? 700 : 500
+                }}
+                onClick={() => setModalTab('mule')}
+              >
+                🏦 Analisis Deteksi Rekening Mule
+              </button>
+            </div>
+
+            {/* Modal Body with full view inside */}
+            <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4 }}>
+              {modalTab === 'gnn' ? (
+                <GNNVisualization addToast={addToast} />
+              ) : (
+                <MuleAccountAnalysis addToast={addToast} />
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
