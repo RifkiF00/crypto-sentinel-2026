@@ -318,7 +318,7 @@ export default function GNNVisualization({ addToast }) {
               <h3 className="card-title"><GitBranch size={18} /> Graph Neural Network — Peta Jaringan Transaksi</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                  {gnnGraphData.nodes.length} nodes • {gnnGraphData.edges.length} edges
+                  {graphData.nodes.length} nodes • {graphData.edges.length} edges
                 </span>
               </div>
             </div>
@@ -363,9 +363,9 @@ export default function GNNVisualization({ addToast }) {
                   <line x1="630" y1="40" x2="630" y2="500" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
 
                   {/* Edges */}
-                  {gnnGraphData.edges.map((edge, i) => {
-                    const sourceNode = gnnGraphData.nodes.find(n => n.id === edge.source);
-                    const targetNode = gnnGraphData.nodes.find(n => n.id === edge.target);
+                  {graphData.edges.map((edge, i) => {
+                    const sourceNode = graphData.nodes.find(n => n.id === edge.source);
+                    const targetNode = graphData.nodes.find(n => n.id === edge.target);
                     if (!sourceNode || !targetNode) return null;
 
                     const isHighlighted = highlightedEdges
@@ -384,7 +384,7 @@ export default function GNNVisualization({ addToast }) {
                   })}
 
                   {/* Nodes */}
-                  {gnnGraphData.nodes.map(node => {
+                  {graphData.nodes.map(node => {
                     const isHovered = hoveredNode === node.id;
                     const isHighlighted = highlightedNodes
                       ? highlightedNodes.has(node.id) ? true : false
