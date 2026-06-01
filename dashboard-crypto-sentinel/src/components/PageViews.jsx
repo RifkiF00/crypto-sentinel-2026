@@ -68,10 +68,32 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
   const [simAmount, setSimAmount] = useState('85000000');
   const [simSender, setSimSender] = useState('Hendra Wijaya');
   const [simExchange, setSimExchange] = useState('Binance');
+  const [simDevice, setSimDevice] = useState('DEV-IPHONE15-88A');
+  const [simIp, setSimIp] = useState('182.16.2.89');
+  const [simPurpose, setSimPurpose] = useState('DEBT');
   const [logs, setLogs] = useState([
     { time: '10:08:42', text: 'Real-time WebSocket connection established with Bank API Gateways.' },
     { time: '10:08:45', text: 'Active scanning enabled. Compliance database connected.' }
   ]);
+
+  // Dynamic registered profiles mapping for prefilling
+  useEffect(() => {
+    const nameLower = simSender.toLowerCase();
+    if (nameLower.includes('bud')) {
+      setSimDevice('DEV-ANDROID-S24B');
+      setSimIp('182.16.2.90');
+    } else if (nameLower.includes('riz')) {
+      setSimDevice('DEV-ANDROID-S24C');
+      setSimIp('182.16.2.91');
+    } else if (nameLower.includes('mar') || nameLower.includes('dew')) {
+      setSimDevice('DEV-IPHONE14-77C');
+      setSimIp('182.16.2.92');
+    } else {
+      // Hendra Wijaya or default (A001)
+      setSimDevice('DEV-IPHONE15-88A');
+      setSimIp('182.16.2.89');
+    }
+  }, [simSender]);
 
   // Simulate real-time ticking logs
   useEffect(() => {
@@ -106,7 +128,14 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
       const isOnline = await checkHealth();
       if (isOnline) {
         addToast('⚡ Menganalisis transaksi via Crypto-Sentinel API...', 'success');
-        const apiResult = await analyzeTransaction(simSender, amountNum, simExchange);
+        const apiResult = await analyzeTransaction(
+          simSender,
+          amountNum,
+          simExchange,
+          simDevice,
+          simIp,
+          simPurpose
+        );
         const newTx = mapApiLogToTx(apiResult);
         
         setTransactions(prev => [newTx, ...prev]);
@@ -128,7 +157,32 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
       } else {
         // Fallback to offline mock logic
         const txId = `TXN-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-        const risk = amountNum >= 500000000 ? Math.floor(82 + Math.random() * 15) : Math.floor(40 + Math.random() * 40);
+        let risk = amountNum >= 500000000 ? Math.floor(82 + Math.random() * 15) : Math.floor(40 + Math.random() * 40);
+        
+        let offlineProfile = { registered_device: "DEV-IPHONE15-88A", registered_ip: "182.16.2.89" };
+        const nameLower = simSender.toLowerCase();
+        if (nameLower.includes('bud')) offlineProfile = { registered_device: "DEV-ANDROID-S24B", registered_ip: "182.16.2.90" };
+        else if (nameLower.includes('riz')) offlineProfile = { registered_device: "DEV-ANDROID-S24C", registered_ip: "182.16.2.91" };
+        else if (nameLower.includes('mar') || nameLower.includes('dew')) offlineProfile = { registered_device: "DEV-IPHONE14-77C", registered_ip: "182.16.2.92" };
+
+        let rulesFlagged = [];
+        if (simDevice !== offlineProfile.registered_device) {
+          risk += 20;
+          rulesFlagged.push("Device ID changed suddenly (Device Anomaly)");
+        }
+        if (simIp !== offlineProfile.registered_ip) {
+          risk += 25;
+          rulesFlagged.push("Impossible travel detected (IP Geolocation Anomaly)");
+        }
+        if (["DEBT", "SALA"].includes(simPurpose)) {
+          const isExchange = simExchange.startsWith("Binance") || simExchange.startsWith("Luno") || simExchange.startsWith("Indodax") || simExchange.startsWith("Tokocrypto") || simExchange.startsWith("Pintu");
+          if (isExchange) {
+            risk += 15;
+            rulesFlagged.push("Purpose mismatch: Personal transfer code sent to crypto exchange");
+          }
+        }
+        
+        risk = Math.min(risk, 100);
         const shouldBlock = autoBlock && risk >= rules.riskThreshold;
 
         const newTx = {
@@ -144,7 +198,7 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
           riskScore: risk,
           status: shouldBlock ? 'blocked' : risk >= 40 ? 'flagged' : 'approved',
           reason: shouldBlock ? 'Skor risiko melebihi ambang batas otomatis' : risk >= 40 ? 'Potensi transfer besar ke crypto' : null,
-          flaggedRules: shouldBlock ? ['Automated Block Threshold', 'High Risk Destination'] : risk >= 40 ? ['Medium Risk Destination'] : []
+          flaggedRules: rulesFlagged.length > 0 ? rulesFlagged : (shouldBlock ? ['Automated Block Threshold', 'High Risk Destination'] : risk >= 40 ? ['Medium Risk Destination'] : [])
         };
 
         setTransactions(prev => [newTx, ...prev]);
@@ -168,7 +222,32 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
       addToast('⚠️ Terjadi error koneksi API, beralih ke mode offline.', 'warning');
       
       const txId = `TXN-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-      const risk = amountNum >= 500000000 ? Math.floor(82 + Math.random() * 15) : Math.floor(40 + Math.random() * 40);
+      let risk = amountNum >= 500000000 ? Math.floor(82 + Math.random() * 15) : Math.floor(40 + Math.random() * 40);
+      
+      let offlineProfile = { registered_device: "DEV-IPHONE15-88A", registered_ip: "182.16.2.89" };
+      const nameLower = simSender.toLowerCase();
+      if (nameLower.includes('bud')) offlineProfile = { registered_device: "DEV-ANDROID-S24B", registered_ip: "182.16.2.90" };
+      else if (nameLower.includes('riz')) offlineProfile = { registered_device: "DEV-ANDROID-S24C", registered_ip: "182.16.2.91" };
+      else if (nameLower.includes('mar') || nameLower.includes('dew')) offlineProfile = { registered_device: "DEV-IPHONE14-77C", registered_ip: "182.16.2.92" };
+
+      let rulesFlagged = [];
+      if (simDevice !== offlineProfile.registered_device) {
+        risk += 20;
+        rulesFlagged.push("Device ID changed suddenly (Device Anomaly)");
+      }
+      if (simIp !== offlineProfile.registered_ip) {
+        risk += 25;
+        rulesFlagged.push("Impossible travel detected (IP Geolocation Anomaly)");
+      }
+      if (["DEBT", "SALA"].includes(simPurpose)) {
+        const isExchange = simExchange.startsWith("Binance") || simExchange.startsWith("Luno") || simExchange.startsWith("Indodax") || simExchange.startsWith("Tokocrypto") || simExchange.startsWith("Pintu");
+        if (isExchange) {
+          risk += 15;
+          rulesFlagged.push("Purpose mismatch: Personal transfer code sent to crypto exchange");
+        }
+      }
+      
+      risk = Math.min(risk, 100);
       const shouldBlock = autoBlock && risk >= rules.riskThreshold;
 
       const newTx = {
@@ -184,7 +263,7 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
         riskScore: risk,
         status: shouldBlock ? 'blocked' : risk >= 40 ? 'flagged' : 'approved',
         reason: shouldBlock ? 'Skor risiko melebihi ambang batas otomatis' : risk >= 40 ? 'Potensi transfer besar ke crypto' : null,
-        flaggedRules: shouldBlock ? ['Automated Block Threshold', 'High Risk Destination'] : risk >= 40 ? ['Medium Risk Destination'] : []
+        flaggedRules: rulesFlagged.length > 0 ? rulesFlagged : (shouldBlock ? ['Automated Block Threshold', 'High Risk Destination'] : risk >= 40 ? ['Medium Risk Destination'] : [])
       };
 
       setTransactions(prev => [newTx, ...prev]);
@@ -341,7 +420,7 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
                     required
                   />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Jumlah (IDR)</label>
                     <input 
@@ -368,6 +447,46 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
                       <option value="Pintu">Pintu (Lokal)</option>
                     </select>
                   </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Perangkat Pengirim (Device ID)</label>
+                    <input 
+                      type="text" 
+                      className="header-search"
+                      style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
+                      value={simDevice}
+                      onChange={(e) => setSimDevice(e.target.value)}
+                      placeholder="Contoh: DEV-IPHONE15-88A"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>IP Address Pengirim</label>
+                    <input 
+                      type="text" 
+                      className="header-search"
+                      style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
+                      value={simIp}
+                      onChange={(e) => setSimIp(e.target.value)}
+                      placeholder="Contoh: 182.16.2.89"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Tujuan Transfer (ISO 20022)</label>
+                  <select 
+                    style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
+                    value={simPurpose}
+                    onChange={(e) => setSimPurpose(e.target.value)}
+                  >
+                    <option value="DEBT">DEBT - Bayar Utang (High Risk Mismatch)</option>
+                    <option value="SALA">SALA - Pembayaran Gaji (High Risk Mismatch)</option>
+                    <option value="GIFT">GIFT - Hadiah / Donasi Pribadi (Low Risk)</option>
+                  </select>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>

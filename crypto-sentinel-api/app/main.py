@@ -64,12 +64,43 @@ paysim_analysis_results = []
 
 
 
+# Simulated reliable customer profiles database (mapping account number -> identity details)
+customer_profiles = {
+    "A001": {"national_id": "3171092828020921", "registered_device": "DEV-IPHONE15-88A", "registered_ip": "182.16.2.89"},
+    "A002": {"national_id": "3171092828020922", "registered_device": "DEV-ANDROID-S24B", "registered_ip": "182.16.2.90"},
+    "A003": {"national_id": "3171092828020923", "registered_device": "DEV-ANDROID-S24C", "registered_ip": "182.16.2.91"},
+    "A004": {"national_id": "3171092828020924", "registered_device": "DEV-IPHONE14-77C", "registered_ip": "182.16.2.92"},
+}
+
+def get_profile_for_account(acc_num: str) -> dict:
+    """Helper to return customer profile from db, generating deterministic ones if missing"""
+    if acc_num in customer_profiles:
+        return customer_profiles[acc_num]
+    
+    # Deterministic generation based on account number
+    h = int(hashlib.md5(acc_num.encode()).hexdigest(), 16)
+    nik = f"317109{2000000000 + (h % 1000000000):010d}"
+    devices = ["DEV-IPHONE15-88A", "DEV-ANDROID-S24B", "DEV-IPHONE14-77C", "DEV-XIAOMI13-99D"]
+    ips = ["182.16.2.89", "182.16.2.90", "182.16.2.91", "182.16.2.92"]
+    
+    return {
+        "national_id": nik,
+        "registered_device": devices[h % len(devices)],
+        "registered_ip": ips[(h // 2) % len(ips)]
+    }
+
+
 class Transaction(BaseModel):
     type: str
     amount: float
     oldbalanceOrg: float
     newbalanceOrig: float
     destinationAccount: str
+    sender_account: str = "A001"
+    device_id: str = None
+    ip_address: str = None
+    purpose_code: str = None
+    description: str = None
 
 
 @app.get("/")
@@ -101,12 +132,16 @@ def get_threat_intel():
 
 @app.post("/analyze-transaction")
 def analyze_transaction(transaction: Transaction):
-    result = evaluate_transaction(transaction, threat_df)
+    profile = get_profile_for_account(transaction.sender_account)
+    result = evaluate_transaction(transaction, threat_df, profile)
 
     payload = {
         "transaction_id": str(uuid.uuid4()),
         "timestamp": datetime.now().isoformat(timespec="seconds"),
         "transaction": transaction.model_dump(),
+        "senderAccount": transaction.sender_account,
+        "senderName": get_name_for_account(transaction.sender_account),
+        "national_id": profile["national_id"],
         "risk_score": result.risk_score,
         "risk_level": result.risk_level,
         "decision": result.decision,

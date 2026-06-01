@@ -258,13 +258,25 @@ export async function fetchMuleAccounts() {
 
 
 // Analyze transaction using rules engine
-export async function analyzeTransaction(senderName, amount, exchange) {
+export async function analyzeTransaction(senderName, amount, exchange, deviceId = null, ipAddress = null, purposeCode = null, description = null) {
+  // Map senderName deterministically to a mock sender account number (A001-A004) to fetch profiles
+  let senderAccount = 'A001';
+  const nameLower = senderName.toLowerCase();
+  if (nameLower.includes('bud')) senderAccount = 'A002';
+  else if (nameLower.includes('riz')) senderAccount = 'A003';
+  else if (nameLower.includes('mar') || nameLower.includes('dew')) senderAccount = 'A004';
+
   const payload = {
     type: 'TRANSFER',
     amount: parseFloat(amount),
     oldbalanceOrg: parseFloat(amount),
     newbalanceOrig: 0.0,
-    destinationAccount: exchange
+    destinationAccount: exchange,
+    sender_account: senderAccount,
+    device_id: deviceId,
+    ip_address: ipAddress,
+    purpose_code: purposeCode,
+    description: description
   };
 
   const response = await fetch(`${API_BASE_URL}/analyze-transaction`, {
@@ -281,9 +293,9 @@ export async function analyzeTransaction(senderName, amount, exchange) {
 
   const data = await response.json();
 
-  // Inject metadata for frontend mapping
-  data.senderName = senderName;
-  data.senderAccount = `****${Math.floor(1000 + Math.random() * 9000)}`;
+  // Inject fallback metadata for frontend mapping if missing
+  data.senderName = data.senderName || senderName;
+  data.senderAccount = data.senderAccount ? `****${data.senderAccount.slice(-4)}` : `****${Math.floor(1000 + Math.random() * 9000)}`;
   data.senderBank = ['BCA', 'Mandiri', 'BNI', 'BRI'][Math.floor(Math.random() * 4)];
   data.walletAddress = `0x${Math.random().toString(16).substr(2, 40)}`;
 
