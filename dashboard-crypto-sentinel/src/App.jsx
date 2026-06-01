@@ -1,0 +1,351 @@
+import { useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
+import { ThemeProvider } from './context/ThemeContext';
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+
+// Dynamic API Integration
+import { checkHealth, fetchTransactions, fetchAlerts } from './services/api';
+
+// Dashboard Overview Components
+import StatsGrid from './components/StatsGrid';
+import TransactionChart from './components/TransactionChart';
+import RiskDistribution from './components/RiskDistribution';
+import AlertFeed from './components/AlertFeed';
+import CryptoExchangeList from './components/CryptoExchangeList';
+import TransactionTable from './components/TransactionTable';
+import BlockedPatterns from './components/BlockedPatterns';
+import HourlyActivity from './components/HourlyActivity';
+import BankDistribution from './components/BankDistribution';
+import ActivityTimeline from './components/ActivityTimeline';
+import WeeklyComparison from './components/WeeklyComparison';
+
+// Dynamic Sub-View Components
+import {
+  MonitoringView,
+  AlertsView,
+  AnalysisView,
+  ExchangeView,
+  PatternsView,
+  RiskProfilesView,
+  BlocklistView,
+  RulesView,
+  ComplianceView,
+  SettingsView
+} from './components/PageViews';
+
+// Initial Mock Data
+import { recentTransactions, alertFeed } from './data/mockData';
+
+function DashboardLayout() {
+  const [activePage, setActivePage] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [apiOnline, setApiOnline] = useState(false);
+
+  // ----------------------------------------------------
+  // UNIFIED AML SANDBOX STATES
+  // ----------------------------------------------------
+  const [transactions, setTransactions] = useState(recentTransactions);
+  const [alerts, setAlerts] = useState(alertFeed);
+
+  // Polling mechanism to check health and load transaction data from backend
+  useEffect(() => {
+    let active = true;
+
+    async function loadData() {
+      try {
+        const online = await checkHealth();
+        if (!active) return;
+        setApiOnline(online);
+        
+        if (online) {
+          const txs = await fetchTransactions();
+          const alts = await fetchAlerts();
+          if (active) {
+            setTransactions(txs);
+            setAlerts(alts);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading API data:", err);
+      }
+    }
+
+    loadData();
+    const interval = setInterval(loadData, 5000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
+  
+  const [blockedEntities, setBlockedEntities] = useState({
+    wallets: [
+      { id: 'w1', address: '0x1a2b3c4d5e6f7890abcdef1234567890abcd1234', dateAdded: '2026-05-28', reason: 'Pola Structuring Berulang (Smurfing)' },
+      { id: 'w2', address: '0x9876543210fedcba9876543210fedcba98765432', dateAdded: '2026-05-29', reason: 'Batas transfer harian terlampaui' }
+    ],
+    banks: [
+      { id: 'b1', account: '4521880292', holder: 'Ahmad Faisal', bank: 'BCA', dateAdded: '2026-05-28', reason: 'Kasus Pencucian Uang Binance' }
+    ],
+    ids: [
+      { id: 'id1', nik: '3171092828020921', name: 'Ahmad Faisal', dateAdded: '2026-05-28', reason: 'Blacklist Densus Keuangan' }
+    ]
+  });
+
+  const [rules, setRules] = useState({
+    riskThreshold: 80,
+    dailyLimit: 100000000,
+    autoBlockEnabled: true,
+    smurfingCheckEnabled: true
+  });
+
+  const [adminProfile, setAdminProfile] = useState({
+    name: 'Admin Regulator',
+    role: 'OJK - Compliance Div.',
+    avatar: 'AR'
+  });
+
+  const [toasts, setToasts] = useState([]);
+
+  // Toast utility helper
+  const addToast = useCallback((message, type = 'success') => {
+    const id = Math.random().toString();
+    setToasts(prev => [...prev, { id, message, type }]);
+    
+    // Auto remove after 3.5 seconds
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3500);
+  }, []);
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen((prev) => !prev);
+  }, []);
+
+  const closeSidebar = useCallback(() => {
+    setSidebarOpen(false);
+  }, []);
+
+  return (
+    <div className="app-layout" id="app-root">
+      {/* Mobile overlay */}
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? 'visible' : ''}`}
+        onClick={closeSidebar}
+      />
+
+      <Sidebar
+        activePage={activePage}
+        onPageChange={(page) => {
+          setActivePage(page);
+          closeSidebar();
+        }}
+        isOpen={sidebarOpen}
+        adminProfile={adminProfile}
+        alertsCount={alerts.length}
+      />
+
+      <main className="main-content">
+        <Header onMenuToggle={toggleSidebar} apiOnline={apiOnline} />
+        
+        <div className="page-content">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activePage}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+            >
+              {/* ----------------------------------------------------
+                  1. DEFAULT OVERVIEW DASHBOARD
+              ---------------------------------------------------- */}
+              {activePage === 'dashboard' && (
+                <>
+                  <StatsGrid />
+                  <TransactionChart />
+                  <div className="content-grid-3" style={{ marginTop: 24 }}>
+                    <RiskDistribution />
+                    <AlertFeed alerts={alerts} />
+                    <CryptoExchangeList />
+                  </div>
+                  <TransactionTable transactions={transactions} />
+                  <div className="content-grid-3" style={{ marginTop: 24 }}>
+                    <BlockedPatterns />
+                    <HourlyActivity />
+                    <BankDistribution />
+                  </div>
+                  <div className="content-grid" style={{ marginTop: 24 }}>
+                    <ActivityTimeline />
+                    <WeeklyComparison />
+                  </div>
+                </>
+              )}
+
+              {/* ----------------------------------------------------
+                  2. LIVE MONITORING VIEW
+              ---------------------------------------------------- */}
+              {activePage === 'monitoring' && (
+                <MonitoringView 
+                  transactions={transactions} 
+                  setTransactions={setTransactions} 
+                  addToast={addToast} 
+                  rules={rules} 
+                />
+              )}
+
+              {/* ----------------------------------------------------
+                  3. ALERTS AND THREATS VIEW
+              ---------------------------------------------------- */}
+              {activePage === 'alerts' && (
+                <AlertsView 
+                  alerts={alerts} 
+                  setAlerts={setAlerts} 
+                  addToast={addToast} 
+                  setBlockedEntities={setBlockedEntities} 
+                />
+              )}
+
+              {/* ----------------------------------------------------
+                  4. TRANSACTION DEEP ANALYSIS
+              ---------------------------------------------------- */}
+              {activePage === 'analysis' && (
+                <AnalysisView transactions={transactions} addToast={addToast} />
+              )}
+
+              {/* ----------------------------------------------------
+                  5. CRYPTO EXCHANGES DIRECTORY
+              ---------------------------------------------------- */}
+              {activePage === 'exchange' && (
+                <ExchangeView addToast={addToast} />
+              )}
+
+              {/* ----------------------------------------------------
+                  6. DETECTED CRITICAL FRAUD PATTERNS
+              ---------------------------------------------------- */}
+              {activePage === 'patterns' && (
+                <PatternsView />
+              )}
+
+              {/* ----------------------------------------------------
+                  7. DETAILED CLIENT RISK PROFILES
+              ---------------------------------------------------- */}
+              {activePage === 'risk-profiles' && (
+                <RiskProfilesView addToast={addToast} />
+              )}
+
+              {/* ----------------------------------------------------
+                  8. DATABASE BLOCKLIST
+              ---------------------------------------------------- */}
+              {activePage === 'blocklist' && (
+                <BlocklistView 
+                  blockedEntities={blockedEntities} 
+                  setBlockedEntities={setBlockedEntities} 
+                  addToast={addToast} 
+                />
+              )}
+
+              {/* ----------------------------------------------------
+                  9. DYNAMIC THRESHOLD POLICIES & RULES
+              ---------------------------------------------------- */}
+              {activePage === 'rules' && (
+                <RulesView 
+                  rules={rules} 
+                  setRules={setRules} 
+                  addToast={addToast} 
+                />
+              )}
+
+              {/* ----------------------------------------------------
+                  10. COMPLIANCE AUDITING VIEWS
+              ---------------------------------------------------- */}
+              {activePage === 'compliance' && (
+                <ComplianceView addToast={addToast} />
+              )}
+
+              {/* ----------------------------------------------------
+                  11. PREFERENCES & SETTINGS
+              ---------------------------------------------------- */}
+              {activePage === 'settings' && (
+                <SettingsView 
+                  adminProfile={adminProfile} 
+                  setAdminProfile={setAdminProfile} 
+                  addToast={addToast} 
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </main>
+
+      {/* ----------------------------------------------------
+          DYNAMIC TOAST NOTIFICATIONS DRAWER
+      ---------------------------------------------------- */}
+      <div 
+        style={{ 
+          position: 'fixed', 
+          bottom: 24, 
+          right: 24, 
+          zIndex: 9999, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: 10, 
+          pointerEvents: 'none' 
+        }}
+      >
+        <AnimatePresence>
+          {toasts.map(toast => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, y: 30, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.9 }}
+              style={{
+                pointerEvents: 'auto',
+                minWidth: 320,
+                padding: '14px 20px',
+                borderRadius: 'var(--radius-md)',
+                color: 'white',
+                background: toast.type === 'error' ? 'var(--status-danger)' : toast.type === 'warning' ? 'var(--status-warning)' : 'var(--status-success)',
+                boxShadow: 'var(--shadow-lg)',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                border: '1px solid rgba(255,255,255,0.08)'
+              }}
+            >
+              <span>{toast.message}</span>
+              <button 
+                onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
+                style={{ 
+                  background: 'transparent', 
+                  border: 'none', 
+                  color: 'white', 
+                  cursor: 'pointer', 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  opacity: 0.8
+                }}
+              >
+                <X size={14} />
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <DashboardLayout />
+    </ThemeProvider>
+  );
+}
