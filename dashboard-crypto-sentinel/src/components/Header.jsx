@@ -1,4 +1,4 @@
-import { Search, Bell, Sun, Moon, Filter, Menu } from 'lucide-react';
+import { Bell, Sun, Moon, Filter, Menu } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Header({ onMenuToggle, apiOnline = false }) {
@@ -39,14 +39,6 @@ export default function Header({ onMenuToggle, apiOnline = false }) {
           <span style={{ fontSize: '0.78rem', fontWeight: 600, color: apiOnline ? '#10b981' : 'var(--text-muted)' }}>
             {apiOnline ? 'SENTINEL API: ONLINE' : 'SENTINEL: OFFLINE MODE'}
           </span>
-        </div>
-        <div className="header-search">
-          <Search />
-          <input
-            type="text"
-            placeholder="Cari transaksi, nasabah..."
-            id="search-input"
-          />
         </div>
         <button className="header-btn tooltip" data-tooltip="Filter" id="btn-filter">
           <Filter size={18} />
