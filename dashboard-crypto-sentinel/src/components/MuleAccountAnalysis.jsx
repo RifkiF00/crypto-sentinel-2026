@@ -18,10 +18,11 @@ import {
   X
 } from 'lucide-react';
 import { muleAccountsData, formatCurrency } from '../data/mockData';
-import { checkHealth, fetchMuleAccounts } from '../services/api';
+import { checkHealth, fetchMuleAccounts, fetchGnnGraph } from '../services/api';
 
 export default function MuleAccountAnalysis({ addToast }) {
   const [muleAccounts, setMuleAccounts] = useState(muleAccountsData);
+  const [gnnData, setGnnData] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMule, setSelectedMule] = useState(null);
   const [hoveredFlowNode, setHoveredFlowNode] = useState(null);
@@ -34,7 +35,11 @@ export default function MuleAccountAnalysis({ addToast }) {
         if (!active) return;
         if (online) {
           const res = await fetchMuleAccounts();
-          if (active) setMuleAccounts(res);
+          const graph = await fetchGnnGraph();
+          if (active) {
+            setMuleAccounts(res);
+            setGnnData(graph);
+          }
         }
       } catch (e) {
         console.error("Failed to load mule accounts:", e);
@@ -71,14 +76,37 @@ export default function MuleAccountAnalysis({ addToast }) {
     }));
   };
 
-  // Flow diagram data
-  const flowLayers = [
-    { label: 'Sumber Dana', color: '#3b82f6', icon: '🏦', items: ['Ahmad F.', 'Budi S.', 'Rizky H.'] },
-    { label: 'Mule Layer 1', color: '#ef4444', icon: '🔴', items: ['Hendro G.', 'Rina K.'] },
-    { label: 'Mule Layer 2', color: '#f59e0b', icon: '🟡', items: ['Darmawan P.', 'Surya P.'] },
-    { label: 'Crypto Wallet', color: '#a855f7', icon: '💜', items: ['0x1a2b…', '0x9abc…', '0x3456…'] },
-    { label: 'Exchange', color: '#f97316', icon: '🔶', items: ['Binance', 'Indodax'] }
-  ];
+  // Dynamic Flow diagram data loaded from API
+  const flowLayers = useMemo(() => {
+    if (!gnnData || !gnnData.nodes) {
+      // Fallback if API is offline
+      return [
+        { label: 'Sumber Dana', color: '#3b82f6', icon: '🏦', items: ['Ahmad F.', 'Budi S.', 'Rizky H.'] },
+        { label: 'Mule Layer 1', color: '#ef4444', icon: '🔴', items: ['Hendro G.', 'Rina K.'] },
+        { label: 'Mule Layer 2', color: '#f59e0b', icon: '🟡', items: ['Darmawan P.', 'Surya P.'] },
+        { label: 'Crypto Wallet', color: '#a855f7', icon: '💜', items: ['0x1a2b…', '0x9abc…', '0x3456…'] },
+        { label: 'Exchange', color: '#f97316', icon: '🔶', items: ['Binance', 'Indodax'] }
+      ];
+    }
+
+    const banks = gnnData.nodes.filter(n => n.type === 'bank').map(n => n.label);
+    const mules = gnnData.nodes.filter(n => n.type === 'mule').map(n => n.label);
+    const wallets = gnnData.nodes.filter(n => n.type === 'wallet').map(n => n.label);
+    const exchanges = gnnData.nodes.filter(n => n.type === 'exchange').map(n => n.label);
+
+    // Split mules into Layer 1 and Layer 2 for visual balance
+    const muleHalf = Math.ceil(mules.length / 2);
+    const muleLayer1 = mules.slice(0, muleHalf);
+    const muleLayer2 = mules.slice(muleHalf);
+
+    return [
+      { label: 'Sumber Dana', color: '#3b82f6', icon: '🏦', items: banks.slice(0, 4) },
+      { label: 'Mule Layer 1', color: '#ef4444', icon: '🔴', items: muleLayer1.length > 0 ? muleLayer1 : ['Taufik S.'] },
+      { label: 'Mule Layer 2', color: '#f59e0b', icon: '🟡', items: muleLayer2 },
+      { label: 'Crypto Wallet', color: '#a855f7', icon: '💜', items: wallets.slice(0, 3) },
+      { label: 'Exchange', color: '#f97316', icon: '🔶', items: exchanges.slice(0, 2) }
+    ].filter(layer => layer.items.length > 0 || layer.label === 'Mule Layer 2');
+  }, [gnnData]);
 
   const roleColor = (role) => {
     if (role.includes('Utama')) return { bg: 'var(--status-danger-bg)', color: 'var(--status-danger)', border: 'var(--status-danger-border)' };
