@@ -2193,14 +2193,17 @@ data = Data(x=x, edge_index=edge_index, y=y)
       </tr>
     </thead>
     <tbody>
-      <tr><td class="field-name">account_id</td><td class="field-type">VARCHAR(20)</td><td class="field-pk">PK</td><td>Nomor rekening unik</td></tr>
-      <tr><td class="field-name">owner_name</td><td class="field-type">VARCHAR(100)</td><td>NOT NULL</td><td>Nama nasabah</td></tr>
-      <tr><td class="field-name">balance</td><td class="field-type">BIGINT</td><td>DEFAULT 0</td><td>Saldo dalam satuan rupiah</td></tr>
+      <tr><td class="field-name">account_id</td><td class="field-type">VARCHAR(20)</td><td class="field-pk">PK</td><td>Nomor rekening unik (Nomor Rekening Bank)</td></tr>
+      <tr><td class="field-name">national_id</td><td class="field-type">VARCHAR(16)</td><td>NOT NULL UNIQUE</td><td>NIK KTP Nasabah (Kepatuhan KYC & UU PDP)</td></tr>
+      <tr><td class="field-name">owner_name</td><td class="field-type">VARCHAR(100)</td><td>NOT NULL</td><td>Nama lengkap nasabah resmi</td></tr>
+      <tr><td class="field-name">balance</td><td class="field-type">BIGINT</td><td>DEFAULT 0</td><td>Saldo dalam satuan Rupiah (IDR)</td></tr>
       <tr><td class="field-name">risk_profile</td><td class="field-type">VARCHAR(10)</td><td>DEFAULT 'LOW'</td><td>LOW | MEDIUM | HIGH</td></tr>
-      <tr><td class="field-name">is_active</td><td class="field-type">BOOLEAN</td><td>DEFAULT TRUE</td><td>Status rekening aktif/pasif</td></tr>
-      <tr><td class="field-name">is_blocked</td><td class="field-type">BOOLEAN</td><td>DEFAULT FALSE</td><td>Diblokir oleh Sentinel</td></tr>
-      <tr><td class="field-name">last_activity</td><td class="field-type">TIMESTAMP</td><td></td><td>Waktu transaksi terakhir</td></tr>
-      <tr><td class="field-name">created_at</td><td class="field-type">TIMESTAMP</td><td>DEFAULT NOW()</td><td>Tanggal pembukaan rekening</td></tr>
+      <tr><td class="field-name">is_active</td><td class="field-type">BOOLEAN</td><td>DEFAULT TRUE</td><td>Status rekening aktif / pasif (Dormant check)</td></tr>
+      <tr><td class="field-name">is_blocked</td><td class="field-type">BOOLEAN</td><td>DEFAULT FALSE</td><td>Status pemblokiran otomatis oleh Sentinel</td></tr>
+      <tr><td class="field-name">registered_device</td><td class="field-type">VARCHAR(50)</td><td></td><td>Device Fingerprint tepercaya (Deteksi Device Anomaly)</td></tr>
+      <tr><td class="field-name">registered_ip</td><td class="field-type">INET</td><td></td><td>IP Address tepercaya nasabah (Deteksi Impossible Travel)</td></tr>
+      <tr><td class="field-name">last_activity</td><td class="field-type">TIMESTAMP</td><td></td><td>Waktu aktivitas/transaksi terakhir</td></tr>
+      <tr><td class="field-name">created_at</td><td class="field-type">TIMESTAMP</td><td>DEFAULT NOW()</td><td>Tanggal awal pembukaan rekening resmi</td></tr>
     </tbody>
   </table>
 
