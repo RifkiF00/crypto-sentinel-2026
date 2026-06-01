@@ -299,24 +299,80 @@ export async function fetchGnnGraph() {
     const res = await fetch(`${API_BASE_URL}/demo-graph`);
     const data = await res.json();
 
-    // Map backend nodes back to coordinates
-    const mappedNodes = gnnGraphData.nodes.map(n => {
-      const apiNode = data.nodes.find(an => an.id === n.id || an.label === n.label);
-      if (apiNode) {
-        return {
-          ...n,
-          riskScore: apiNode.riskScore || n.riskScore,
-          degree: apiNode.degree || n.degree
-        };
+    // Dynamically calculate coordinates for nodes based on their types
+    const bankNodes = data.nodes.filter(n => n.type === 'bank');
+    const muleNodes = data.nodes.filter(n => n.type === 'mule');
+    const walletNodes = data.nodes.filter(n => n.type === 'wallet');
+    const exchangeNodes = data.nodes.filter(n => n.type === 'exchange');
+
+    const mappedNodes = data.nodes.map(n => {
+      let x = 300;
+      let y = 250;
+      
+      if (n.type === 'bank') {
+        const idx = bankNodes.findIndex(node => node.id === n.id);
+        x = 80;
+        y = bankNodes.length > 1 ? 80 + (idx * 340) / (bankNodes.length - 1) : 250;
+      } else if (n.type === 'mule') {
+        const idx = muleNodes.findIndex(node => node.id === n.id);
+        x = 300;
+        y = muleNodes.length > 1 ? 80 + (idx * 360) / (muleNodes.length - 1) : 250;
+      } else if (n.type === 'wallet') {
+        const idx = walletNodes.findIndex(node => node.id === n.id);
+        x = 530;
+        y = walletNodes.length > 1 ? 100 + (idx * 300) / (walletNodes.length - 1) : 250;
+      } else if (n.type === 'exchange') {
+        const idx = exchangeNodes.findIndex(node => node.id === n.id);
+        x = 730;
+        y = exchangeNodes.length > 1 ? 170 + (idx * 170) / (exchangeNodes.length - 1) : 250;
       }
-      return n;
+
+      // Assign realistic risk score based on degree and role
+      let riskScore = 45;
+      if (n.type === 'mule') {
+        riskScore = 88 + (n.degree * 2);
+      } else if (n.type === 'bank') {
+        riskScore = 70 + (n.degree * 4);
+      } else if (n.type === 'wallet') {
+        riskScore = 72 + (n.degree * 3);
+      } else if (n.type === 'exchange') {
+        riskScore = n.label === 'Binance' || n.label === 'Indodax' ? 85 : 45;
+      }
+      riskScore = Math.min(99, Math.max(10, riskScore));
+
+      return {
+        id: n.id,
+        label: n.label,
+        type: n.type,
+        riskScore: riskScore,
+        degree: n.degree,
+        x: x,
+        y: y
+      };
+    });
+
+    // Map backend edges
+    const mappedEdges = data.edges.map(e => {
+      const sourceNode = mappedNodes.find(n => n.id === e.source);
+      const targetNode = mappedNodes.find(n => n.id === e.target);
+      const maxRisk = Math.max(sourceNode?.riskScore || 0, targetNode?.riskScore || 0);
+      const riskLevel = maxRisk >= 85 ? 'high' : maxRisk >= 75 ? 'medium' : 'low';
+
+      return {
+        source: e.source,
+        target: e.target,
+        amount: e.amount,
+        riskLevel: riskLevel,
+        scenario: e.scenario
+      };
     });
 
     return {
       nodes: mappedNodes,
-      edges: gnnGraphData.edges
+      edges: mappedEdges
     };
   } catch (error) {
+    console.error("Error fetching GNN graph:", error);
     return gnnGraphData;
   }
 }

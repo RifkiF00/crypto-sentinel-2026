@@ -229,16 +229,31 @@ def get_demo_graph():
             scenario=row["scenario"]
         )
 
-    nodes = [
-        {
+    nodes = []
+    for node in G.nodes():
+        if node.startswith("A"):
+            label = get_name_for_account(node)
+            node_type = "bank"
+        elif node.startswith("MULE"):
+            label = get_name_for_account(node)
+            node_type = "mule"
+        elif node.startswith("CRYPTO"):
+            h = hashlib.md5(node.encode()).hexdigest()
+            label = f"0x{h[:6]}...{h[-4:]}"
+            node_type = "wallet"
+        else:
+            # WALLET001 or exchanges
+            label = get_exchange_for_account(node)
+            node_type = "exchange"
+
+        nodes.append({
             "id": node,
-            "label": node,
+            "label": label,
+            "type": node_type,
             "degree": G.degree(node),
             "in_degree": G.in_degree(node),
             "out_degree": G.out_degree(node)
-        }
-        for node in G.nodes()
-    ]
+        })
 
     edges = [
         {
