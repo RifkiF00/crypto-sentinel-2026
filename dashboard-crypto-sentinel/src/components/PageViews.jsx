@@ -57,7 +57,7 @@ import MuleAccountAnalysis from './MuleAccountAnalysis';
 import GNNVisualization from './GNNVisualization';
 
 // Dynamic API Integration
-import { checkHealth, analyzeTransaction, mapApiLogToTx, fetchCryptoExchanges, fetchBlockedPatterns } from '../services/api';
+import { checkHealth, analyzeTransaction, mapApiLogToTx, fetchCryptoExchanges, fetchBlockedPatterns, fetchMuleAccounts } from '../services/api';
 
 // ==========================================
 // 1. LIVE MONITORING VIEW
@@ -1161,13 +1161,34 @@ export function PatternsView() {
 // ==========================================
 export function RiskProfilesView({ addToast }) {
   const [searchClient, setSearchClient] = useState('');
-  const [clients, setClients] = useState([
-    { name: 'Ahmad Faisal', account: '****4521', bank: 'BCA', score: 92, status: 'Suspended', txs: 18 },
-    { name: 'Budi Santoso', account: '****8734', bank: 'Mandiri', score: 76, status: 'Monitored', txs: 12 },
-    { name: 'Rizky Hidayat', account: '****6543', bank: 'BRI', score: 88, status: 'Suspended', txs: 15 },
-    { name: 'Siti Nurhaliza', account: '****1122', bank: 'BCA', score: 65, status: 'Monitored', txs: 9 },
-    { name: 'Maria Kusuma', account: '****5566', bank: 'CIMB', score: 84, status: 'Suspended', txs: 14 }
-  ]);
+  const [clients, setClients] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadClients() {
+      try {
+        const online = await checkHealth();
+        if (!active) return;
+        if (online) {
+          const mules = await fetchMuleAccounts();
+          if (active) {
+            const mapped = mules.map(m => ({
+              name: m.name,
+              account: `****${m.account.slice(-4)}`,
+              bank: m.bank,
+              score: m.riskScore,
+              status: m.status === 'frozen' ? 'Suspended' : m.status === 'monitored' ? 'Monitored' : 'Active',
+              txs: m.txCount
+            }));
+            setClients(mapped);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load client risk profiles:", e);
+      }
+    }
+    loadClients();
+  }, []);
 
   const handleUpdateStatus = (name, currentStatus) => {
     const nextStatus = currentStatus === 'Suspended' ? 'Monitored' : currentStatus === 'Monitored' ? 'Active' : 'Suspended';
