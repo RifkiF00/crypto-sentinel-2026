@@ -102,7 +102,7 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
           <p style={{ color: 'var(--text-muted)' }}>Pantau alur dana nasabah bank ke Crypto Exchange secara real-time.</p>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <button 
+          <button
             className="btn btn-ghost btn-sm"
             onClick={() => setIsLive(!isLive)}
           >
@@ -185,7 +185,7 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
                         <td>
                           <div className="risk-meter">
                             <div className="risk-bar" style={{ width: 60 }}>
-                              <div 
+                              <div
                                 className={`risk-bar-fill ${txn.riskScore >= 80 ? 'high' : txn.riskScore >= 40 ? 'medium' : 'low'}`}
                                 style={{ width: `${txn.riskScore}%` }}
                               />
@@ -253,8 +253,8 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
   const [mulesList, setMulesList] = useState(muleAccountsData);
 
   const filteredAlerts = alerts.filter(alert => {
-    const matchesSearch = alert.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          alert.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = alert.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      alert.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSeverity = filterSeverity === 'all' || alert.type === filterSeverity;
     return matchesSearch && matchesSeverity;
   });
@@ -269,7 +269,7 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
         const walletToBlock = walletMatch ? walletMatch[0] : `0x${Math.random().toString(16).substr(2, 40)}`;
         const accountMatch = alertItem.description.match(/\d+/);
         const accountToBlock = accountMatch ? accountMatch[0] : String(Math.floor(100000000 + Math.random() * 900000000));
-        
+
         // Add to blocked entities in state
         setBlockedEntities(prev => ({
           ...prev,
@@ -335,7 +335,7 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
     setMulesList(prev => prev.map(m => {
       if (m.id === id) {
         const isFrozen = m.status === 'frozen';
-        addToast(isFrozen 
+        addToast(isFrozen
           ? `🔓 Rekening ${m.name} (${m.account}) dicairkan kembali.`
           : `🧊 Rekening Mule ${m.name} (${m.account}) DIBEKUKAN oleh OJK!`, isFrozen ? 'warning' : 'error');
         return { ...m, status: isFrozen ? 'monitored' : 'frozen' };
@@ -368,27 +368,27 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
           <div className="card" style={{ padding: 16, marginBottom: 20 }}>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button 
+                <button
                   className={`tab ${filterSeverity === 'all' ? 'active' : ''}`}
                   onClick={() => setFilterSeverity('all')}
                 >
                   Semua ({alerts.length})
                 </button>
-                <button 
+                <button
                   className={`tab ${filterSeverity === 'critical' ? 'active' : ''}`}
                   onClick={() => setFilterSeverity('critical')}
                   style={{ color: filterSeverity === 'critical' ? 'var(--status-danger)' : '' }}
                 >
                   🔴 Kritis ({alerts.filter(a => a.type === 'critical').length})
                 </button>
-                <button 
+                <button
                   className={`tab ${filterSeverity === 'warning' ? 'active' : ''}`}
                   onClick={() => setFilterSeverity('warning')}
                   style={{ color: filterSeverity === 'warning' ? 'var(--status-warning)' : '' }}
                 >
                   🟡 Peringatan ({alerts.filter(a => a.type === 'warning').length})
                 </button>
-                <button 
+                <button
                   className={`tab ${filterSeverity === 'info' ? 'active' : ''}`}
                   onClick={() => setFilterSeverity('info')}
                   style={{ color: filterSeverity === 'info' ? 'var(--status-info)' : '' }}
@@ -396,12 +396,12 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                   🔵 Info ({alerts.filter(a => a.type === 'info').length})
                 </button>
               </div>
-              
+
               <div className="header-search" style={{ margin: 0 }}>
                 <Search />
-                <input 
-                  type="text" 
-                  placeholder="Cari alert..." 
+                <input
+                  type="text"
+                  placeholder="Cari alert..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   style={{ width: 220 }}
@@ -420,7 +420,7 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
               </div>
             ) : (
               filteredAlerts.map(alert => (
-                <div 
+                <div
                   key={alert.id}
                   className={`alert-item ${alert.type} ${selectedAlert?.id === alert.id ? 'active' : ''}`}
                   style={{
@@ -443,11 +443,11 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <h4 className="alert-title" style={{ fontSize: '0.92rem', margin: 0 }}>{alert.title}</h4>
-                        <span style={{ 
-                          fontSize: '0.68rem', 
-                          padding: '1px 8px', 
-                          borderRadius: 'var(--radius-full)', 
-                          fontWeight: 700, 
+                        <span style={{
+                          fontSize: '0.68rem',
+                          padding: '1px 8px',
+                          borderRadius: 'var(--radius-full)',
+                          fontWeight: 700,
                           background: alert.type === 'critical' ? 'var(--status-danger-bg)' : alert.type === 'warning' ? 'var(--status-warning-bg)' : 'var(--status-info-bg)',
                           color: alert.type === 'critical' ? 'var(--status-danger)' : alert.type === 'warning' ? 'var(--status-warning)' : 'var(--status-info)'
                         }}>{alert.type.toUpperCase()}</span>
@@ -469,7 +469,7 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
         <div>
           <AnimatePresence mode="wait">
             {selectedAlert ? (
-              <motion.div 
+              <motion.div
                 className="card"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -483,15 +483,15 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
 
                 {/* Sub-tab Navigation */}
                 <div style={{ display: 'flex', background: 'var(--bg-elevated)', padding: 4, borderRadius: 8, marginBottom: 20, gap: 4 }}>
-                  <button 
+                  <button
                     onClick={() => setActiveDetailTab('remediation')}
                     className={`tab ${activeDetailTab === 'remediation' ? 'active' : ''}`}
-                    style={{ 
-                      fontSize: '0.75rem', 
-                      padding: '8px 4px', 
-                      flex: 1, 
-                      textAlign: 'center', 
-                      border: 'none', 
+                    style={{
+                      fontSize: '0.75rem',
+                      padding: '8px 4px',
+                      flex: 1,
+                      textAlign: 'center',
+                      border: 'none',
                       background: activeDetailTab === 'remediation' ? 'var(--bg-card)' : 'transparent',
                       color: activeDetailTab === 'remediation' ? 'var(--text-primary)' : 'var(--text-muted)',
                       borderRadius: 6,
@@ -502,15 +502,15 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                   >
                     🛡️ Tindakan
                   </button>
-                  <button 
+                  <button
                     onClick={() => setActiveDetailTab('mule')}
                     className={`tab ${activeDetailTab === 'mule' ? 'active' : ''}`}
-                    style={{ 
-                      fontSize: '0.75rem', 
-                      padding: '8px 4px', 
-                      flex: 1, 
-                      textAlign: 'center', 
-                      border: 'none', 
+                    style={{
+                      fontSize: '0.75rem',
+                      padding: '8px 4px',
+                      flex: 1,
+                      textAlign: 'center',
+                      border: 'none',
                       background: activeDetailTab === 'mule' ? 'var(--bg-card)' : 'transparent',
                       color: activeDetailTab === 'mule' ? 'var(--text-primary)' : 'var(--text-muted)',
                       borderRadius: 6,
@@ -521,15 +521,15 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                   >
                     🏦 Mule Acc
                   </button>
-                  <button 
+                  <button
                     onClick={() => setActiveDetailTab('gnn')}
                     className={`tab ${activeDetailTab === 'gnn' ? 'active' : ''}`}
-                    style={{ 
-                      fontSize: '0.75rem', 
-                      padding: '8px 4px', 
-                      flex: 1, 
-                      textAlign: 'center', 
-                      border: 'none', 
+                    style={{
+                      fontSize: '0.75rem',
+                      padding: '8px 4px',
+                      flex: 1,
+                      textAlign: 'center',
+                      border: 'none',
                       background: activeDetailTab === 'gnn' ? 'var(--bg-card)' : 'transparent',
                       color: activeDetailTab === 'gnn' ? 'var(--text-primary)' : 'var(--text-muted)',
                       borderRadius: 6,
@@ -541,7 +541,7 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                     🧠 GNN Flow
                   </button>
                 </div>
-                
+
                 {activeDetailTab === 'remediation' && (
                   <>
                     <div style={{ marginBottom: 20 }}>
@@ -556,24 +556,24 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
                       <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>REMEDIASI OJK COMPLIANCE</div>
-                      
-                      <button 
+
+                      <button
                         className="btn btn-primary"
                         style={{ background: 'var(--gradient-danger)', justifyContent: 'center' }}
                         onClick={() => handleResolveAlert(selectedAlert.id, 'block')}
                       >
                         🛡️ Blokir Rekening & Wallet Crypto
                       </button>
-                      
-                      <button 
-                        className="btn btn-ghost" 
+
+                      <button
+                        className="btn btn-ghost"
                         style={{ justifyContent: 'center' }}
                         onClick={() => handleResolveAlert(selectedAlert.id, 'investigate')}
                       >
                         📂 Kirim Tim Investigasi AML
                       </button>
 
-                      <button 
+                      <button
                         className="btn btn-ghost"
                         style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', justifyContent: 'center' }}
                         onClick={() => handleResolveAlert(selectedAlert.id, 'dismiss')}
@@ -581,11 +581,11 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                         Abaikan & Tandai Aman
                       </button>
 
-                      <button 
+                      <button
                         className="btn btn-primary"
-                        style={{ 
-                          background: 'var(--gradient-primary)', 
-                          justifyContent: 'center', 
+                        style={{
+                          background: 'var(--gradient-primary)',
+                          justifyContent: 'center',
                           marginTop: 12,
                           boxShadow: 'var(--shadow-glow)'
                         }}
@@ -606,11 +606,11 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                       REKENING PENAMPUNG TERKAIT SENDER
                     </div>
                     {getLinkedMules(selectedAlert).map((mule) => (
-                      <div 
-                        key={mule.id} 
-                        style={{ 
-                          background: 'var(--bg-input)', 
-                          padding: 14, 
+                      <div
+                        key={mule.id}
+                        style={{
+                          background: 'var(--bg-input)',
+                          padding: 14,
                           borderRadius: 10,
                           border: '1px solid var(--border-color)',
                           position: 'relative'
@@ -621,11 +621,11 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                             <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-primary)', letterSpacing: 0.5 }}>{mule.id}</span>
                             <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: 2 }}>{mule.name}</h4>
                           </div>
-                          <span style={{ 
-                            fontSize: '0.7rem', 
-                            padding: '2px 8px', 
-                            borderRadius: 'var(--radius-full)', 
-                            fontWeight: 700, 
+                          <span style={{
+                            fontSize: '0.7rem',
+                            padding: '2px 8px',
+                            borderRadius: 'var(--radius-full)',
+                            fontWeight: 700,
                             background: mule.status === 'frozen' ? 'var(--status-info-bg)' : 'var(--status-danger-bg)',
                             color: mule.status === 'frozen' ? 'var(--status-info)' : 'var(--status-danger)',
                             border: `1px solid ${mule.status === 'frozen' ? 'var(--status-info-border)' : 'var(--status-danger-border)'}`
@@ -656,11 +656,11 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                         </div>
 
                         <div style={{ display: 'flex', gap: 8, borderTop: '1px solid var(--border-color)', paddingTop: 10 }}>
-                          <button 
+                          <button
                             className={`btn btn-sm ${mule.status === 'frozen' ? 'btn-ghost' : 'btn-primary'}`}
-                            style={{ 
-                              flex: 1, 
-                              justifyContent: 'center', 
+                            style={{
+                              flex: 1,
+                              justifyContent: 'center',
                               fontSize: '0.75rem',
                               padding: '6px',
                               background: mule.status === 'frozen' ? 'transparent' : 'var(--gradient-danger)',
@@ -673,7 +673,7 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                         </div>
                       </div>
                     ))}
-                    <button 
+                    <button
                       className="btn btn-ghost btn-sm"
                       style={{ justifyContent: 'center', marginTop: 4 }}
                       onClick={() => {
@@ -691,27 +691,27 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                     <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: -4 }}>
                       ALIRAN DANA DETEKSI GNN (PIPELINE)
                     </div>
-                    
+
                     {/* Visual Vertical Flow Chart */}
-                    <div style={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      alignItems: 'center', 
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
                       position: 'relative',
-                      background: 'rgba(0, 0, 0, 0.25)', 
-                      padding: '20px 14px', 
+                      background: 'rgba(0, 0, 0, 0.25)',
+                      padding: '20px 14px',
                       borderRadius: 12,
                       border: '1px solid var(--border-color)'
                     }}>
-                      
+
                       {/* Node 1: Sender Bank */}
-                      <div style={{ 
-                        width: '100%', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: 12, 
-                        background: 'var(--bg-card)', 
-                        padding: 10, 
+                      <div style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        background: 'var(--bg-card)',
+                        padding: 10,
                         borderRadius: 8,
                         border: '1px solid var(--status-info-border)',
                         boxShadow: 'var(--shadow-sm)'
@@ -728,14 +728,14 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
 
                       {/* Connective Line */}
                       <div style={{ height: 24, width: 2, background: 'linear-gradient(180deg, var(--status-info) 0%, var(--status-danger) 100%)', position: 'relative' }}>
-                        <div style={{ 
-                          position: 'absolute', 
-                          top: '50%', 
-                          left: '50%', 
-                          transform: 'translate(-50%, -50%)', 
-                          width: 6, 
-                          height: 6, 
-                          background: 'var(--status-danger)', 
+                        <div style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          width: 6,
+                          height: 6,
+                          background: 'var(--status-danger)',
                           borderRadius: '50%',
                           animation: 'ping 1s infinite'
                         }} />
@@ -744,13 +744,13 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                       {/* Node 2: Mule Accounts */}
                       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {getLinkedMules(selectedAlert).map((mule, idx) => (
-                          <div key={idx} style={{ 
-                            width: '100%', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: 12, 
-                            background: 'var(--bg-card)', 
-                            padding: 10, 
+                          <div key={idx} style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            background: 'var(--bg-card)',
+                            padding: 10,
                             borderRadius: 8,
                             border: '1px solid var(--status-danger-border)',
                             boxShadow: 'var(--shadow-sm)'
@@ -773,13 +773,13 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                       {/* Node 3: Crypto Wallets */}
                       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {getLinkedMules(selectedAlert).flatMap(m => m.linkedCryptoWallets || []).map((w, idx) => (
-                          <div key={idx} style={{ 
-                            width: '100%', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: 12, 
-                            background: 'var(--bg-card)', 
-                            padding: 10, 
+                          <div key={idx} style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            background: 'var(--bg-card)',
+                            padding: 10,
                             borderRadius: 8,
                             border: '1px solid rgba(168, 85, 247, 0.2)',
                             boxShadow: 'var(--shadow-sm)'
@@ -802,13 +802,13 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                       <div style={{ height: 24, width: 2, background: 'linear-gradient(180deg, var(--accent-purple) 0%, var(--accent-tertiary) 100%)' }} />
 
                       {/* Node 4: Target Exchange */}
-                      <div style={{ 
-                        width: '100%', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: 12, 
-                        background: 'var(--bg-card)', 
-                        padding: 10, 
+                      <div style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        background: 'var(--bg-card)',
+                        padding: 10,
                         borderRadius: 8,
                         border: '1px solid rgba(245, 158, 11, 0.2)',
                         boxShadow: 'var(--shadow-sm)'
@@ -825,7 +825,7 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
 
                     </div>
 
-                    <button 
+                    <button
                       className="btn btn-primary btn-sm"
                       style={{ background: 'var(--gradient-primary)', justifyContent: 'center', marginTop: 4 }}
                       onClick={() => {
@@ -865,21 +865,21 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
           zIndex: 99999,
           padding: 24
         }}>
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            style={{ 
-              maxWidth: '90vw', 
-              width: '1280px', 
-              height: '88vh', 
-              background: 'var(--bg-secondary)', 
-              border: '1px solid var(--border-accent)', 
-              borderRadius: 'var(--radius-lg)', 
-              padding: 24, 
-              display: 'flex', 
-              flexDirection: 'column', 
+            style={{
+              maxWidth: '90vw',
+              width: '1280px',
+              height: '88vh',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-accent)',
+              borderRadius: 'var(--radius-lg)',
+              padding: 24,
+              display: 'flex',
+              flexDirection: 'column',
               boxShadow: 'var(--shadow-xl)',
               overflow: 'hidden'
             }}
@@ -893,8 +893,8 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                   Analisis Jaringan GNN & Deteksi Rekening Mule untuk alert: <strong>{selectedAlert?.title}</strong> ({getSenderName(selectedAlert)})
                 </p>
               </div>
-              <button 
-                className="btn btn-ghost" 
+              <button
+                className="btn btn-ghost"
                 style={{ borderRadius: '50%', width: 36, height: 36, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 onClick={() => setShowFullModal(false)}
               >
@@ -904,12 +904,12 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
 
             {/* Modal Navigation Tabs */}
             <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: 20, gap: 12 }}>
-              <button 
+              <button
                 className={`tab ${modalTab === 'gnn' ? 'active' : ''}`}
-                style={{ 
-                  padding: '10px 20px', 
-                  fontSize: '0.9rem', 
-                  border: 'none', 
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '0.9rem',
+                  border: 'none',
                   background: 'transparent',
                   color: modalTab === 'gnn' ? 'var(--accent-primary)' : 'var(--text-muted)',
                   borderBottom: modalTab === 'gnn' ? '2px solid var(--accent-primary)' : 'none',
@@ -920,12 +920,12 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
               >
                 🧠 Peta Jaringan GNN
               </button>
-              <button 
+              <button
                 className={`tab ${modalTab === 'mule' ? 'active' : ''}`}
-                style={{ 
-                  padding: '10px 20px', 
-                  fontSize: '0.9rem', 
-                  border: 'none', 
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '0.9rem',
+                  border: 'none',
                   background: 'transparent',
                   color: modalTab === 'mule' ? 'var(--accent-primary)' : 'var(--text-muted)',
                   borderBottom: modalTab === 'mule' ? '2px solid var(--accent-primary)' : 'none',
@@ -1027,7 +1027,7 @@ export function AnalysisView({ transactions, addToast }) {
         <div style={{ display: 'flex', gap: 12 }}>
           {activeAnalysisTab === 'patterns' && (
             <>
-              <select 
+              <select
                 style={{ padding: '8px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                 value={analysisRange}
                 onChange={(e) => setAnalysisRange(e.target.value)}
@@ -1111,7 +1111,7 @@ export function AnalysisView({ transactions, addToast }) {
                       <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>🛡️ 162 Transaksi Blok</span>
                     </div>
                   </div>
-                  
+
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{ display: 'flex', justify: 'space-between', fontSize: '0.8rem' }}>
                       <span>Persentase Keberhasilan Pencegahan</span>
@@ -1317,8 +1317,8 @@ export function ExchangeView({ addToast }) {
                   <td style={{ fontFamily: 'var(--font-mono)' }}>{formatCurrency(ex.volume)}</td>
                   <td style={{ fontWeight: 700, color: 'var(--status-danger)', fontFamily: 'var(--font-mono)' }}>{formatCurrency(ex.prevented)}</td>
                   <td>
-                    <span style={{ 
-                      fontSize: '0.8rem', 
+                    <span style={{
+                      fontSize: '0.8rem',
                       fontWeight: 600,
                       color: ex.compliance.startsWith('A') ? 'var(--status-success)' : ex.compliance.startsWith('F') ? 'var(--status-danger)' : 'var(--status-warning)'
                     }}>{ex.compliance}</span>
@@ -1329,8 +1329,8 @@ export function ExchangeView({ addToast }) {
                     </span>
                   </td>
                   <td>
-                    <button 
-                      className={`btn btn-sm ${ex.status ? 'btn-danger' : 'btn-primary'}`} 
+                    <button
+                      className={`btn btn-sm ${ex.status ? 'btn-danger' : 'btn-primary'}`}
                       style={{ padding: '4px 10px', fontSize: '0.72rem' }}
                       onClick={() => toggleStatus(ex.name)}
                     >
@@ -1396,11 +1396,11 @@ export function PatternsView() {
         {/* Pattern catalog list */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {patterns.map((p) => (
-            <div 
+            <div
               key={p.id}
               className="card"
-              style={{ 
-                padding: 18, 
+              style={{
+                padding: 18,
                 cursor: 'pointer',
                 borderColor: selectedPattern?.id === p.id ? 'var(--border-accent)' : '',
                 background: selectedPattern?.id === p.id ? 'var(--accent-primary-subtle)' : ''
@@ -1425,8 +1425,8 @@ export function PatternsView() {
                 {selectedPattern.algorithm}
               </code>
 
-              <button 
-                className="btn btn-primary" 
+              <button
+                className="btn btn-primary"
                 style={{ width: '100%', justifyContent: 'center', marginBottom: 20 }}
                 onClick={() => handleTestPattern(selectedPattern.id)}
                 disabled={isAnalyzing}
@@ -1515,12 +1515,12 @@ export function RiskProfilesView({ addToast }) {
           <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Profil Risiko Nasabah Bank</h2>
           <p style={{ color: 'var(--text-muted)' }}>Gunakan audit profil untuk mengawasi individual berisiko tinggi berdasarkan skor anomali transaksi kripto.</p>
         </div>
-        
+
         <div className="header-search" style={{ margin: 0 }}>
           <Search />
-          <input 
-            type="text" 
-            placeholder="Cari nama nasabah..." 
+          <input
+            type="text"
+            placeholder="Cari nama nasabah..."
             value={searchClient}
             onChange={(e) => setSearchClient(e.target.value)}
             style={{ width: 220 }}
@@ -1549,7 +1549,7 @@ export function RiskProfilesView({ addToast }) {
                   <td>
                     <div className="risk-meter" style={{ width: 120 }}>
                       <div className="risk-bar">
-                        <div 
+                        <div
                           className={`risk-bar-fill ${client.score >= 80 ? 'high' : 'medium'}`}
                           style={{ width: `${client.score}%` }}
                         />
@@ -1564,7 +1564,7 @@ export function RiskProfilesView({ addToast }) {
                     </span>
                   </td>
                   <td>
-                    <button 
+                    <button
                       className="btn btn-ghost btn-sm"
                       style={{ padding: '4px 10px', fontSize: '0.72rem' }}
                       onClick={() => handleUpdateStatus(client.name, client.status)}
@@ -1587,11 +1587,11 @@ export function RiskProfilesView({ addToast }) {
 // ==========================================
 export function BlocklistView({ blockedEntities, setBlockedEntities, addToast }) {
   const [activeTab, setActiveTab] = useState('wallets');
-  
+
   // Form input states
   const [walletInput, setWalletInput] = useState('');
   const [walletReason, setWalletReason] = useState('Potensi Smurfing Binance');
-  
+
   const [bankAccountInput, setBankAccountInput] = useState('');
   const [bankHolderInput, setBankHolderInput] = useState('');
   const [bankReason, setBankReason] = useState('Stukturasi Berulang');
@@ -1687,19 +1687,19 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
         <div>
           {/* Tab selector */}
           <div className="tabs" style={{ marginBottom: 20, display: 'inline-flex' }}>
-            <button 
+            <button
               className={`tab ${activeTab === 'wallets' ? 'active' : ''}`}
               onClick={() => setActiveTab('wallets')}
             >
               🌐 Alamat Wallet Crypto ({blockedEntities.wallets.length})
             </button>
-            <button 
+            <button
               className={`tab ${activeTab === 'banks' ? 'active' : ''}`}
               onClick={() => setActiveTab('banks')}
             >
               💳 Rekening Bank ({blockedEntities.banks.length})
             </button>
-            <button 
+            <button
               className={`tab ${activeTab === 'ids' ? 'active' : ''}`}
               onClick={() => setActiveTab('ids')}
             >
@@ -1726,8 +1726,8 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
                         <td>{w.dateAdded}</td>
                         <td style={{ fontSize: '0.82rem' }}>{w.reason}</td>
                         <td>
-                          <button 
-                            className="btn btn-ghost btn-sm" 
+                          <button
+                            className="btn btn-ghost btn-sm"
                             style={{ color: 'var(--status-danger)', border: 'none' }}
                             onClick={() => handleRemoveEntity(w.id, 'wallets')}
                           >
@@ -1762,8 +1762,8 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
                         <td>{b.dateAdded}</td>
                         <td style={{ fontSize: '0.82rem' }}>{b.reason}</td>
                         <td>
-                          <button 
-                            className="btn btn-ghost btn-sm" 
+                          <button
+                            className="btn btn-ghost btn-sm"
                             style={{ color: 'var(--status-danger)', border: 'none' }}
                             onClick={() => handleRemoveEntity(b.id, 'banks')}
                           >
@@ -1795,8 +1795,8 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
                         <td>{id.dateAdded}</td>
                         <td style={{ fontSize: '0.82rem' }}>{id.reason}</td>
                         <td>
-                          <button 
-                            className="btn btn-ghost btn-sm" 
+                          <button
+                            className="btn btn-ghost btn-sm"
                             style={{ color: 'var(--status-danger)', border: 'none' }}
                             onClick={() => handleRemoveEntity(id.id, 'ids')}
                           >
@@ -1823,9 +1823,9 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
                 <form onSubmit={handleAddWallet}>
                   <div style={{ marginBottom: 12 }}>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Alamat Wallet Crypto (Hex)</label>
-                    <input 
-                      type="text" 
-                      className="header-search" 
+                    <input
+                      type="text"
+                      className="header-search"
                       style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                       value={walletInput}
                       onChange={(e) => setWalletInput(e.target.value)}
@@ -1835,9 +1835,9 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
                   </div>
                   <div style={{ marginBottom: 20 }}>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Alasan / Indikasi Kasus</label>
-                    <input 
-                      type="text" 
-                      className="header-search" 
+                    <input
+                      type="text"
+                      className="header-search"
                       style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                       value={walletReason}
                       onChange={(e) => setWalletReason(e.target.value)}
@@ -1853,9 +1853,9 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
                 <form onSubmit={handleAddBank}>
                   <div style={{ marginBottom: 12 }}>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Nama Pemegang Rekening</label>
-                    <input 
-                      type="text" 
-                      className="header-search" 
+                    <input
+                      type="text"
+                      className="header-search"
                       style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                       value={bankHolderInput}
                       onChange={(e) => setBankHolderInput(e.target.value)}
@@ -1865,9 +1865,9 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
                   </div>
                   <div style={{ marginBottom: 12 }}>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Nomor Rekening Bank</label>
-                    <input 
-                      type="text" 
-                      className="header-search" 
+                    <input
+                      type="text"
+                      className="header-search"
                       style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                       value={bankAccountInput}
                       onChange={(e) => setBankAccountInput(e.target.value)}
@@ -1877,9 +1877,9 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
                   </div>
                   <div style={{ marginBottom: 20 }}>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Alasan Kasus</label>
-                    <input 
-                      type="text" 
-                      className="header-search" 
+                    <input
+                      type="text"
+                      className="header-search"
                       style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                       value={bankReason}
                       onChange={(e) => setBankReason(e.target.value)}
@@ -1895,9 +1895,9 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
                 <form onSubmit={handleAddId}>
                   <div style={{ marginBottom: 12 }}>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Nama Lengkap Sesuai KTP</label>
-                    <input 
-                      type="text" 
-                      className="header-search" 
+                    <input
+                      type="text"
+                      className="header-search"
                       style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                       value={idHolderInput}
                       onChange={(e) => setIdHolderInput(e.target.value)}
@@ -1907,9 +1907,9 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
                   </div>
                   <div style={{ marginBottom: 12 }}>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Nomor NIK / KTP Resmi (16 Digit)</label>
-                    <input 
-                      type="text" 
-                      className="header-search" 
+                    <input
+                      type="text"
+                      className="header-search"
                       style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                       value={idInput}
                       onChange={(e) => setIdInput(e.target.value)}
@@ -1919,9 +1919,9 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
                   </div>
                   <div style={{ marginBottom: 20 }}>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Catatan Fraud AML</label>
-                    <input 
-                      type="text" 
-                      className="header-search" 
+                    <input
+                      type="text"
+                      className="header-search"
                       style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                       value={idReason}
                       onChange={(e) => setIdReason(e.target.value)}
@@ -1979,10 +1979,10 @@ export function RulesView({ rules, setRules, addToast }) {
                 <span>Ambang Batas Pemblokiran Otomatis OJK</span>
                 <span style={{ color: 'var(--status-danger)', fontFamily: 'var(--font-mono)' }}>Skor {localThreshold}%</span>
               </div>
-              <input 
-                type="range" 
-                min="40" 
-                max="95" 
+              <input
+                type="range"
+                min="40"
+                max="95"
                 style={{ width: '100%', cursor: 'pointer' }}
                 value={localThreshold}
                 onChange={(e) => setLocalThreshold(parseInt(e.target.value))}
@@ -1993,9 +1993,9 @@ export function RulesView({ rules, setRules, addToast }) {
             {/* Rule 2: Daily limit amount */}
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>Batas Pengiriman Uang Harian ke Bursa Crypto</label>
-              <input 
-                type="number" 
-                className="header-search" 
+              <input
+                type="number"
+                className="header-search"
                 style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                 value={localLimit}
                 onChange={(e) => setLocalLimit(parseInt(e.target.value))}
@@ -2009,8 +2009,8 @@ export function RulesView({ rules, setRules, addToast }) {
                 <h5 style={{ fontSize: '0.85rem', fontWeight: 600 }}>Blokir Otomatis Skala Nasional</h5>
                 <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Gunakan audit real-time untuk mematikan alur transfer berisiko.</p>
               </div>
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 checked={localAutoBlock}
                 onChange={() => setLocalAutoBlock(!localAutoBlock)}
                 style={{ width: 18, height: 18, cursor: 'pointer' }}
@@ -2023,8 +2023,8 @@ export function RulesView({ rules, setRules, addToast }) {
                 <h5 style={{ fontSize: '0.85rem', fontWeight: 600 }}>Deteksi Structuring / Smurfing Pintar</h5>
                 <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Deteksi alur pemecahan dana di bawah Rp 100jt berulang.</p>
               </div>
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 checked={localSmurfing}
                 onChange={() => setLocalSmurfing(!localSmurfing)}
                 style={{ width: 18, height: 18, cursor: 'pointer' }}
@@ -2150,7 +2150,7 @@ export function ComplianceView({ addToast }) {
 
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Pilih Kategori Laporan</label>
-              <select 
+              <select
                 style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value)}
@@ -2161,8 +2161,8 @@ export function ComplianceView({ addToast }) {
               </select>
             </div>
 
-            <button 
-              className="btn btn-primary" 
+            <button
+              className="btn btn-primary"
               style={{ width: '100%', justifyContent: 'center' }}
               onClick={triggerAuditReport}
               disabled={loading}
@@ -2183,7 +2183,7 @@ export function SettingsView({ adminProfile, setAdminProfile, addToast }) {
   // Local profile states
   const [name, setName] = useState(adminProfile.name);
   const [role, setRole] = useState(adminProfile.role);
-  
+
   // Local toggles
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [autoRefreshSecs, setAutoRefreshSecs] = useState(3);
@@ -2218,9 +2218,9 @@ export function SettingsView({ adminProfile, setAdminProfile, addToast }) {
             <form onSubmit={handleSaveProfile}>
               <div style={{ marginBottom: 12 }}>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Nama Lengkap Regulator</label>
-                <input 
-                  type="text" 
-                  className="header-search" 
+                <input
+                  type="text"
+                  className="header-search"
                   style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -2231,9 +2231,9 @@ export function SettingsView({ adminProfile, setAdminProfile, addToast }) {
 
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Jabatan & Divisi OJK</label>
-                <input 
-                  type="text" 
-                  className="header-search" 
+                <input
+                  type="text"
+                  className="header-search"
                   style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
@@ -2261,7 +2261,7 @@ export function SettingsView({ adminProfile, setAdminProfile, addToast }) {
                 <h5 style={{ fontSize: '0.85rem', fontWeight: 600 }}>Efek Suara Sinyal Ancaman</h5>
                 <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Bunyikan alarm OJK otomatis jika structuring terdeteksi.</p>
               </div>
-              <button 
+              <button
                 type="button"
                 className="btn btn-ghost btn-sm"
                 onClick={() => {
@@ -2279,16 +2279,16 @@ export function SettingsView({ adminProfile, setAdminProfile, addToast }) {
                 <span>Interval Auto-refresh Realtime Ticker</span>
                 <span style={{ color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>{autoRefreshSecs} Detik</span>
               </div>
-              <input 
-                type="range" 
-                min="2" 
-                max="10" 
+              <input
+                type="range"
+                min="2"
+                max="10"
                 style={{ width: '100%', cursor: 'pointer' }}
                 value={autoRefreshSecs}
                 onChange={(e) => setAutoRefreshSecs(parseInt(e.target.value))}
               />
             </div>
-            
+
             <div style={{ background: 'var(--bg-input)', padding: 12, borderRadius: 8, fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
               <strong>🔑 KUNCI API DEV (MOCK):</strong>
               <code style={{ display: 'block', wordBreak: 'break-all', marginTop: 4, fontFamily: 'var(--font-mono)', color: 'var(--text-accent)' }}>
