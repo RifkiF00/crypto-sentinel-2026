@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart,
@@ -12,7 +11,6 @@ import {
 import { BarChart3 } from 'lucide-react';
 import { topBlockedPatterns } from '../data/mockData';
 import { useChartTheme } from '../hooks/useChartTheme';
-import { checkHealth, fetchBlockedPatterns } from '../services/api';
 
 function ChartTooltip({ active, payload, label, colors }) {
   if (!active || !payload) return null;
@@ -35,25 +33,7 @@ function ChartTooltip({ active, payload, label, colors }) {
 }
 
 export default function BlockedPatternsChart() {
-  const [data, setData] = useState(topBlockedPatterns);
   const chartTheme = useChartTheme();
-
-  useEffect(() => {
-    let active = true;
-    async function loadPatterns() {
-      try {
-        const online = await checkHealth();
-        if (!active) return;
-        if (online) {
-          const res = await fetchBlockedPatterns();
-          if (active) setData(res);
-        }
-      } catch (e) {
-        console.error("Failed to load blocked patterns:", e);
-      }
-    }
-    loadPatterns();
-  }, []);
 
   return (
     <motion.div
@@ -73,7 +53,7 @@ export default function BlockedPatternsChart() {
         <div className="chart-container">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={data}
+              data={topBlockedPatterns}
               layout="vertical"
               margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
             >
@@ -107,4 +87,3 @@ export default function BlockedPatternsChart() {
     </motion.div>
   );
 }
-

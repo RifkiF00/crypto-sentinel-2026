@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   AreaChart,
@@ -13,7 +13,6 @@ import {
 import { TrendingUp } from 'lucide-react';
 import { transactionTrend } from '../data/mockData';
 import { useChartTheme } from '../hooks/useChartTheme';
-import { checkHealth, fetchTransactionTrend } from '../services/api';
 
 function ChartTooltip({ active, payload, label, colors }) {
   if (!active || !payload) return null;
@@ -59,41 +58,7 @@ function ChartTooltip({ active, payload, label, colors }) {
 
 export default function TransactionChart() {
   const [timeRange, setTimeRange] = useState('30d');
-  const [trendData, setTrendData] = useState(transactionTrend);
   const chartTheme = useChartTheme();
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadTrend() {
-      try {
-        const online = await checkHealth();
-        if (!active) return;
-        if (online) {
-          const daysLimit = timeRange === '7d' ? 7 : timeRange === '14d' ? 14 : 30;
-          const res = await fetchTransactionTrend();
-          if (active) {
-            // Take last N days from response
-            setTrendData(res.slice(-daysLimit));
-          }
-        } else {
-          if (active) {
-            const daysLimit = timeRange === '7d' ? 7 : timeRange === '14d' ? 14 : 15;
-            setTrendData(transactionTrend.slice(-daysLimit));
-          }
-        }
-      } catch (e) {
-        console.error("Failed to load transaction trend:", e);
-      }
-    }
-
-    loadTrend();
-    const interval = setInterval(loadTrend, 6000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [timeRange]);
 
   return (
     <motion.div
@@ -123,7 +88,7 @@ export default function TransactionChart() {
       <div className="card-body">
         <div className="chart-container large">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <AreaChart data={transactionTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="gradientApproved" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
@@ -183,4 +148,3 @@ export default function TransactionChart() {
     </motion.div>
   );
 }
-

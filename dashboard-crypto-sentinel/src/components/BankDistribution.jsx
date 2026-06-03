@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart,
@@ -13,7 +12,6 @@ import {
 import { Building2 } from 'lucide-react';
 import { bankDistribution } from '../data/mockData';
 import { useChartTheme } from '../hooks/useChartTheme';
-import { checkHealth, fetchBankDistribution } from '../services/api';
 
 function ChartTooltip({ active, payload, label, colors }) {
   if (!active || !payload) return null;
@@ -41,26 +39,8 @@ function ChartTooltip({ active, payload, label, colors }) {
   );
 }
 
-export default function BankDistributionChart() {
-  const [data, setData] = useState(bankDistribution);
+export default function BankDistribution() {
   const chartTheme = useChartTheme();
-
-  useEffect(() => {
-    let active = true;
-    async function loadBanks() {
-      try {
-        const online = await checkHealth();
-        if (!active) return;
-        if (online) {
-          const res = await fetchBankDistribution();
-          if (active) setData(res);
-        }
-      } catch (e) {
-        console.error("Failed to load bank distribution:", e);
-      }
-    }
-    loadBanks();
-  }, []);
 
   return (
     <motion.div
@@ -79,7 +59,7 @@ export default function BankDistributionChart() {
       <div className="card-body">
         <div className="chart-container">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <BarChart data={bankDistribution} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
               <XAxis
                 dataKey="bank"
@@ -104,4 +84,3 @@ export default function BankDistributionChart() {
     </motion.div>
   );
 }
-

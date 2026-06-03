@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart,
@@ -13,7 +12,6 @@ import {
 import { Clock } from 'lucide-react';
 import { hourlyActivity } from '../data/mockData';
 import { useChartTheme } from '../hooks/useChartTheme';
-import { checkHealth, fetchHourlyActivity } from '../services/api';
 
 function ChartTooltip({ active, payload, label, colors }) {
   if (!active || !payload) return null;
@@ -36,27 +34,7 @@ function ChartTooltip({ active, payload, label, colors }) {
 }
 
 export default function HourlyActivityChart() {
-  const [data, setData] = useState(hourlyActivity);
   const chartTheme = useChartTheme();
-
-  useEffect(() => {
-    let active = true;
-    async function loadHourly() {
-      try {
-        const online = await checkHealth();
-        if (!active) return;
-        if (online) {
-          const res = await fetchHourlyActivity();
-          if (active) setData(res);
-        }
-      } catch (e) {
-        console.error("Failed to load hourly activity:", e);
-      }
-    }
-    loadHourly();
-  }, []);
-
-  const maxVal = Math.max(...data.map(d => d.count), 1);
 
   return (
     <motion.div
@@ -75,7 +53,7 @@ export default function HourlyActivityChart() {
       <div className="card-body">
         <div className="chart-container small">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+            <BarChart data={hourlyActivity} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
               <XAxis
                 dataKey="hour"
@@ -91,10 +69,10 @@ export default function HourlyActivityChart() {
               />
               <Tooltip content={<ChartTooltip colors={chartTheme.tooltip} />} cursor={{ fill: chartTheme.cursor }} />
               <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={12}>
-                {data.map((entry, index) => (
+                {hourlyActivity.map((entry, index) => (
                   <Cell
                     key={index}
-                    fill={entry.count > maxVal * 0.7 ? '#6366f1' : entry.count > maxVal * 0.4 ? '#818cf8' : 'rgba(99,102,241,0.35)'}
+                    fill={entry.count > 300 ? '#6366f1' : entry.count > 150 ? '#818cf8' : 'rgba(99,102,241,0.35)'}
                   />
                 ))}
               </Bar>
@@ -105,4 +83,3 @@ export default function HourlyActivityChart() {
     </motion.div>
   );
 }
-
