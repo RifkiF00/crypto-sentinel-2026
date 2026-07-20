@@ -162,7 +162,7 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
                       <th>TXID / Waktu</th>
                       <th>Nasabah</th>
                       <th>Asal Rekening</th>
-                      <th>Tujuan Kripto</th>
+                      <th>Rekening / Exchange Tujuan</th>
                       <th>Nominal</th>
                       <th>Skor Risiko</th>
                       <th>Status</th>
@@ -179,7 +179,7 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
                         <td>{txn.senderBank} ({txn.senderAccount})</td>
                         <td>
                           <div style={{ fontWeight: 600 }}>{txn.destination}</div>
-                          <div className="wallet-address">{txn.walletAddress || 'N/A'}</div>
+                          {txn.walletAddress && <div className="wallet-address">{txn.walletAddress}</div>}
                         </td>
                         <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{formatCurrency(txn.amount)}</td>
                         <td>

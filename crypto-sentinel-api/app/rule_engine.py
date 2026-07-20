@@ -24,15 +24,19 @@ def evaluate_transaction(transaction: Any, threat_df: pd.DataFrame, sender_profi
     reasons: list[str] = []
     threat_match: dict[str, Any] | None = None
 
-    # 1. Behavioral: High-risk type check
-    if transaction.type in HIGH_RISK_TYPES:
-        risk_score += 30
-        reasons.append("High-risk transaction type")
+    # 1. Behavioral: High-risk type & destination check
+    is_crypto_or_threat = transaction.destinationAccount.startswith("C") or "exchange" in transaction.destinationAccount.lower()
+    is_sesama_bank = not is_crypto_or_threat and len(transaction.destinationAccount) == 10
 
-    # 2. Behavioral: High-risk amount check
-    if transaction.amount > HIGH_RISK_AMOUNT:
-        risk_score += 25
-        reasons.append("High transaction amount")
+    if not is_sesama_bank:
+        risk_score += 25 if is_crypto_or_threat else 15
+        reasons.append("External / High-risk transaction channel")
+
+    # 2. Behavioral: High-risk amount check (> 10M for Sesama Bank, > 5M for External/Crypto)
+    threshold = 10_000_000 if is_sesama_bank else 5_000_000
+    if transaction.amount > threshold:
+        risk_score += 35
+        reasons.append(f"High transaction amount (> Rp {threshold:,.0f})")
 
     # 3. Behavioral: Balance Drained check
     if transaction.oldbalanceOrg > 0 and transaction.newbalanceOrig == 0:
@@ -45,9 +49,11 @@ def evaluate_transaction(transaction: Any, threat_df: pd.DataFrame, sender_profi
             risk_score += 20
             reasons.append("Device ID changed suddenly (Device Anomaly)")
 
-    # 5. Technical: Impossible Travel / Geolocation Anomaly check
-    if sender_profile and getattr(transaction, "ip_address", None) and sender_profile.get("registered_ip"):
-        if transaction.ip_address != sender_profile["registered_ip"]:
+    # 5. Technical: IP Geolocation Anomaly check (ignore local Wi-Fi subnets 192.168.x.x / 127.0.0.1)
+    ip_addr = str(getattr(transaction, "ip_address", ""))
+    is_local_ip = ip_addr.startswith("192.168.") or ip_addr.startswith("127.0.0.1") or ip_addr.startswith("172.")
+    if sender_profile and ip_addr and sender_profile.get("registered_ip") and not is_local_ip:
+        if ip_addr != sender_profile["registered_ip"]:
             risk_score += 25
             reasons.append("Impossible travel detected (IP Geolocation Anomaly)")
 

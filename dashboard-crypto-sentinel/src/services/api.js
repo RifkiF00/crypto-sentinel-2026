@@ -46,16 +46,40 @@ export function mapApiLogToTx(log) {
     formattedTime = formattedTime.replace('T', ' ').substring(0, 19);
   }
 
+  const destAcc = txn.destinationAccount || '';
+  const isCrypto = destAcc.startsWith('C') || destAcc.toLowerCase().includes('exchange') || destAcc.toLowerCase().includes('mule');
+
+  let senderName = log.senderName || 'Billy Jonathan';
+  let senderBank = log.senderBank || 'Bank Kuningan';
+  let senderAccount = log.senderAccount || '1234567890';
+
+  if (senderAccount === '1234567890') {
+    senderName = 'Billy Jonathan';
+    senderBank = 'Bank Kuningan';
+  } else if (senderAccount === '9876543210') {
+    senderName = 'Siti Rahma';
+    senderBank = 'Bank Kuningan';
+  }
+
+  let destDisplay = log.destinationName ? `${log.destinationName} (${log.destinationBank || 'Bank Kuningan'})` : destAcc;
+  if (destAcc === '9876543210' || destAcc === '098765432100') {
+    destDisplay = 'Siti Rahma (Bank Kuningan)';
+  } else if (destAcc === 'C666666666') {
+    destDisplay = 'Indodax Mule Account (Indodax)';
+  } else if (destAcc === 'C123456789') {
+    destDisplay = 'Binance Exchange Account (Binance)';
+  }
+
   return {
     id: log.transaction_id || `TXN-${Math.floor(10000 + Math.random() * 90000)}`,
     timestamp: formattedTime || new Date().toISOString().replace('T', ' ').substring(0, 19),
-    senderName: log.senderName || 'Nasabah Uji',
-    senderAccount: log.senderAccount || `****${Math.floor(1000 + Math.random() * 9000)}`,
-    senderBank: log.senderBank || ['BCA', 'Mandiri', 'BNI', 'BRI'][Math.floor(Math.random() * 4)],
+    senderName: senderName,
+    senderAccount: senderAccount,
+    senderBank: senderBank,
     amount: txn.amount,
-    destinationType: 'Crypto Exchange',
-    destination: txn.destinationAccount,
-    walletAddress: log.walletAddress || `0x${Math.random().toString(16).substr(2, 40)}`,
+    destinationType: isCrypto ? 'Crypto Exchange' : 'Transfer Bank',
+    destination: destDisplay,
+    walletAddress: isCrypto ? (log.walletAddress || `0x${Math.random().toString(16).substr(2, 40)}`) : null,
     riskScore: log.risk_score,
     status: status,
     reason: log.reasons && log.reasons.length > 0 ? log.reasons.join(', ') : null,
@@ -294,9 +318,9 @@ export async function analyzeTransaction(senderName, amount, exchange, deviceId 
   const data = await response.json();
 
   // Inject fallback metadata for frontend mapping if missing
-  data.senderName = data.senderName || senderName;
-  data.senderAccount = data.senderAccount ? `****${data.senderAccount.slice(-4)}` : `****${Math.floor(1000 + Math.random() * 9000)}`;
-  data.senderBank = ['BCA', 'Mandiri', 'BNI', 'BRI'][Math.floor(Math.random() * 4)];
+  data.senderName = data.senderName || senderName || 'Billy Jonathan';
+  data.senderAccount = data.senderAccount || '1234567890';
+  data.senderBank = 'Bank Kuningan';
   data.walletAddress = `0x${Math.random().toString(16).substr(2, 40)}`;
 
   return data;

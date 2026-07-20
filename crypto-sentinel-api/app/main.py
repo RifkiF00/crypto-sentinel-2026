@@ -41,7 +41,35 @@ df = pd.read_csv(BASE_DIR / "data" / "paysim_sample.csv")
 threat_df = pd.read_csv(BASE_DIR / "data" / "threat_intel.csv")
 demo_df = pd.read_csv(BASE_DIR / "data" / "demo_transactions.csv")
 
+KNOWN_NAMES = {
+    "1234567890": "Billy Jonathan",
+    "0123456789": "Rifki Firmansyah",
+    "1122334455": "Desta Erlangga",
+    "5544332211": "Aam Setiana",
+    "9876543210": "Siti Rahma",
+    "C666666666": "Indodax Mule Account",
+    "C999999999": "Tokocrypto Mixer Account",
+    "C123456789": "Binance Exchange Account",
+    "C777777777": "Indodax Fraud Receiver",
+    "C888888888": "Pintu Layering Account",
+}
+
+KNOWN_BANKS = {
+    "1234567890": "Bank Kuningan",
+    "0123456789": "Bank Kuningan",
+    "1122334455": "Bank Kuningan",
+    "5544332211": "Bank Kuningan",
+    "9876543210": "Bank Kuningan",
+    "C666666666": "Indodax",
+    "C999999999": "Tokocrypto",
+    "C123456789": "Binance",
+    "C777777777": "Indodax",
+    "C888888888": "Pintu",
+}
+
 def get_bank_for_account(acc_num: str) -> str:
+    if acc_num in KNOWN_BANKS:
+        return KNOWN_BANKS[acc_num]
     banks = ["BCA", "Mandiri", "BRI", "BNI", "CIMB"]
     h = int(hashlib.md5(acc_num.encode()).hexdigest(), 16)
     return banks[h % len(banks)]
@@ -52,6 +80,8 @@ def get_exchange_for_account(acc_num: str) -> str:
     return exchanges[h % len(exchanges)]
 
 def get_name_for_account(acc_num: str) -> str:
+    if acc_num in KNOWN_NAMES:
+        return KNOWN_NAMES[acc_num]
     first_names = ["Hendra", "Budi", "Dewi", "Rizky", "Siti", "Maria", "Andi", "Taufik", "Aditya", "Rina"]
     last_names = ["Wijaya", "Santoso", "Cahyani", "Hidayat", "Nurhaliza", "Kusuma", "Prasetyo", "Saputra", "Wulandari", "Setiawan"]
     h = int(hashlib.md5(acc_num.encode()).hexdigest(), 16)

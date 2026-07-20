@@ -40,9 +40,9 @@ class QuickActionModel {
 class MockData {
   MockData._();
 
-  // Data Pengguna
-  static const String userName = 'Budi Santoso';
-  static const String accountNumber = '1234-5678-9012';
+  // Data Pengguna (Billy Jonathan - Rekening Core Banking Bank Kuningan)
+  static const String userName = 'Billy Jonathan';
+  static const String accountNumber = '1234-5678-90';
   static const String accountBalance = 'Rp 24.550.000';
 
   // Daftar 8 Aksi Cepat (Quick Actions Menu)

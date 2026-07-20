@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, String, JSON
+from sqlalchemy import create_engine, Column, String, JSON, Integer
 from sqlalchemy import BigInteger, Boolean, Float, Text, TIMESTAMP, func
 from sqlalchemy.orm import declarative_base
 import os
@@ -46,7 +46,7 @@ class Transaction(Base):
 
 class SentinelAlert(Base):
     __tablename__ = "sentinel_alerts"
-    alert_id        = Column(BigInteger, primary_key=True, autoincrement=True)
+    alert_id        = Column(Integer, primary_key=True, autoincrement=True)
     transaction_id  = Column(String(30))
     risk_score      = Column(Float)
     indicators_json = Column(JSON)
@@ -58,7 +58,7 @@ class SentinelAlert(Base):
 class STRDraft(Base):
     __tablename__ = "str_drafts"
     str_id        = Column(String(30), primary_key=True)
-    alert_id      = Column(BigInteger)
+    alert_id      = Column(Integer)
     summary_text  = Column(Text)
     risk_factors  = Column(JSON)
     status        = Column(String(20), default='DRAFT')  # DRAFT | REVIEWED | SENT

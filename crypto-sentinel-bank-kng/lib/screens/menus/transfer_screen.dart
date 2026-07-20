@@ -7,7 +7,7 @@ import '../../widgets/pin_confirmation_modal.dart';
 import '../../data/api_service.dart';
 import 'receipt_screen.dart';
 
-/// Halaman Fungsional Transfer Uang (Sesama Bank Kuningan, Bank Lain, Daftar Favorit)
+/// Halaman Fungsional Transfer Uang M-Banking Bank Kuningan (Multi-Step Verification)
 class TransferScreen extends StatefulWidget {
   const TransferScreen({super.key});
 
@@ -20,9 +20,14 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
   final TextEditingController _accountController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
-  String _selectedTransferMethod = 'BI-FAST'; // Pilihan: 'BI-FAST' atau 'RTOL'
 
+  String _selectedTransferMethod = 'BI-FAST';
   String _selectedBank = 'Bank Central Asia (BCA)';
+
+  bool _isAccountVerified = false;
+  String _verifiedName = '';
+  bool _isVerifying = false;
+
   final List<String> _banks = [
     'Bank Central Asia (BCA)',
     'Bank Mandiri',
@@ -34,9 +39,9 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
   ];
 
   final List<Map<String, String>> _favorites = [
-    {'name': 'Siti Rahma', 'account': '0987-6543-2100', 'bank': 'Bank Kuningan'},
-    {'name': 'PT Maju Bersama', 'account': '8899-7766-5544', 'bank': 'Bank Mandiri'},
-    {'name': 'Budi Raharjo', 'account': '1122-3344-5566', 'bank': 'BCA'},
+    {'name': 'Siti Rahma', 'account': '9876543210', 'bank': 'Bank Kuningan'},
+    {'name': 'Indodax Mule Account', 'account': 'C666666666', 'bank': 'Indodax'},
+    {'name': 'Binance Exchange Account', 'account': 'C123456789', 'bank': 'BCA'},
   ];
 
   @override
@@ -54,6 +59,53 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     super.dispose();
   }
 
+  void _verifyAccount() {
+    final raw = _accountController.text.trim();
+    final acc = raw.replaceAll(RegExp(r'[^0-9A-Za-z]'), '');
+
+    if (raw.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Harap masukkan nomor rekening tujuan'),
+          backgroundColor: AppColors.accentRed,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isVerifying = true);
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      String name = 'Nasabah Terverifikasi';
+
+      if (acc == '9876543210' || acc == '098765432100') {
+        name = 'Siti Rahma';
+      } else if (acc == '1234567890') {
+        name = 'Billy Jonathan';
+      } else if (acc == '0123456789') {
+        name = 'Rifki Firmansyah';
+      } else if (acc.toUpperCase() == 'C666666666' || acc.toUpperCase().contains('C666')) {
+        name = 'Indodax Mule Account (High Risk)';
+      } else if (acc.toUpperCase() == 'C999999999' || acc.toUpperCase().contains('C999')) {
+        name = 'Tokocrypto Mixer Account';
+      } else if (acc.toUpperCase() == 'C123456789' || acc.toUpperCase().contains('C123')) {
+        name = 'Binance Exchange Account';
+      } else if (acc.toUpperCase() == 'C777777777' || acc.toUpperCase().contains('C777')) {
+        name = 'Indodax Fraud Receiver';
+      } else {
+        name = 'Rekening ${_accountController.text} (${_tabController.index == 0 ? "Bank Kuningan" : _selectedBank})';
+      }
+
+      if (mounted) {
+        setState(() {
+          _isVerifying = false;
+          _isAccountVerified = true;
+          _verifiedName = name;
+        });
+      }
+    });
+  }
+
   void _selectQuickAmount(String amount) {
     setState(() {
       _amountController.text = amount;
@@ -69,16 +121,22 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
         _selectedBank = fav['bank'] ?? 'Bank Central Asia (BCA)';
       }
       _accountController.text = fav['account'] ?? '';
+      _isAccountVerified = true;
+      _verifiedName = fav['name'] ?? 'Siti Rahma';
     });
   }
 
   void _handleTransfer() {
-    if (_accountController.text.trim().isEmpty || _amountController.text.trim().isEmpty) {
+    if (!_isAccountVerified) {
+      _verifyAccount();
+      return;
+    }
+
+    if (_amountController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Harap masukkan nomor rekening dan nominal transfer'),
+          content: Text('Harap masukkan nominal transfer'),
           backgroundColor: AppColors.accentRed,
-          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
@@ -94,10 +152,9 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     PinConfirmationModal.show(
       context,
       title: 'Konfirmasi Transfer',
-      recipientText: '$bankName • ${_accountController.text}',
+      recipientText: '$_verifiedName • $bankName',
       amountText: totalAmountText,
       onPinSuccess: () async {
-        // Tampilkan loading dialog
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -118,16 +175,19 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
           ),
         );
 
-        // Panggil API Backend Expresso Core Banking (8080) & Crypto-Sentinel (8000)
+        String sanitizedReceiver = _accountController.text.trim().replaceAll(RegExp(r'[^0-9A-Za-z]'), '');
+        if (sanitizedReceiver == '098765432100') {
+          sanitizedReceiver = '9876543210';
+        }
+
         final result = await BankKuninganApiService.sendTransfer(
-          senderAccount: '4521880292', // Rekening Budi Santoso di Core Banking
-          receiverAccount: _accountController.text.trim(),
+          senderAccount: '1234567890', // Rekening Billy Jonathan di Core Banking
+          receiverAccount: sanitizedReceiver,
           amount: amountInt > 0 ? amountInt : 100000,
           method: _selectedTransferMethod,
           description: _noteController.text.isEmpty ? 'Transfer $bankName' : _noteController.text,
         );
 
-        // Tutup Dialog Loading
         if (mounted) Navigator.of(context).pop();
 
         if (result['success'] == true) {
@@ -138,7 +198,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
               MaterialPageRoute(
                 builder: (context) => ReceiptScreen(
                   title: 'Transfer $bankName',
-                  recipientName: 'Penerima: ${_accountController.text}',
+                  recipientName: 'Penerima: $_verifiedName',
                   recipientDetail: '$bankName (${_noteController.text.isEmpty ? "Transfer Dana" : _noteController.text})',
                   amount: amountText,
                   adminFee: adminFee,
@@ -150,7 +210,6 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
             );
           }
         } else {
-          // TAMPILKAN DIALOG ANCAMAN KETIKA CRYPTO-SENTINEL MEMBLOKIR TRANSAKSI
           final isBlocked = result['isBlocked'] == true || result['status'] == 'BLOCK';
           if (mounted) {
             showDialog(
@@ -218,39 +277,10 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildPillLogo(String assetPath, String fallbackText, {double height = 24}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withOpacity(0.8)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Image.asset(
-        assetPath,
-        height: height,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => Text(
-          fallbackText,
-          style: AppTextStyles.textTheme.labelSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.primaryDark,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNetworkLogo(String assetPath, String fallbackText, {double height = 24}) {
-    return _buildPillLogo(assetPath, fallbackText, height: height);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Transfer Uang'),
         bottom: TabBar(
@@ -298,7 +328,12 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
                   value: _selectedBank,
                   icon: const Icon(CupertinoIcons.chevron_down, size: 18, color: AppColors.primary),
                   onChanged: (val) {
-                    if (val != null) setState(() => _selectedBank = val);
+                    if (val != null) {
+                      setState(() {
+                        _selectedBank = val;
+                        _isAccountVerified = false;
+                      });
+                    }
                   },
                   items: _banks.map((bank) {
                     return DropdownMenuItem<String>(
@@ -312,93 +347,77 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
             const SizedBox(height: 18),
           ],
 
-          CustomTextField(
-            label: isSesama ? 'Nomor Rekening Bank Kuningan' : 'Nomor Rekening Tujuan',
-            hint: 'Masukkan 10-12 digit nomor rekening',
-            prefixIcon: CupertinoIcons.creditcard_fill,
-            controller: _accountController,
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 18),
-
-          CustomTextField(
-            label: 'Nominal Transfer (Rp)',
-            hint: 'Masukkan nominal transfer',
-            prefixIcon: CupertinoIcons.money_dollar_circle_fill,
-            controller: _amountController,
-            keyboardType: TextInputType.number,
-            inputFormatters: [RupiahInputFormatter()],
-          ),
-          const SizedBox(height: 12),
-
-          // Pilihan Nominal Cepat
-          Text('Pilihan Cepat', style: AppTextStyles.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)),
-          const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: ['50.000', '100.000', '250.000', '500.000', '1.000.000'].map((amt) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ActionChip(
-                    label: Text('Rp $amt', style: AppTextStyles.textTheme.labelSmall?.copyWith(color: AppColors.primary)),
-                    backgroundColor: AppColors.primary.withOpacity(0.08),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    onPressed: () => _selectQuickAmount(amt),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: CustomTextField(
+                  label: isSesama ? 'Nomor Rekening Bank Kuningan' : 'Nomor Rekening Tujuan',
+                  hint: 'Masukkan nomor rekening',
+                  prefixIcon: CupertinoIcons.creditcard_fill,
+                  controller: _accountController,
+                  keyboardType: TextInputType.text,
+                  onChanged: (val) {
+                    if (_isAccountVerified) {
+                      setState(() => _isAccountVerified = false);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: _isVerifying ? null : _verifyAccount,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                   ),
-                );
-              }).toList(),
-            ),
+                  child: _isVerifying
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Cek', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
 
-          CustomTextField(
-            label: 'Catatan Transfer (Opsional)',
-            hint: 'Masukkan catatan transfer (opsional)',
-            prefixIcon: CupertinoIcons.doc_text_fill,
-            controller: _noteController,
-          ),
-          const SizedBox(height: 24),
-
-          if (isSesama) ...[
-            // Info Biaya Admin Sesama Bank
+          if (_isAccountVerified) ...[
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.accentGreen.withOpacity(0.08),
+                color: AppColors.primary.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.accentGreen.withOpacity(0.3), width: 1.2),
+                border: Border.all(color: AppColors.primary.withOpacity(0.4), width: 1.2),
               ),
               child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentGreen.withOpacity(0.15),
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.accentGreen, size: 22),
+                    child: const Icon(CupertinoIcons.checkmark_alt, color: Colors.white, size: 20),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Biaya Admin Bank',
-                          style: AppTextStyles.textTheme.labelSmall?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
+                        const Text(
+                          'IDENTITAS PENERIMA TERVERIFIKASI',
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary, letterSpacing: 0.8),
                         ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 2),
                         Text(
-                          'GRATIS (Tanpa Biaya)',
-                          style: AppTextStyles.textTheme.titleSmall?.copyWith(
-                            color: AppColors.accentGreen,
-                            fontWeight: FontWeight.w800,
-                          ),
+                          _verifiedName,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                        ),
+                        Text(
+                          '${isSesama ? "Bank Kuningan" : _selectedBank} • ${_accountController.text}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -406,178 +425,63 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
                 ],
               ),
             ),
-          ] else ...[
-            // Pilihan Metode Transfer Bank Lain (2 Pilihan: BI-FAST & RTOL)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Pilih Metode Transfer', style: AppTextStyles.textTheme.labelLarge),
-                Text(
-                  '2 Layanan Tersedia',
-                  style: AppTextStyles.textTheme.labelSmall?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            
-            // Pilihan 1: BI-FAST (Lebih Rapi & Eksklusif)
-            GestureDetector(
-              onTap: () => setState(() => _selectedTransferMethod = 'BI-FAST'),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: _selectedTransferMethod == 'BI-FAST'
-                      ? AppColors.primary.withOpacity(0.06)
-                      : AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _selectedTransferMethod == 'BI-FAST'
-                        ? AppColors.primary
-                        : AppColors.border.withOpacity(0.8),
-                    width: _selectedTransferMethod == 'BI-FAST' ? 1.8 : 1.0,
-                  ),
-                  boxShadow: _selectedTransferMethod == 'BI-FAST'
-                      ? [BoxShadow(color: AppColors.primary.withOpacity(0.12), blurRadius: 8, offset: const Offset(0, 3))]
-                      : [],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: _selectedTransferMethod == 'BI-FAST'
-                            ? AppColors.primary.withOpacity(0.15)
-                            : AppColors.border.withOpacity(0.3),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _selectedTransferMethod == 'BI-FAST'
-                            ? CupertinoIcons.checkmark_alt
-                            : CupertinoIcons.arrow_right_arrow_left,
-                        color: _selectedTransferMethod == 'BI-FAST'
-                            ? AppColors.primary
-                            : AppColors.textSecondary,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'BI-FAST',
-                                style: AppTextStyles.textTheme.titleSmall?.copyWith(
-                                  color: AppColors.primaryDark,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryLight.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 0.8),
-                                ),
-                                child: Text(
-                                  'Powered By APEX BANK BJB',
-                                  style: AppTextStyles.textTheme.labelSmall?.copyWith(
-                                    color: AppColors.primaryDark,
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w800,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            'Transfer cepat antarbank 24 jam non-stop',
-                            style: AppTextStyles.textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                              fontSize: 11.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Rp 2.500',
-                          style: AppTextStyles.textTheme.titleSmall?.copyWith(
-                            color: AppColors.primaryDark,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Icon(
-                          _selectedTransferMethod == 'BI-FAST'
-                              ? CupertinoIcons.check_mark_circled_solid
-                              : CupertinoIcons.circle,
-                          color: _selectedTransferMethod == 'BI-FAST'
-                              ? AppColors.primary
-                              : AppColors.border,
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+            const SizedBox(height: 20),
+
+            CustomTextField(
+              label: 'Nominal Transfer (Rp)',
+              hint: 'Masukkan nominal transfer',
+              prefixIcon: CupertinoIcons.money_dollar_circle_fill,
+              controller: _amountController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [RupiahInputFormatter()],
             ),
             const SizedBox(height: 12),
 
-            // Pilihan 2: Transfer Online - RTOL (Lebih Rapi & Eksklusif)
-            GestureDetector(
-              onTap: () => setState(() => _selectedTransferMethod = 'RTOL'),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(16),
+            Text('Pilihan Cepat', style: AppTextStyles.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: ['50.000', '100.000', '250.000', '500.000', '1.000.000'].map((amt) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ActionChip(
+                      label: Text('Rp $amt', style: AppTextStyles.textTheme.labelSmall?.copyWith(color: AppColors.primary)),
+                      backgroundColor: AppColors.primary.withOpacity(0.08),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      onPressed: () => _selectQuickAmount(amt),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            CustomTextField(
+              label: 'Catatan Transfer (Opsional)',
+              hint: 'Masukkan catatan transfer (opsional)',
+              prefixIcon: CupertinoIcons.doc_text_fill,
+              controller: _noteController,
+            ),
+            const SizedBox(height: 24),
+
+            if (isSesama) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                 decoration: BoxDecoration(
-                  color: _selectedTransferMethod == 'RTOL'
-                      ? AppColors.primary.withOpacity(0.06)
-                      : AppColors.surface,
+                  color: AppColors.accentGreen.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _selectedTransferMethod == 'RTOL'
-                        ? AppColors.primary
-                        : AppColors.border.withOpacity(0.8),
-                    width: _selectedTransferMethod == 'RTOL' ? 1.8 : 1.0,
-                  ),
-                  boxShadow: _selectedTransferMethod == 'RTOL'
-                      ? [BoxShadow(color: AppColors.primary.withOpacity(0.12), blurRadius: 8, offset: const Offset(0, 3))]
-                      : [],
+                  border: Border.all(color: AppColors.accentGreen.withOpacity(0.3), width: 1.2),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: _selectedTransferMethod == 'RTOL'
-                            ? AppColors.primary.withOpacity(0.15)
-                            : AppColors.border.withOpacity(0.3),
+                        color: AppColors.accentGreen.withOpacity(0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        _selectedTransferMethod == 'RTOL'
-                            ? CupertinoIcons.checkmark_alt
-                            : CupertinoIcons.bolt_horizontal_circle_fill,
-                        color: _selectedTransferMethod == 'RTOL'
-                            ? AppColors.primary
-                            : AppColors.textSecondary,
-                        size: 18,
-                      ),
+                      child: const Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.accentGreen, size: 22),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -585,144 +489,213 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Transfer Online (RTOL)',
-                            style: AppTextStyles.textTheme.titleSmall?.copyWith(
-                              color: AppColors.primaryDark,
-                              fontWeight: FontWeight.w800,
+                            'Biaya Admin Bank',
+                            style: AppTextStyles.textTheme.labelSmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
                             ),
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'Instan via ALTO, ATM Bersama & PRIMA',
-                            style: AppTextStyles.textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                              fontSize: 11.5,
+                            'GRATIS (Tanpa Biaya)',
+                            style: AppTextStyles.textTheme.titleSmall?.copyWith(
+                              color: AppColors.accentGreen,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Rp 6.500',
-                          style: AppTextStyles.textTheme.titleSmall?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Icon(
-                          _selectedTransferMethod == 'RTOL'
-                              ? CupertinoIcons.check_mark_circled_solid
-                              : CupertinoIcons.circle,
-                          color: _selectedTransferMethod == 'RTOL'
-                              ? AppColors.primary
-                              : AppColors.border,
-                          size: 20,
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
-            ),
-          ],
-          const SizedBox(height: 28),
-
-          ElevatedButton(
-            onPressed: _handleTransfer,
-            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 18)),
-            child: const Text('Lanjutkan Transfer'),
-          ),
-          const SizedBox(height: 32),
-
-          // Jaringan Transfer (ALTO, ATM Bersama, PRIMA) & Powered by Bank bjb
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: AppColors.border, width: 1.2),
-              boxShadow: [
-                BoxShadow(color: AppColors.shadow.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 6)),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.primary, size: 16),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        'Mendukung Jaringan Transfer Real-Time Online (RTOL)',
-                        style: AppTextStyles.textTheme.labelSmall?.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.2,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+            ] else ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Pilih Metode Transfer', style: AppTextStyles.textTheme.labelLarge),
+                  Text(
+                    '2 Layanan Tersedia',
+                    style: AppTextStyles.textTheme.labelSmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Deretan Logo Jaringan dalam Badge Putih Bersih
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildPillLogo('assets/images/alto-logo.png', 'ALTO', height: 24),
-                    const SizedBox(width: 12),
-                    _buildPillLogo('assets/images/atm-bersama-logo.png', 'ATM Bersama', height: 26),
-                    const SizedBox(width: 12),
-                    _buildPillLogo('assets/images/prima-logo.png', 'PRIMA', height: 24),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                Divider(color: AppColors.border.withOpacity(0.7), height: 1),
-                const SizedBox(height: 16),
-                // Powered by bank bjb dalam Badge Rapi
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              
+              GestureDetector(
+                onTap: () => setState(() => _selectedTransferMethod = 'BI-FAST'),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.border.withOpacity(0.8)),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6),
-                    ],
+                    color: _selectedTransferMethod == 'BI-FAST'
+                        ? AppColors.primary.withOpacity(0.06)
+                        : AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _selectedTransferMethod == 'BI-FAST'
+                          ? AppColors.primary
+                          : AppColors.border.withOpacity(0.8),
+                      width: _selectedTransferMethod == 'BI-FAST' ? 1.8 : 1.0,
+                    ),
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        'Powered by',
-                        style: AppTextStyles.textTheme.labelMedium?.copyWith(
-                          color: AppColors.primaryDark,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.4,
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _selectedTransferMethod == 'BI-FAST'
+                              ? AppColors.primary.withOpacity(0.15)
+                              : AppColors.border.withOpacity(0.3),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          CupertinoIcons.bolt_fill,
+                          size: 20,
+                          color: _selectedTransferMethod == 'BI-FAST' ? AppColors.primary : AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Image.asset(
-                        'assets/images/bjb-logo.png',
-                        height: 24,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => Text(
-                          'bank bjb',
-                          style: AppTextStyles.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'BI-FAST (Rekomendasi)',
+                              style: AppTextStyles.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: _selectedTransferMethod == 'BI-FAST' ? AppColors.primaryDark : AppColors.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              'Biaya Rp 2.500 • Real-Time 24/7 (SNAP BI)',
+                              style: AppTextStyles.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                            ),
+                          ],
                         ),
+                      ),
+                      Radio<String>(
+                        value: 'BI-FAST',
+                        groupValue: _selectedTransferMethod,
+                        activeColor: AppColors.primary,
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedTransferMethod = val);
+                        },
                       ),
                     ],
                   ),
                 ),
-              ],
+              ),
+              const SizedBox(height: 10),
+
+              GestureDetector(
+                onTap: () => setState(() => _selectedTransferMethod = 'RTOL'),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: _selectedTransferMethod == 'RTOL'
+                        ? AppColors.primary.withOpacity(0.06)
+                        : AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _selectedTransferMethod == 'RTOL'
+                          ? AppColors.primary
+                          : AppColors.border.withOpacity(0.8),
+                      width: _selectedTransferMethod == 'RTOL' ? 1.8 : 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _selectedTransferMethod == 'RTOL'
+                              ? AppColors.primary.withOpacity(0.15)
+                              : AppColors.border.withOpacity(0.3),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          CupertinoIcons.paperplane_fill,
+                          size: 20,
+                          color: _selectedTransferMethod == 'RTOL' ? AppColors.primary : AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Real-Time Online (RTOL)',
+                              style: AppTextStyles.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: _selectedTransferMethod == 'RTOL' ? AppColors.primaryDark : AppColors.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              'Biaya Rp 6.500 • Jaringan ATM Bersama / ALTO / PRIMA',
+                              style: AppTextStyles.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Radio<String>(
+                        value: 'RTOL',
+                        groupValue: _selectedTransferMethod,
+                        activeColor: AppColors.primary,
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedTransferMethod = val);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 28),
+
+            SizedBox(
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _handleTransfer,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDark,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 2,
+                ),
+                child: const Text(
+                  'Lanjutkan ke Konfirmasi',
+                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
-          ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(CupertinoIcons.info_circle_fill, color: Colors.amber.shade800, size: 22),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Silakan tekan tombol "Cek" untuk memverifikasi nama pemilik rekening penerima terlebih dahulu.',
+                      style: TextStyle(color: Colors.amber.shade900, fontSize: 13, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
         ],
       ),
@@ -730,36 +703,31 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
   }
 
   Widget _buildFavoritesTab() {
-    return ListView.builder(
+    return ListView.separated(
       padding: const EdgeInsets.all(20),
       itemCount: _favorites.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final fav = _favorites[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
+        return Card(
+          elevation: 0.5,
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
+            side: BorderSide(color: AppColors.border.withOpacity(0.6)),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Material(
-              color: Colors.transparent,
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: AppColors.primary.withOpacity(0.12),
-                  child: Text(
-                    fav['name']!.substring(0, 1),
-                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                title: Text(fav['name']!, style: AppTextStyles.textTheme.titleMedium),
-                subtitle: Text('${fav['bank']} • ${fav['account']}', style: AppTextStyles.textTheme.bodySmall),
-                trailing: const Icon(CupertinoIcons.arrow_right_circle_fill, color: AppColors.primary),
-                onTap: () => _onFavoriteSelected(fav),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: CircleAvatar(
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              child: Text(
+                fav['name']![0],
+                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
               ),
             ),
+            title: Text(fav['name']!, style: AppTextStyles.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+            subtitle: Text('${fav['bank']} • ${fav['account']}', style: AppTextStyles.textTheme.bodySmall),
+            trailing: const Icon(CupertinoIcons.chevron_right, size: 16, color: AppColors.textSecondary),
+            onTap: () => _onFavoriteSelected(fav),
           ),
         );
       },

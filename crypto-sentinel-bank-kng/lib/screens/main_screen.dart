@@ -7,6 +7,7 @@ import 'home_screen.dart';
 import 'login_screen.dart';
 import 'history_screen.dart';
 import 'messages_screen.dart';
+import '../data/mock_data.dart';
 
 /// Kontainer Bottom Navigation Bar untuk aplikasi Bank Kuningan.
 /// Mengatur 4 Tab: Beranda, Mutasi, Pesan, dan Akun.
@@ -226,7 +227,7 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                     child: const Center(
                       child: Text(
-                        'BS',
+                        'BJ',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 24,
@@ -240,7 +241,7 @@ class _MainScreenState extends State<MainScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Budi Santoso', style: AppTextStyles.textTheme.headlineMedium),
+                        Text(MockData.userName, style: AppTextStyles.textTheme.headlineMedium),
                         const SizedBox(height: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

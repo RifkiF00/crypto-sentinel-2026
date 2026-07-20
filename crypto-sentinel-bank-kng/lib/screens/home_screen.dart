@@ -192,7 +192,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           child: const Center(
                             child: Text(
-                              'BS',
+                              'BJ',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w800,

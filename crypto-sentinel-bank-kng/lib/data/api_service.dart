@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 /// Service Integrasi API Core Banking Expresso (Port 8080) & Crypto-Sentinel FDS Engine
 class BankKuninganApiService {
   // Base URL Core Banking Expresso API
-  static const String baseUrl = 'http://localhost:8080/api/v1';
+  static const String baseUrl = 'http://192.168.1.180:8080/api/v1';
 
   /// Kirim transaksi transfer (Dukungan BI-FAST & RTOL / Interbank)
   static Future<Map<String, dynamic>> sendTransfer({
