@@ -66,10 +66,15 @@ paysim_analysis_results = []
 
 # Simulated reliable customer profiles database (mapping account number -> identity details)
 customer_profiles = {
-    "A001": {"national_id": "3171092828020921", "registered_device": "DEV-IPHONE15-88A", "registered_ip": "182.16.2.89"},
-    "A002": {"national_id": "3171092828020922", "registered_device": "DEV-ANDROID-S24B", "registered_ip": "182.16.2.90"},
-    "A003": {"national_id": "3171092828020923", "registered_device": "DEV-ANDROID-S24C", "registered_ip": "182.16.2.91"},
-    "A004": {"national_id": "3171092828020924", "registered_device": "DEV-IPHONE14-77C", "registered_ip": "182.16.2.92"},
+    "A001": {"national_id": "3171092802092101", "registered_device": "DEV-IPHONE15-PRO-MAX", "registered_ip": "182.16.2.89"},
+    "A002": {"national_id": "3171092802092102", "registered_device": "DEV-ANDROID-S24-ULTRA", "registered_ip": "182.16.2.90"},
+    "A003": {"national_id": "3171092802092103", "registered_device": "DEV-IPHONE14-PRO", "registered_ip": "182.16.2.91"},
+    "A004": {"national_id": "3171092802092104", "registered_device": "DEV-MACBOOK-AIR-M3", "registered_ip": "182.16.2.92"},
+    "1234567890": {"national_id": "3171092802092101", "registered_device": "DEV-IPHONE15-PRO-MAX", "registered_ip": "182.16.2.89"},
+    "0123456789": {"national_id": "3171092802092102", "registered_device": "DEV-ANDROID-S24-ULTRA", "registered_ip": "182.16.2.90"},
+    "1122334455": {"national_id": "3171092802092103", "registered_device": "DEV-IPHONE14-PRO", "registered_ip": "182.16.2.91"},
+    "5544332211": {"national_id": "3171092802092104", "registered_device": "DEV-MACBOOK-AIR-M3", "registered_ip": "182.16.2.92"},
+    "9876543210": {"national_id": "3171092802092105", "registered_device": "DEV-XIAOMI13-PRO", "registered_ip": "180.252.120.45"},
 }
 
 def get_profile_for_account(acc_num: str) -> dict:
@@ -250,6 +255,7 @@ def get_transaction_graph(limit: int = 100):
 def get_demo_graph():
     G = nx.DiGraph()
 
+    # 1. Add static demo laundering scenario transactions
     for _, row in demo_df.iterrows():
         sender = row["sender"]
         receiver = row["receiver"]
@@ -264,6 +270,24 @@ def get_demo_graph():
             scenario=row["scenario"]
         )
 
+    # 2. Add dynamic sandbox logs transactions (including user simulations)
+    for log in transaction_logs:
+        sender = log.get("senderAccount", "A001")
+        receiver = log["transaction"]["destinationAccount"]
+        
+        G.add_node(sender)
+        G.add_node(receiver)
+        G.add_edge(
+            sender,
+            receiver,
+            amount=log["transaction"]["amount"],
+            transaction_type=log["transaction"]["type"],
+            scenario="sandbox_simulation"
+        )
+
+    # 3. Create a lookup mapping for threat intelligence watchlist
+    threat_map = {row["account_id"]: row for _, row in threat_df.iterrows()}
+
     nodes = []
     for node in G.nodes():
         if node.startswith("A"):
@@ -276,8 +300,21 @@ def get_demo_graph():
             h = hashlib.md5(node.encode()).hexdigest()
             label = f"0x{h[:6]}...{h[-4:]}"
             node_type = "wallet"
+        elif node in threat_map:
+            t_info = threat_map[node]
+            # Map labels based on watchlist type
+            if t_info["entity_type"] == "mule_account":
+                label = get_name_for_account(node)
+                node_type = "mule"
+            elif t_info["entity_type"] == "suspicious_wallet":
+                h = hashlib.md5(node.encode()).hexdigest()
+                label = f"0x{h[:6]}...{h[-4:]}"
+                node_type = "wallet"
+            else:
+                label = get_exchange_for_account(node)
+                node_type = "exchange"
         else:
-            # WALLET001 or exchanges
+            # Fallback
             label = get_exchange_for_account(node)
             node_type = "exchange"
 

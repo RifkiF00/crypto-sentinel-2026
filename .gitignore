@@ -2,6 +2,9 @@ crypto-sentinel-api/venv/
 **/__pycache__/
 *.pyc
 .env
+**/node_modules/
+**/.dart_tool/
+**/build/
 
 crypto-sentinel-api/notebooks/.ipynb_checkpoints/
 

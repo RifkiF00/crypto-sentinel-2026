@@ -5,7 +5,7 @@ const ThemeContext = createContext();
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('cryptosentinel-theme');
-    return saved || 'light';
+    return saved || 'dark';
   });
 
   useEffect(() => {
