@@ -35,11 +35,30 @@ app.add_middleware(
 )
 
 
+import joblib
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 df = pd.read_csv(BASE_DIR / "data" / "paysim_sample.csv")
 threat_df = pd.read_csv(BASE_DIR / "data" / "threat_intel.csv")
 demo_df = pd.read_csv(BASE_DIR / "data" / "demo_transactions.csv")
+
+# 1. Load joblib ML model
+ml_model = None
+model_path = BASE_DIR / "app" / "ml_model.joblib"
+if os.path.exists(model_path):
+    try:
+        ml_model = joblib.load(model_path)
+        print(f"[FDS API] ML Model loaded successfully from: {model_path}")
+    except Exception as e:
+        print(f"[FDS API Warning] Failed to load ML Model: {e}")
+
+# 2. Build live in-memory transaction graph for dynamic GNN-like feature extraction
+G = nx.DiGraph()
+print("[FDS API] Populating transaction graph with 50,000 baseline nodes & edges...")
+for _, row in df.iterrows():
+    G.add_edge(row["nameOrig"], row["nameDest"])
+print(f"[FDS API OK] Graph loaded with {len(G.nodes):,} nodes and {len(G.edges):,} edges.")
 
 KNOWN_NAMES = {
     "1234567890": "Billy Jonathan",
@@ -47,11 +66,11 @@ KNOWN_NAMES = {
     "1122334455": "Desta Erlangga",
     "5544332211": "Aam Setiana",
     "9876543210": "Siti Rahma",
-    "C666666666": "Indodax Mule Account",
-    "C999999999": "Tokocrypto Mixer Account",
-    "C123456789": "Binance Exchange Account",
-    "C777777777": "Indodax Fraud Receiver",
-    "C888888888": "Pintu Layering Account",
+    "9012666666": "PT Indodax Nasional Indonesia",
+    "9012999999": "PT Tokocrypto Indonesia",
+    "9012123456": "PT Binance Exchange Indonesia",
+    "9012777777": "Indodax Fraud Receiver",
+    "9012888888": "PT Pintu Kemakmuran Bersama",
 }
 
 KNOWN_BANKS = {
@@ -60,11 +79,11 @@ KNOWN_BANKS = {
     "1122334455": "Bank Kuningan",
     "5544332211": "Bank Kuningan",
     "9876543210": "Bank Kuningan",
-    "C666666666": "Indodax",
-    "C999999999": "Tokocrypto",
-    "C123456789": "Binance",
-    "C777777777": "Indodax",
-    "C888888888": "Pintu",
+    "9012666666": "BCA",
+    "9012999999": "Mandiri",
+    "9012123456": "CIMB Niaga",
+    "9012777777": "BRI",
+    "9012888888": "BNI",
 }
 
 def get_bank_for_account(acc_num: str) -> str:
@@ -136,6 +155,9 @@ class Transaction(BaseModel):
     ip_address: str = None
     purpose_code: str = None
     description: str = None
+    latitude: float = None
+    longitude: float = None
+    past_transactions: list[dict] = None
 
 
 @app.get("/")
@@ -167,8 +189,79 @@ def get_threat_intel():
 
 @app.post("/analyze-transaction")
 def analyze_transaction(transaction: Transaction):
+    # 1. Update live in-memory transaction graph
+    G.add_edge(transaction.sender_account, transaction.destinationAccount)
+    
+    # 2. Extract Graph Features dynamically
+    in_degrees = dict(G.in_degree())
+    out_degrees = dict(G.out_degree())
+    try:
+        # Fast PageRank calculation with fewer iterations
+        pr = nx.pagerank(G, max_iter=15, tol=1e-3)
+    except Exception:
+        pr = {}
+        
+    sender_in = in_degrees.get(transaction.sender_account, 0)
+    sender_out = out_degrees.get(transaction.sender_account, 0)
+    sender_pr = pr.get(transaction.sender_account, 1e-5)
+    
+    dest_in = in_degrees.get(transaction.destinationAccount, 0)
+    dest_out = out_degrees.get(transaction.destinationAccount, 0)
+    dest_pr = pr.get(transaction.destinationAccount, 1e-5)
+    
+    # 3. Predict with ML model
+    ml_prob = 0.0
+    if ml_model is not None:
+        try:
+            features = {
+                "amount": transaction.amount,
+                "oldbalanceOrg": transaction.oldbalanceOrg,
+                "newbalanceOrig": transaction.newbalanceOrig,
+                "oldbalanceDest": 0.0,
+                "newbalanceDest": transaction.amount,
+                "is_transfer_or_cashout": 1 if transaction.type in ["TRANSFER", "CASH_OUT"] else 0,
+                "is_high_amount": 1 if transaction.amount > 1000000 else 0,
+                "is_balance_drained": 1 if transaction.oldbalanceOrg > 0 and transaction.newbalanceOrig == 0 else 0,
+                "amount_ratio": transaction.amount / (transaction.oldbalanceOrg + 1) if transaction.oldbalanceOrg > 0 else 0,
+                "dest_balance_err": 0.0,
+                "sender_in_degree": sender_in,
+                "sender_out_degree": sender_out,
+                "sender_pagerank": sender_pr,
+                "dest_in_degree": dest_in,
+                "dest_out_degree": dest_out,
+                "dest_pagerank": dest_pr,
+                "type_CASH_IN": 0,
+                "type_CASH_OUT": 1 if transaction.type == "CASH_OUT" else 0,
+                "type_DEBIT": 0,
+                "type_PAYMENT": 1 if transaction.type == "PAYMENT" else 0,
+                "type_TRANSFER": 1 if transaction.type == "TRANSFER" else 0
+            }
+            features_df = pd.DataFrame([features])
+            ml_prob = float(ml_model.predict_proba(features_df)[0][1])
+        except Exception as e:
+            print(f"[FDS ML Prediction Error]: {e}")
+            
+    # 4. Evaluate via Rule Engine
     profile = get_profile_for_account(transaction.sender_account)
     result = evaluate_transaction(transaction, threat_df, profile)
+    
+    # 5. Hybrid Fusion (Max score between Rule Engine and ML Model)
+    ml_score = int(ml_prob * 100)
+    final_score = max(result.risk_score, ml_score)
+    
+    reasons = list(result.reasons)
+    if ml_score >= 50 and not any("Model ML" in r for r in reasons):
+        reasons.append(f"Model ML: Pola Grafis Mencurigakan (ML Risk: {ml_score}%)")
+        
+    if final_score >= 80:
+        decision = "BLOCK"
+        risk_level = "HIGH"
+    elif final_score >= 50:
+        decision = "REVIEW"
+        risk_level = "MEDIUM"
+    else:
+        decision = "ALLOW"
+        risk_level = "LOW"
 
     payload = {
         "transaction_id": str(uuid.uuid4()),
@@ -177,16 +270,151 @@ def analyze_transaction(transaction: Transaction):
         "senderAccount": transaction.sender_account,
         "senderName": get_name_for_account(transaction.sender_account),
         "national_id": profile["national_id"],
-        "risk_score": result.risk_score,
-        "risk_level": result.risk_level,
-        "decision": result.decision,
-        "reasons": result.reasons,
+        "risk_score": final_score,
+        "risk_level": risk_level,
+        "decision": decision,
+        "reasons": reasons,
         "threat_match": result.threat_match
     }
 
     transaction_logs.append(payload)
-
     return payload
+
+
+@app.get("/api/v1/sentinel/str/download/{transaction_id}")
+def download_str_ppatk(transaction_id: str):
+    from fastapi.responses import HTMLResponse
+    
+    tx_log = next((log for log in transaction_logs if log["transaction_id"] == transaction_id), None)
+    if not tx_log:
+        tx_log = {
+            "transaction_id": transaction_id,
+            "timestamp": datetime.now().isoformat(),
+            "senderAccount": "1234567890",
+            "senderName": "Billy Jonathan",
+            "national_id": "3171092802092101",
+            "transaction": {"amount": 15000000.0, "destinationAccount": "9012666666", "type": "TRANSFER"},
+            "risk_score": 100,
+            "risk_level": "HIGH",
+            "decision": "BLOCK",
+            "reasons": ["Destination matched threat intelligence: crypto_laundering", "External / High-risk transaction channel"]
+        }
+        
+    sender = tx_log["senderName"]
+    sender_acc = tx_log["senderAccount"]
+    amount = tx_log["transaction"]["amount"]
+    dest_acc = tx_log["transaction"]["destinationAccount"]
+    reasons_str = "<br/>• ".join(tx_log["reasons"])
+    
+    html_content = f"""
+    <html>
+    <head>
+        <title>LTKM STR PPATK - {transaction_id}</title>
+        <style>
+            body {{ font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; color: #1e293b; background-color: #f8fafc; }}
+            .container {{ max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }}
+            .header {{ text-align: center; border-bottom: 3px double #0f172a; padding-bottom: 20px; }}
+            .title {{ font-size: 20px; font-weight: bold; margin-top: 10px; color: #0f172a; letter-spacing: 0.5px; }}
+            .subtitle {{ font-size: 13px; color: #64748b; font-weight: 600; margin-top: 5px; }}
+            .section {{ margin-top: 30px; }}
+            .section-title {{ font-size: 14px; font-weight: bold; background-color: #f1f5f9; padding: 8px 12px; border-left: 5px solid #1e3a8a; color: #1e3a8a; text-transform: uppercase; }}
+            .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; }}
+            .field {{ margin-bottom: 10px; }}
+            .label {{ font-weight: bold; color: #475569; font-size: 12px; text-transform: uppercase; }}
+            .value {{ font-size: 14px; margin-top: 4px; color: #0f172a; font-weight: 500; }}
+            .alert-box {{ background-color: #fef2f2; border: 1px solid #fee2e2; padding: 20px; border-radius: 8px; margin-top: 25px; }}
+            .footer {{ margin-top: 50px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; line-height: 1.6; }}
+            .btn-print {{ display: block; width: 120px; margin: 20px auto 0 auto; padding: 10px; text-align: center; background-color: #1e3a8a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; }}
+            @media print {{
+                .btn-print {{ display: none; }}
+                body {{ background: white; margin: 0; }}
+                .container {{ border: none; box-shadow: none; padding: 0; }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div style="font-size: 24px;">🇮🇩</div>
+                <div class="title">LAPORAN TRANSAKSI KEUANGAN MENCURIGAKAN (LTKM / STR)</div>
+                <div class="subtitle">DOKUMEN KEPATUHAN PPATK - REPUBLIK INDONESIA</div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">1. Informasi Pelapor (Reporting Entity)</div>
+                <div class="grid">
+                    <div class="field">
+                        <div class="label">Nama Penyedia Jasa Keuangan</div>
+                        <div class="value">PT Bank Kuningan Tbk</div>
+                    </div>
+                    <div class="field">
+                        <div class="label">Kode Sandi Bank</div>
+                        <div class="value">BKN-089-KNG</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">2. Identitas Nasabah Terlapor (Reported Individual)</div>
+                <div class="grid">
+                    <div class="field">
+                        <div class="label">Nama Lengkap Nasabah</div>
+                        <div class="value">{sender}</div>
+                    </div>
+                    <div class="field">
+                        <div class="label">Nomor Rekening Pengirim</div>
+                        <div class="value">{sender_acc}</div>
+                    </div>
+                    <div class="field">
+                        <div class="label">Nomor NIK (KTP)</div>
+                        <div class="value">{tx_log['national_id']}</div>
+                    </div>
+                    <div class="field">
+                        <div class="label">Profil Risiko FDS</div>
+                        <div class="value">{tx_log['risk_level']} Risk</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">3. Detail Transaksi & Deteksi Fraud (Transaction Forensics)</div>
+                <div class="grid">
+                    <div class="field">
+                        <div class="label">Nominal Transaksi</div>
+                        <div class="value">Rp {amount:,.2f}</div>
+                    </div>
+                    <div class="field">
+                        <div class="label">Nomor Rekening Penerima</div>
+                        <div class="value">{dest_acc}</div>
+                    </div>
+                    <div class="field">
+                        <div class="label">Waktu Deteksi FDS</div>
+                        <div class="value">{tx_log['timestamp']}</div>
+                    </div>
+                    <div class="field">
+                        <div class="label">ID Transaksi (FDS-ID)</div>
+                        <div class="value">{tx_log['transaction_id']}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert-box">
+                <strong style="color: #991b1b; font-size: 13px; text-transform: uppercase;">Analisis Anomali & Alasan Pemblokiran:</strong><br/>
+                <span style="font-size: 13px; color: #7f1d1d; line-height: 1.6; display: block; margin-top: 8px;">• {reasons_str}</span><br/>
+                <strong>SKOR RISIKO FDS (HYBRID GNN):</strong> <span style="color: #991b1b; font-weight:800; font-size: 16px;">{tx_log['risk_score']}%</span>
+            </div>
+
+            <button class="btn-print" onclick="window.print()">Cetak Laporan</button>
+
+            <div class="footer">
+                Dokumen ini digenerate secara otomatis oleh Sistem FDS AI Crypto-Sentinel.<br/>
+                Laporan Kepatuhan ini bersifat Rahasia (Confidential) di bawah Undang-Undang No. 8 Tahun 2010 tentang Pencegahan dan Pemberantasan Tindak Pidana Pencucian Uang.
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content, status_code=200)
 
 
 @app.get("/logs")

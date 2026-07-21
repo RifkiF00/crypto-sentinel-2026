@@ -15,18 +15,36 @@ class RuleEngineResult:
     threat_match: dict[str, Any] | None
 
 
+import math
+from datetime import datetime
+
 HIGH_RISK_TYPES = {"TRANSFER", "CASH_OUT"}
 HIGH_RISK_AMOUNT = 1_000_000
 
 
-def evaluate_transaction(transaction: Any, threat_df: pd.DataFrame, sender_profile: dict = None) -> RuleEngineResult:
+def haversine_distance(lat1, lon1, lat2, lon2):
+    r_lat1 = math.radians(lat1)
+    r_lon1 = math.radians(lon1)
+    r_lat2 = math.radians(lat2)
+    r_lon2 = math.radians(lon2)
+    
+    dlat = r_lat2 - r_lat1
+    dlon = r_lon2 - r_lon1
+    
+    a = math.sin(dlat / 2.0)**2 + math.cos(r_lat1) * math.cos(r_lat2) * math.sin(dlon / 2.0)**2
+    c = 2.0 * math.asin(math.sqrt(a))
+    r = 6371.0
+    return c * r
+
+
+def evaluate_transaction(transaction: Any, threat_df: pd.DataFrame, sender_profile: dict = None, past_transactions: list[dict] = None) -> RuleEngineResult:
     risk_score = 0
     reasons: list[str] = []
     threat_match: dict[str, Any] | None = None
 
-    # 1. Behavioral: High-risk type & destination check
-    is_crypto_or_threat = transaction.destinationAccount.startswith("C") or "exchange" in transaction.destinationAccount.lower()
-    is_sesama_bank = not is_crypto_or_threat and len(transaction.destinationAccount) == 10
+    # 1. Behavioral: High-risk type & destination check (9012 prefix represents high-risk bursa/mule accounts)
+    is_crypto_or_threat = transaction.destinationAccount.startswith("9012") or "exchange" in transaction.destinationAccount.lower()
+    is_sesama_bank = not is_crypto_or_threat and (transaction.destinationAccount == "9876543210" or transaction.destinationAccount.startswith("1000"))
 
     if not is_sesama_bank:
         risk_score += 25 if is_crypto_or_threat else 15
@@ -66,7 +84,7 @@ def evaluate_transaction(transaction: Any, threat_df: pd.DataFrame, sender_profi
             reasons.append("Purpose mismatch: Personal transfer code sent to crypto exchange")
 
     # 7. Relational: Threat Intel Matching
-    match = threat_df[threat_df["account_id"] == transaction.destinationAccount]
+    match = threat_df[threat_df["account_id"].astype(str) == str(transaction.destinationAccount)]
 
     if not match.empty:
         threat = match.iloc[0].to_dict()
@@ -80,6 +98,45 @@ def evaluate_transaction(transaction: Any, threat_df: pd.DataFrame, sender_profi
             risk_score += 20
 
         reasons.append(f"Destination matched threat intelligence: {threat['risk_category']}")
+
+    # 8. Hackathon Advanced Rule: Dynamic Historical Baseline
+    if past_transactions:
+        amounts = [t["amount"] for t in past_transactions if t.get("amount")]
+        if amounts:
+            avg_amount = sum(amounts) / len(amounts)
+            if transaction.amount > 5 * avg_amount and transaction.amount > 200000:
+                risk_score += 30
+                reasons.append(f"Dynamic Baseline Alert: Amount (Rp {transaction.amount:,.0f}) is > 5x customer's past average (Rp {avg_amount:,.0f})")
+
+    # 9. Hackathon Advanced Rule: Geolocation Impossible Travel
+    if past_transactions:
+        try:
+            valid_past = [t for t in past_transactions if t.get("latitude") is not None and t.get("longitude") is not None and t.get("timestamp")]
+            if valid_past:
+                sorted_txs = sorted(valid_past, key=lambda x: x.get("timestamp", ""))
+                latest_tx = sorted_txs[-1]
+                
+                lat1 = latest_tx.get("latitude")
+                lon1 = latest_tx.get("longitude")
+                lat2 = getattr(transaction, "latitude", None)
+                lon2 = getattr(transaction, "longitude", None)
+                
+                t1_str = latest_tx.get("timestamp")
+                # Handle potential timezone offsets or Z
+                t1 = datetime.fromisoformat(t1_str.replace("Z", "+00:00"))
+                t2 = datetime.now(t1.tzinfo)
+                
+                if lat1 is not None and lon1 is not None and lat2 is not None and lon2 is not None:
+                    distance = haversine_distance(lat1, lon1, lat2, lon2)
+                    time_diff = (t2 - t1).total_seconds() / 3600.0
+                    
+                    if time_diff > 0.001:
+                        speed = distance / time_diff
+                        if speed > 1000.0:
+                            risk_score += 35
+                            reasons.append(f"Impossible Travel Alert: Speed of {speed:,.0f} km/h between transactions exceeds physical limits ({distance:,.1f} km in {time_diff*60:,.1f} mins)")
+        except Exception as e:
+            print(f"[Impossible Travel Calculation Error]: {e}")
 
     # Cap risk score at 100
     risk_score = min(risk_score, 100)

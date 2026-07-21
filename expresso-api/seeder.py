@@ -91,9 +91,9 @@ def generate_100_accounts():
             registered_ip="36.85.15.102"
         ),
         Account(
-            account_id="C666666666",
+            account_id="9012666666",
             national_id="3171092802099902",
-            owner_name="Indodax Mule Account",
+            owner_name="PT Indodax Nasional Indonesia",
             balance=15000000,
             risk_profile="HIGH",
             is_active=True,
@@ -102,9 +102,9 @@ def generate_100_accounts():
             registered_ip="103.28.57.12"
         ),
         Account(
-            account_id="C999999999",
+            account_id="9012999999",
             national_id="3171092802099903",
-            owner_name="Tokocrypto Mixer Account",
+            owner_name="PT Tokocrypto Indonesia",
             balance=25000000,
             risk_profile="HIGH",
             is_active=True,
@@ -113,9 +113,9 @@ def generate_100_accounts():
             registered_ip="45.12.89.201"
         ),
         Account(
-            account_id="C123456789",
+            account_id="9012123456",
             national_id="3171092802099904",
-            owner_name="Binance Exchange Account",
+            owner_name="PT Binance Exchange Indonesia",
             balance=50000000,
             risk_profile="MEDIUM",
             is_active=True,
@@ -124,7 +124,7 @@ def generate_100_accounts():
             registered_ip="52.198.112.4"
         ),
         Account(
-            account_id="C777777777",
+            account_id="9012777777",
             national_id="3171092802099905",
             owner_name="Indodax Fraud Receiver",
             balance=10000000,
@@ -135,9 +135,9 @@ def generate_100_accounts():
             registered_ip="185.220.101.5"
         ),
         Account(
-            account_id="C888888888",
+            account_id="9012888888",
             national_id="3171092802099906",
-            owner_name="Pintu Layering Account",
+            owner_name="PT Pintu Kemakmuran Bersama",
             balance=12000000,
             risk_profile="MEDIUM",
             is_active=True,

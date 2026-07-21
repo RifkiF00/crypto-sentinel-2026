@@ -16,11 +16,31 @@ async def analyze_via_sentinel(
     ip_address: str,
     purpose_code: str,
     description: str,
-    old_balance: float
+    old_balance: float,
+    latitude: float = None,
+    longitude: float = None
 ) -> dict:
     """Mengirim transaksi ke Crypto-Sentinel API untuk analisis risiko."""
     sentinel_url = os.getenv("SENTINEL_API_URL", "http://localhost:8000")
     
+    past_transactions = []
+    try:
+        with Session(engine) as db:
+            txs = db.query(Transaction).filter(
+                (Transaction.sender_account == sender_account) &
+                (Transaction.status == "SUCCESS")
+            ).order_by(Transaction.timestamp.desc()).limit(5).all()
+            
+            for tx in txs:
+                past_transactions.append({
+                    "amount": tx.amount,
+                    "timestamp": tx.timestamp.isoformat(),
+                    "latitude": tx.latitude,
+                    "longitude": tx.longitude
+                })
+    except Exception as e:
+        print(f"[Core Banking DB Warning] Gagal mengambil past transactions: {e}")
+        
     payload = {
         "type": "TRANSFER",
         "amount": float(amount),
@@ -30,7 +50,10 @@ async def analyze_via_sentinel(
         "sender_account": sender_account,
         "ip_address": ip_address,
         "purpose_code": purpose_code,
-        "description": description
+        "description": description,
+        "latitude": latitude,
+        "longitude": longitude,
+        "past_transactions": past_transactions
     }
     
     try:
@@ -68,7 +91,29 @@ async def bri_transfer(
     latitude: float = Form(-6.2, description="Latitude (Nanti diisi otomatis oleh Frontend)"),
     longitude: float = Form(106.8, description="Longitude (Nanti diisi otomatis oleh Frontend)")
 ):
-    """Transfer via Form Input. IP Address ditangkap otomatis oleh sistem backend."""
+    import hmac
+    import hashlib
+
+    # SNAP BI Security Header Validation
+    partner_id = request.headers.get("X-Partner-Id")
+    signature = request.headers.get("X-Signature")
+    timestamp = request.headers.get("X-Timestamp")
+
+    if not signature or not partner_id or not timestamp:
+        raise HTTPException(
+            status_code=401,
+            detail="SNAP BI Security Error: Missing required headers (X-Partner-Id, X-Signature, X-Timestamp)"
+        )
+
+    secret_key = b"KNG_SECRET_2026"
+    message = f"{partner_id}|{timestamp}|{sender_account}|{receiver_account}|{amount}".encode()
+    expected_sig = hmac.new(secret_key, message, hashlib.sha256).hexdigest()
+
+    if not hmac.compare_digest(signature, expected_sig):
+        raise HTTPException(
+            status_code=401,
+            detail="SNAP BI Security Error: Invalid digital signature (X-Signature verification failed)"
+        )
 
     if amount < 50000:
         raise HTTPException(
@@ -134,7 +179,9 @@ async def bri_transfer(
             ip_address=ip_address,
             purpose_code=purpose_code,
             description=description,
-            old_balance=sender.balance
+            old_balance=sender.balance,
+            latitude=latitude,
+            longitude=longitude
         )
         
         sentinel_decision = sentinel_res.get("decision", "ALLOW")
@@ -144,41 +191,71 @@ async def bri_transfer(
         tx.sentinel_score = sentinel_score
         tx.sentinel_decision = sentinel_decision
         
-        if sentinel_decision in ["BLOCK", "REVIEW"]:
+        if sentinel_decision == "BLOCK":
             tx.status = "FAILED"
             
-            # Buat SentinelAlert
+            if receiver_account.startswith("9012"):
+                sender.is_blocked = True
+                if "Upstream Chain Freezing: Akun pengirim dibekukan otomatis demi keamanan karena terhubung dengan aktivitas mule" not in reasons:
+                    reasons.append("Upstream Chain Freezing: Akun pengirim dibekukan otomatis demi keamanan karena terhubung dengan aktivitas mule")
+            
             alert = SentinelAlert(
                 transaction_id=tx_id,
                 risk_score=sentinel_score,
                 indicators_json=reasons,
-                shap_values_json={"risk_level": sentinel_res.get("risk_level", "LOW")},
+                shap_values_json={"risk_level": sentinel_res.get("risk_level", "HIGH")},
                 resolved=False
             )
             db.add(alert)
             db.flush()
             
-            # Buat STRDraft jika BLOCKED
-            if sentinel_decision == "BLOCK":
-                str_id = "STR-" + datetime.now(timezone.utc).strftime("%Y%m%d") + "-" + str(uuid.uuid4())[:6].upper()
-                str_draft = STRDraft(
-                    str_id=str_id,
-                    alert_id=alert.alert_id,
-                    summary_text=f"Deteksi pencucian uang otomatis: Akun {sender.owner_name} mengirim Rp{amount:,} ke {receiver.owner_name} (Watchlist Kategori: {', '.join(reasons)}).",
-                    risk_factors=reasons,
-                    status="DRAFT",
-                    analyst_id="SYSTEM"
-                )
-                db.add(str_draft)
-                
+            str_id = "STR-" + datetime.now(timezone.utc).strftime("%Y%m%d") + "-" + str(uuid.uuid4())[:6].upper()
+            str_draft = STRDraft(
+                str_id=str_id,
+                alert_id=alert.alert_id,
+                summary_text=f"Deteksi pencucian uang otomatis: Akun {sender.owner_name} mengirim Rp{amount:,} ke {receiver.owner_name} (Watchlist Kategori: {', '.join(reasons)}).",
+                risk_factors=reasons,
+                status="DRAFT",
+                analyst_id="SYSTEM"
+            )
+            db.add(str_draft)
             db.commit()
             
-            if sentinel_decision == "BLOCK":
-                detail_msg = f"Transaksi diblokir otomatis oleh sistem keamanan Crypto-Sentinel karena terindikasi penipuan/fraud (Skor Risiko: {sentinel_score}. Alasan: {', '.join(reasons)})"
-            else:
-                detail_msg = f"Transaksi ditangguhkan oleh sistem keamanan Crypto-Sentinel untuk ditinjau oleh analis kepatuhan (Skor Risiko: {sentinel_score}. Alasan: {', '.join(reasons)})"
-                
-            raise HTTPException(status_code=403, detail=detail_msg)
+            raise HTTPException(
+                status_code=403,
+                detail="Demi keamanan, transaksi Anda tidak dapat diproses saat ini. Silakan hubungi Customer Service Bank Kuningan di 1500000."
+            )
+            
+        elif sentinel_decision == "REVIEW":
+            tx.status = "REVIEW"
+            
+            alert = SentinelAlert(
+                transaction_id=tx_id,
+                risk_score=sentinel_score,
+                indicators_json=reasons,
+                shap_values_json={"risk_level": sentinel_res.get("risk_level", "MEDIUM")},
+                resolved=False
+            )
+            db.add(alert)
+            db.flush()
+            
+            sender.balance -= amount
+            db.commit()
+            
+            return {
+                "status":             "REVIEW",
+                "sentinel_decision":  "REVIEW",
+                "transaction_id":     tx_id,
+                "ip_address_detected": ip_address,
+                "message":            "Demi keamanan Anda, transaksi ini sedang ditinjau oleh sistem FDS. Transaksi Anda akan diproses dalam waktu maksimal 10 menit. Terima kasih.",
+                "transfer_info": {
+                    "sender":         sender.owner_name,
+                    "receiver":       receiver.owner_name,
+                    "amount":         f"Rp{amount:,}",
+                    "balance_before": f"Rp{balance_before:,}",
+                    "balance_after":  f"Rp{sender.balance:,}",
+                }
+            }
 
         db.commit()
 
@@ -303,7 +380,9 @@ async def bri_transfer_via_url(
             ip_address=ip_address,
             purpose_code=purpose_code,
             description=description,
-            old_balance=sender_acc.balance
+            old_balance=sender_acc.balance,
+            latitude=latitude,
+            longitude=longitude
         )
         
         sentinel_decision = sentinel_res.get("decision", "ALLOW")
@@ -315,6 +394,11 @@ async def bri_transfer_via_url(
         
         if sentinel_decision in ["BLOCK", "REVIEW"]:
             tx.status = "FAILED"
+            
+            if sentinel_decision == "BLOCK" and receiver.startswith("9012"):
+                sender_acc.is_blocked = True
+                if "Upstream Chain Freezing: Akun pengirim dibekukan otomatis demi keamanan karena terhubung dengan aktivitas mule" not in reasons:
+                    reasons.append("Upstream Chain Freezing: Akun pengirim dibekukan otomatis demi keamanan karena terhubung dengan aktivitas mule")
             
             # Buat SentinelAlert
             alert = SentinelAlert(
@@ -490,7 +574,9 @@ async def bri_transfer_interbank(
             ip_address=ip_address,
             purpose_code="SALA",
             description=f"Transfer Interbank ke Bank {bank_code}",
-            old_balance=sender.balance
+            old_balance=sender.balance,
+            latitude=latitude,
+            longitude=longitude
         )
         
         sentinel_decision = sentinel_res.get("decision", "ALLOW")
@@ -502,6 +588,11 @@ async def bri_transfer_interbank(
         
         if sentinel_decision in ["BLOCK", "REVIEW"]:
             tx.status = "FAILED"
+            
+            if sentinel_decision == "BLOCK" and receiver_account.startswith("9012"):
+                sender.is_blocked = True
+                if "Upstream Chain Freezing: Akun pengirim dibekukan otomatis demi keamanan karena terhubung dengan aktivitas mule" not in reasons:
+                    reasons.append("Upstream Chain Freezing: Akun pengirim dibekukan otomatis demi keamanan karena terhubung dengan aktivitas mule")
             
             # Buat SentinelAlert
             alert = SentinelAlert(
@@ -626,3 +717,15 @@ def get_account_transactions(account_id: str):
             }
             for tx in txs
         ]
+
+
+@router.post("/bri/account/block/{account_id}")
+def block_account(account_id: str):
+    """Memblokir otomatis akun nasabah (Upstream Chain Freezing)."""
+    with Session(engine) as db:
+        acc = db.get(Account, account_id)
+        if not acc:
+            raise HTTPException(status_code=404, detail="Akun tidak ditemukan")
+        acc.is_blocked = True
+        db.commit()
+        return {"status": "SUCCESS", "message": f"Account {account_id} has been blocked successfully"}

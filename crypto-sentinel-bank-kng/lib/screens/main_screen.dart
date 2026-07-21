@@ -8,6 +8,7 @@ import 'login_screen.dart';
 import 'history_screen.dart';
 import 'messages_screen.dart';
 import '../data/mock_data.dart';
+import '../data/api_service.dart';
 
 /// Kontainer Bottom Navigation Bar untuk aplikasi Bank Kuningan.
 /// Mengatur 4 Tab: Beranda, Mutasi, Pesan, dan Akun.
@@ -20,6 +21,22 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  String _ownerName = 'Billy Jonathan';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAccountInfo();
+  }
+
+  Future<void> _fetchAccountInfo() async {
+    final info = await BankKuninganApiService.getAccountInfo('1234567890');
+    if (info['success'] == true && mounted) {
+      setState(() {
+        _ownerName = info['ownerName'] ?? 'Billy Jonathan';
+      });
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -241,7 +258,7 @@ class _MainScreenState extends State<MainScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(MockData.userName, style: AppTextStyles.textTheme.headlineMedium),
+                        Text(_ownerName, style: AppTextStyles.textTheme.headlineMedium),
                         const SizedBox(height: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

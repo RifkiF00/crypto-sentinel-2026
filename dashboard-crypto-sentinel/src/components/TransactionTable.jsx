@@ -155,6 +155,30 @@ function TransactionDetail({ transaction, onClose }) {
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
+            {(transaction.status === 'blocked' || transaction.status === 'flagged') && (
+              <a
+                href={`http://localhost:8000/api/v1/sentinel/str/download/${transaction.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-sm"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  backgroundColor: '#991b1b',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '6px 14px',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold',
+                  textDecoration: 'none'
+                }}
+              >
+                <AlertTriangle size={14} />
+                Unduh STR PPATK
+              </a>
+            )}
             <button className="btn btn-ghost btn-sm" onClick={onClose}>Tutup</button>
             {transaction.status === 'pending' && (
               <>

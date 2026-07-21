@@ -47,7 +47,7 @@ export function mapApiLogToTx(log) {
   }
 
   const destAcc = txn.destinationAccount || '';
-  const isCrypto = destAcc.startsWith('C') || destAcc.toLowerCase().includes('exchange') || destAcc.toLowerCase().includes('mule');
+  const isCrypto = destAcc.startsWith('9012') || destAcc.toLowerCase().includes('exchange') || destAcc.toLowerCase().includes('mule');
 
   let senderName = log.senderName || 'Billy Jonathan';
   let senderBank = log.senderBank || 'Bank Kuningan';
@@ -64,10 +64,16 @@ export function mapApiLogToTx(log) {
   let destDisplay = log.destinationName ? `${log.destinationName} (${log.destinationBank || 'Bank Kuningan'})` : destAcc;
   if (destAcc === '9876543210' || destAcc === '098765432100') {
     destDisplay = 'Siti Rahma (Bank Kuningan)';
-  } else if (destAcc === 'C666666666') {
-    destDisplay = 'Indodax Mule Account (Indodax)';
-  } else if (destAcc === 'C123456789') {
-    destDisplay = 'Binance Exchange Account (Binance)';
+  } else if (destAcc === '9012666666') {
+    destDisplay = 'PT Indodax Nasional Indonesia (BCA)';
+  } else if (destAcc === '9012999999') {
+    destDisplay = 'PT Tokocrypto Indonesia (Mandiri)';
+  } else if (destAcc === '9012123456') {
+    destDisplay = 'PT Binance Exchange Indonesia (CIMB Niaga)';
+  } else if (destAcc === '9012777777') {
+    destDisplay = 'Indodax Fraud Receiver (BRI)';
+  } else if (destAcc === '9012888888') {
+    destDisplay = 'PT Pintu Kemakmuran Bersama (BNI)';
   }
 
   return {
@@ -101,61 +107,33 @@ export async function checkHealth() {
   }
 }
 
-// Fetch all transactions (combines logs and sample database from API)
+// Fetch all transactions (only returning actual FDS analyzed logs, no mock fallbacks)
 export async function fetchTransactions() {
   try {
     const isOnline = await checkHealth();
-    if (!isOnline) return recentTransactions;
+    if (!isOnline) return [];
 
-    // 1. Fetch custom logs from backend
     const logsRes = await fetch(`${API_BASE_URL}/logs`);
     const logsData = await logsRes.json();
 
-    // 2. Fetch sample transactions from backend
-    const txsRes = await fetch(`${API_BASE_URL}/transactions?limit=20`);
-    const txsData = await txsRes.json();
-
     const mappedLogs = (logsData.data || []).map(mapApiLogToTx);
-
-    // Map sample database transactions to dashboard format
-    const mappedTxs = (txsData.data || []).map((t, idx) => {
-      const isFraud = t.isFraud === 1;
-      return {
-        id: `TXN-API-${10000 + idx}`,
-        timestamp: new Date(Date.now() - idx * 10 * 60000).toISOString().replace('T', ' ').substring(0, 19),
-        senderName: `User ${t.nameOrig.substring(0, 7)}`,
-        senderAccount: `****${t.nameOrig.substring(t.nameOrig.length - 4)}`,
-        senderBank: ['BCA', 'Mandiri', 'BNI', 'BRI'][idx % 4],
-        amount: t.amount,
-        destinationType: t.type === 'TRANSFER' ? 'Crypto Exchange' : 'Transfer Bank',
-        destination: t.nameDest.startsWith('M') ? 'Indodax' : t.nameDest,
-        walletAddress: t.type === 'TRANSFER' ? `0x${Math.random().toString(16).substr(2, 40)}` : null,
-        riskScore: isFraud ? 95 : Math.floor(Math.random() * 35),
-        status: isFraud ? 'blocked' : 'approved',
-        reason: isFraud ? 'Indikasi Fraud Keras (Paysim Database)' : null,
-        flaggedRules: isFraud ? ['Database Match', 'High Risk Flow'] : []
-      };
-    });
-
-    // Combine them, logs at the top
-    return [...mappedLogs, ...mappedTxs, ...recentTransactions];
+    return mappedLogs;
   } catch (error) {
-    console.warn('Failed to fetch transactions from API, using offline mock data.', error);
-    return recentTransactions;
+    console.warn('Failed to fetch transactions from API', error);
+    return [];
   }
 }
 
-// Fetch Alerts
+// Fetch Alerts (only returning actual FDS alerts, no mock fallbacks)
 export async function fetchAlerts() {
   try {
     const isOnline = await checkHealth();
-    if (!isOnline) return alertFeed;
+    if (!isOnline) return [];
 
     const res = await fetch(`${API_BASE_URL}/alerts`);
     const data = await res.json();
 
     if (data.data && data.data.length > 0) {
-      // Map API alerts to Dashboard alerts format
       const mappedAlerts = data.data.map((log, idx) => {
         const isBlock = log.decision === 'BLOCK';
         const senderName = log.senderName || 'Nasabah Uji';
@@ -168,13 +146,13 @@ export async function fetchAlerts() {
           time: 'Baru saja'
         };
       });
-      return [...mappedAlerts, ...alertFeed];
+      return mappedAlerts;
     }
 
-    return alertFeed;
+    return [];
   } catch (error) {
-    console.warn('Failed to fetch alerts from API, using offline mock data.', error);
-    return alertFeed;
+    console.warn('Failed to fetch alerts from API', error);
+    return [];
   }
 }
 

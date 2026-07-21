@@ -51,7 +51,28 @@ def main():
     df = pd.read_csv(data_path)
     print(f"[OK] Loaded {len(df):,} transactions.\n")
 
-    # 2. Feature Engineering & Preprocessing
+    # 2. Graph Feature Engineering & Preprocessing
+    print("Computing NetworkX Graph Topologies & Centralities...")
+    import networkx as nx
+    G = nx.DiGraph()
+    for _, row in df.iterrows():
+        G.add_edge(row["nameOrig"], row["nameDest"])
+        
+    in_degrees = dict(G.in_degree())
+    out_degrees = dict(G.out_degree())
+    try:
+        pageranks = nx.pagerank(G, max_iter=100)
+    except Exception:
+        pageranks = {node: 1.0/len(G) for node in G.nodes()}
+
+    df["sender_in_degree"] = df["nameOrig"].map(in_degrees).fillna(0)
+    df["sender_out_degree"] = df["nameOrig"].map(out_degrees).fillna(0)
+    df["sender_pagerank"] = df["nameOrig"].map(pageranks).fillna(0)
+    
+    df["dest_in_degree"] = df["nameDest"].map(in_degrees).fillna(0)
+    df["dest_out_degree"] = df["nameDest"].map(out_degrees).fillna(0)
+    df["dest_pagerank"] = df["nameDest"].map(pageranks).fillna(0)
+
     print("Preprocessing & Feature Engineering ...")
     
     # Feature 1: High risk transaction type (TRANSFER or CASH_OUT)
@@ -82,10 +103,16 @@ def main():
         "is_high_amount",
         "is_balance_drained",
         "amount_ratio",
-        "dest_balance_err"
+        "dest_balance_err",
+        "sender_in_degree",
+        "sender_out_degree",
+        "sender_pagerank",
+        "dest_in_degree",
+        "dest_out_degree",
+        "dest_pagerank"
     ] + list(type_dummies.columns)
 
-    X = pd.concat([df[feature_cols[:10]], type_dummies], axis=1)
+    X = pd.concat([df[feature_cols[:-len(type_dummies.columns)]], type_dummies], axis=1)
     y = df["isFraud"]
 
     print(f"[OK] Features matrix shape: {X.shape}, Target distribution: Fraud={y.sum()}, Normal={len(y)-y.sum()}")
@@ -102,7 +129,7 @@ def main():
         n_estimators=100,
         class_weight="balanced",
         random_state=42,
-        n_jobs=-1
+        n_jobs=1
     )
 
     epochs = 5

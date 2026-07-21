@@ -1,10 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/colors.dart';
-import '../../core/constants/strings.dart';
 import '../../core/constants/text_styles.dart';
 
-/// Halaman Bukti Transaksi Berhasil (Struk Resi Digital).
+/// Halaman Bukti Transaksi Berhasil atau Pending (Struk Resi Digital).
 /// Menampilkan rincian transaksi lengkap, nomor referensi, dan tombol kembali ke beranda.
 class ReceiptScreen extends StatelessWidget {
   final String title;
@@ -15,6 +14,7 @@ class ReceiptScreen extends StatelessWidget {
   final String totalAmount;
   final String referenceNumber;
   final String date;
+  final bool isPending;
 
   const ReceiptScreen({
     super.key,
@@ -26,10 +26,16 @@ class ReceiptScreen extends StatelessWidget {
     required this.totalAmount,
     required this.referenceNumber,
     required this.date,
+    this.isPending = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final statusColor = isPending ? Colors.amber.shade800 : AppColors.accentGreen;
+    final statusBgColor = isPending ? Colors.amber.withOpacity(0.12) : AppColors.accentGreen.withOpacity(0.12);
+    final statusIcon = isPending ? CupertinoIcons.clock_fill : CupertinoIcons.checkmark_seal_fill;
+    final statusTitle = isPending ? 'Transaksi Diproses!' : 'Transaksi Berhasil!';
+
     return Scaffold(
       backgroundColor: AppColors.primaryDark,
       body: SafeArea(
@@ -71,25 +77,25 @@ class ReceiptScreen extends StatelessWidget {
                         ),
                       ),
 
-                      // Ikon Sukses Animasi
+                      // Ikon Sukses / Pending Animasi
                       Container(
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: AppColors.accentGreen.withOpacity(0.12),
+                          color: statusBgColor,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
-                          CupertinoIcons.checkmark_seal_fill,
-                          color: AppColors.accentGreen,
+                        child: Icon(
+                          statusIcon,
+                          color: statusColor,
                           size: 56,
                         ),
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Transaksi Berhasil!',
+                        statusTitle,
                         style: AppTextStyles.textTheme.headlineMedium?.copyWith(
-                          color: AppColors.accentGreen,
+                          color: statusColor,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -133,30 +139,35 @@ class ReceiptScreen extends StatelessWidget {
                         child: Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: AppColors.primary.withOpacity(0.1),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(CupertinoIcons.building_2_fill, color: AppColors.primary, size: 24),
+                              child: const Icon(CupertinoIcons.person_fill, color: AppColors.primary, size: 20),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(recipientName, style: AppTextStyles.textTheme.titleMedium),
-                                  const SizedBox(height: 2),
-                                  Text(recipientDetail, style: AppTextStyles.textTheme.bodySmall),
+                                  Text(
+                                    recipientName,
+                                    style: AppTextStyles.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    recipientDetail,
+                                    style: AppTextStyles.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                                  ),
                                 ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
-                      // Tabel Detail Transaksi
+                      // Detail Mutasi
                       _buildDetailRow('Nominal Transaksi', amount),
                       const SizedBox(height: 12),
                       _buildDetailRow('Biaya Admin', adminFee),
@@ -165,17 +176,25 @@ class ReceiptScreen extends StatelessWidget {
                       const SizedBox(height: 12),
                       _buildDetailRow('Nomor Referensi', referenceNumber),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Status Transaksi', 'BERHASIL / SUKSES', isHighlight: true),
+                      _buildDetailRow(
+                        'Status Transaksi', 
+                        isPending ? 'PENDING (DITINJAU FDS)' : 'BERHASIL / SUKSES', 
+                        isHighlight: true,
+                        highlightColor: statusColor
+                      ),
                       const SizedBox(height: 20),
                       Divider(color: AppColors.border.withOpacity(0.8)),
                       const SizedBox(height: 16),
 
                       Text(
-                        'Bank Kuningan terdaftar dan diawasi oleh Otoritas Jasa Keuangan (OJK). Simpan struk ini sebagai bukti pembayaran yang sah.',
+                        isPending 
+                            ? 'Demi keamanan Anda, transaksi ini sedang ditinjau oleh sistem FDS. Transaksi Anda akan diproses dalam waktu maksimal 10 menit. Terima kasih.'
+                            : 'Bank Kuningan terdaftar dan diawasi oleh Otoritas Jasa Keuangan (OJK). Simpan struk ini sebagai bukti pembayaran yang sah.',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textHint,
+                          color: isPending ? Colors.amber.shade900 : AppColors.textHint,
                           fontSize: 10,
+                          fontWeight: isPending ? FontWeight.w600 : FontWeight.normal,
                         ),
                       ),
                     ],
@@ -230,7 +249,7 @@ class ReceiptScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isHighlight = false}) {
+  Widget _buildDetailRow(String label, String value, {bool isHighlight = false, Color? highlightColor}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -244,7 +263,7 @@ class ReceiptScreen extends StatelessWidget {
           value,
           style: AppTextStyles.textTheme.bodyMedium?.copyWith(
             fontWeight: isHighlight ? FontWeight.w800 : FontWeight.w600,
-            color: isHighlight ? AppColors.accentGreen : AppColors.textPrimary,
+            color: isHighlight ? (highlightColor ?? AppColors.accentGreen) : AppColors.textPrimary,
           ),
         ),
       ],

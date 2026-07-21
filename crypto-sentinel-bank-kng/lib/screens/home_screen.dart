@@ -4,6 +4,7 @@ import '../core/constants/colors.dart';
 import '../core/constants/strings.dart';
 import '../core/constants/text_styles.dart';
 import '../data/mock_data.dart';
+import '../data/api_service.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/quick_action_button.dart';
 import '../widgets/transaction_item.dart';
@@ -19,8 +20,45 @@ import 'menus/more_menu_screen.dart';
 /// Screen 2: Home Screen (Dashboard)
 /// Menampilkan sapaan pengguna, notifikasi, BalanceCard eksklusif bergradasi Deep Blue,
 /// grid aksi cepat (Transfer, Top Up, Pembayaran, QRIS, dll), serta daftar mutasi terbaru.
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String _ownerName = 'Billy Jonathan';
+  int _balance = 125750000; // Mulai dengan saldo seeder default
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAccountInfo();
+  }
+
+  Future<void> _fetchAccountInfo() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+
+    final info = await BankKuninganApiService.getAccountInfo('1234567890');
+    if (info['success'] == true && mounted) {
+      setState(() {
+        _ownerName = info['ownerName'] ?? 'Billy Jonathan';
+        _balance = info['balance'] ?? 125750000;
+        _isLoading = false;
+      });
+    } else {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   String _getDynamicGreeting() {
     final hour = DateTime.now().hour;
@@ -33,6 +71,22 @@ class HomeScreen extends StatelessWidget {
     } else {
       return 'Selamat Malam, 🌙';
     }
+  }
+
+  String _formatRupiah(int amount) {
+    final valStr = amount.toString();
+    final chars = valStr.split('');
+    var result = '';
+    var count = 0;
+    for (var i = chars.length - 1; i >= 0; i--) {
+      if (count == 3) {
+        result = '.${result}';
+        count = 0;
+      }
+      result = chars[i] + result;
+      count++;
+    }
+    return 'Rp $result';
   }
 
   void _onQuickActionTapped(BuildContext context, String actionId, String title) {
@@ -65,7 +119,12 @@ class HomeScreen extends StatelessWidget {
     }
 
     if (targetScreen != null) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => targetScreen!));
+      Navigator.push(
+        context, 
+        MaterialPageRoute(builder: (context) => targetScreen!)
+      ).then((_) {
+        _fetchAccountInfo(); // Muat ulang saldo setelah kembali dari menu transfer/transaksi
+      });
     }
   }
 
@@ -165,7 +224,7 @@ class HomeScreen extends StatelessWidget {
         child: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () async {
-            await Future.delayed(const Duration(milliseconds: 800));
+            await _fetchAccountInfo();
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -215,7 +274,7 @@ class HomeScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              MockData.userName,
+                              _ownerName,
                               style: AppTextStyles.textTheme.headlineMedium?.copyWith(
                                 color: AppColors.textPrimary,
                                 fontWeight: FontWeight.w800,
@@ -446,9 +505,9 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 18),
 
                 // Balance Card (Kartu Saldo Deep Blue)
-                const BalanceCard(
+                BalanceCard(
                   accountNumber: MockData.accountNumber,
-                  balance: MockData.accountBalance,
+                  balance: _formatRupiah(_balance),
                 ),
                 const SizedBox(height: 32),
 

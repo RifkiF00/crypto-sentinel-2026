@@ -40,8 +40,8 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
 
   final List<Map<String, String>> _favorites = [
     {'name': 'Siti Rahma', 'account': '9876543210', 'bank': 'Bank Kuningan'},
-    {'name': 'Indodax Mule Account', 'account': 'C666666666', 'bank': 'Indodax'},
-    {'name': 'Binance Exchange Account', 'account': 'C123456789', 'bank': 'BCA'},
+    {'name': 'PT Indodax Nasional Indonesia', 'account': '9012666666', 'bank': 'BCA'},
+    {'name': 'PT Binance Exchange Indonesia', 'account': '9012123456', 'bank': 'CIMB Niaga'},
   ];
 
   @override
@@ -84,14 +84,16 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
         name = 'Billy Jonathan';
       } else if (acc == '0123456789') {
         name = 'Rifki Firmansyah';
-      } else if (acc.toUpperCase() == 'C666666666' || acc.toUpperCase().contains('C666')) {
-        name = 'Indodax Mule Account (High Risk)';
-      } else if (acc.toUpperCase() == 'C999999999' || acc.toUpperCase().contains('C999')) {
-        name = 'Tokocrypto Mixer Account';
-      } else if (acc.toUpperCase() == 'C123456789' || acc.toUpperCase().contains('C123')) {
-        name = 'Binance Exchange Account';
-      } else if (acc.toUpperCase() == 'C777777777' || acc.toUpperCase().contains('C777')) {
+      } else if (acc == '9012666666') {
+        name = 'PT Indodax Nasional Indonesia';
+      } else if (acc == '9012999999') {
+        name = 'PT Tokocrypto Indonesia';
+      } else if (acc == '9012123456') {
+        name = 'PT Binance Exchange Indonesia';
+      } else if (acc == '9012777777') {
         name = 'Indodax Fraud Receiver';
+      } else if (acc == '9012888888') {
+        name = 'PT Pintu Kemakmuran Bersama';
       } else {
         name = 'Rekening ${_accountController.text} (${_tabController.index == 0 ? "Bank Kuningan" : _selectedBank})';
       }
@@ -192,12 +194,14 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
 
         if (result['success'] == true) {
           final refNo = result['data']['transaction_id'] ?? 'REF-${DateTime.now().millisecondsSinceEpoch.toString().substring(3)}';
+          final isPending = result['status'] == 'REVIEW';
+          
           if (mounted) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                 builder: (context) => ReceiptScreen(
-                  title: 'Transfer $bankName',
+                  title: isPending ? 'Transfer Ditangguhkan' : 'Transfer $bankName',
                   recipientName: 'Penerima: $_verifiedName',
                   recipientDetail: '$bankName (${_noteController.text.isEmpty ? "Transfer Dana" : _noteController.text})',
                   amount: amountText,
@@ -205,6 +209,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
                   totalAmount: totalAmountText,
                   referenceNumber: refNo,
                   date: 'Hari ini, ${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')} WIB',
+                  isPending: isPending,
                 ),
               ),
             );
@@ -241,26 +246,9 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isBlocked
-                          ? 'Sistem Keamanan Crypto-Sentinel FDS Engine memblokir transaksi ini karena terindikasi risiko tinggi pencucian uang/pelarian krypto (Risk Score ≥ 80%).'
-                          : result['message'] ?? 'Terjadi kesalahan sistem.',
+                      result['message'] ?? 'Demi keamanan, transaksi Anda tidak dapat diproses saat ini. Silakan hubungi Customer Service Bank Kuningan di 1500000.',
                       style: const TextStyle(fontSize: 14, height: 1.4),
                     ),
-                    if (isBlocked) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red.shade200),
-                        ),
-                        child: Text(
-                          'Detail: ${result['message']}',
-                          style: TextStyle(color: Colors.red.shade900, fontSize: 12, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
                 actions: [
