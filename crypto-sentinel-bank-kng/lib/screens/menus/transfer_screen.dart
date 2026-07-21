@@ -75,6 +75,30 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
 
     setState(() => _isVerifying = true);
 
+    // Deteksi Bank otomatis berdasarkan awalan nomor rekening
+    String detectedBank = _selectedBank;
+    if (acc.startsWith('8012')) {
+      detectedBank = 'Bank Central Asia (BCA)';
+    } else if (acc.startsWith('13700')) {
+      detectedBank = 'Bank Mandiri';
+    } else if (acc.startsWith('0912')) {
+      detectedBank = 'Bank Negara Indonesia (BNI)';
+    } else if (acc.startsWith('888801')) {
+      detectedBank = 'Bank Rakyat Indonesia (BRI)';
+    } else if (acc.startsWith('7054')) {
+      detectedBank = 'Bank CIMB Niaga';
+    } else if (acc.startsWith('9012666666')) {
+      detectedBank = 'Bank Central Asia (BCA)';
+    } else if (acc.startsWith('9012999999')) {
+      detectedBank = 'Bank Mandiri';
+    } else if (acc.startsWith('9012123456')) {
+      detectedBank = 'Bank CIMB Niaga';
+    } else if (acc.startsWith('9012777777')) {
+      detectedBank = 'Bank Rakyat Indonesia (BRI)';
+    } else if (acc.startsWith('9012888888')) {
+      detectedBank = 'Bank Negara Indonesia (BNI)';
+    }
+
     try {
       final res = await BankKuninganApiService.getAccountInfo(acc);
       if (res['success'] == true && res['ownerName'] != 'Billy Jonathan') {
@@ -82,6 +106,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
           _isVerifying = false;
           _isAccountVerified = true;
           _verifiedName = res['ownerName'] ?? 'Nama Tidak Diketahui';
+          _selectedBank = detectedBank;
         });
         return;
       }
@@ -108,7 +133,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     } else if (acc == '9012888888') {
       name = 'PT Pintu Kemakmuran Bersama';
     } else {
-      name = 'Rekening ${_accountController.text} (${_tabController.index == 0 ? "Bank Kuningan" : _selectedBank})';
+      name = 'Rekening ${_accountController.text} (${_tabController.index == 0 ? "Bank Kuningan" : detectedBank})';
     }
 
     if (mounted) {
@@ -116,6 +141,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
         _isVerifying = false;
         _isAccountVerified = true;
         _verifiedName = name;
+        _selectedBank = detectedBank;
       });
     }
   }
