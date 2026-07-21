@@ -59,7 +59,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     super.dispose();
   }
 
-  void _verifyAccount() {
+  void _verifyAccount() async {
     final raw = _accountController.text.trim();
     final acc = raw.replaceAll(RegExp(r'[^0-9A-Za-z]'), '');
 
@@ -75,37 +75,49 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
 
     setState(() => _isVerifying = true);
 
-    Future.delayed(const Duration(milliseconds: 300), () {
-      String name = 'Nasabah Terverifikasi';
-
-      if (acc == '9876543210' || acc == '098765432100') {
-        name = 'Siti Rahma';
-      } else if (acc == '1234567890') {
-        name = 'Billy Jonathan';
-      } else if (acc == '0123456789') {
-        name = 'Rifki Firmansyah';
-      } else if (acc == '9012666666') {
-        name = 'PT Indodax Nasional Indonesia';
-      } else if (acc == '9012999999') {
-        name = 'PT Tokocrypto Indonesia';
-      } else if (acc == '9012123456') {
-        name = 'PT Binance Exchange Indonesia';
-      } else if (acc == '9012777777') {
-        name = 'Indodax Fraud Receiver';
-      } else if (acc == '9012888888') {
-        name = 'PT Pintu Kemakmuran Bersama';
-      } else {
-        name = 'Rekening ${_accountController.text} (${_tabController.index == 0 ? "Bank Kuningan" : _selectedBank})';
-      }
-
-      if (mounted) {
+    try {
+      final res = await BankKuninganApiService.getAccountInfo(acc);
+      if (res['success'] == true && res['ownerName'] != 'Billy Jonathan') {
         setState(() {
           _isVerifying = false;
           _isAccountVerified = true;
-          _verifiedName = name;
+          _verifiedName = res['ownerName'] ?? 'Nama Tidak Diketahui';
         });
+        return;
       }
-    });
+    } catch (e) {
+      print('[Verification Warning] Gagal fetch ke API: $e');
+    }
+
+    // Fallback static untuk demo dan blacklisted exchanges
+    String name = 'Nasabah Terverifikasi';
+    if (acc == '9876543210' || acc == '098765432100') {
+      name = 'Siti Rahma';
+    } else if (acc == '1234567890') {
+      name = 'Billy Jonathan';
+    } else if (acc == '0123456789') {
+      name = 'Rifki Firmansyah';
+    } else if (acc == '9012666666') {
+      name = 'PT Indodax Nasional Indonesia';
+    } else if (acc == '9012999999') {
+      name = 'PT Tokocrypto Indonesia';
+    } else if (acc == '9012123456') {
+      name = 'PT Binance Exchange Indonesia';
+    } else if (acc == '9012777777') {
+      name = 'Indodax Fraud Receiver';
+    } else if (acc == '9012888888') {
+      name = 'PT Pintu Kemakmuran Bersama';
+    } else {
+      name = 'Rekening ${_accountController.text} (${_tabController.index == 0 ? "Bank Kuningan" : _selectedBank})';
+    }
+
+    if (mounted) {
+      setState(() {
+        _isVerifying = false;
+        _isAccountVerified = true;
+        _verifiedName = name;
+      });
+    }
   }
 
   void _selectQuickAmount(String amount) {
