@@ -690,6 +690,27 @@ def get_account_info(account_id: str):
             "is_blocked": acc.is_blocked
         }
 
+
+@router.get("/bri/accounts")
+def list_accounts(limit: int = 150):
+    """Mendapatkan daftar seluruh akun nasabah di database untuk kemudahan testing manual."""
+    with Session(engine) as db:
+        accs = db.query(Account).limit(limit).all()
+        return [
+            {
+                "account_id": acc.account_id,
+                "owner_name": acc.owner_name,
+                "balance": acc.balance,
+                "risk_profile": acc.risk_profile,
+                "is_active": acc.is_active,
+                "is_blocked": acc.is_blocked,
+                "registered_device": acc.registered_device,
+                "registered_ip": acc.registered_ip
+            }
+            for acc in accs
+        ]
+
+
 @router.get("/bri/transactions/{account_id}")
 def get_account_transactions(account_id: str):
     """Mendapatkan riwayat transaksi untuk account_id tertentu."""
