@@ -208,3 +208,43 @@ sequenceDiagram
     C->>U: Error Popup: Transaksi Diblokir 🔴
     C->>D: Real-time Blocked Alert + Upstream Freeze Tag
 ```
+
+---
+
+## 6. Rencana Target & Rekomendasi Industri (Real-World FDS Standard)
+
+Untuk meningkatkan sistem prototype ini agar setara dengan standar operasional riil di industri perbankan nasional, berikut adalah rekomendasi arsitektur fase selanjutnya:
+
+### A. Fitur Step-Up Authentication Flow (OTP & Liveness Biometrics)
+* **Tantangan Industri:** Pencegahan *False Positive* (memblokir nasabah jujur yang kebetulan melakukan transfer besar mendadak).
+* **Solusi Lapangan:** Jika status FDS bernilai **`REVIEW` (Skor 50-79)**, core banking tidak langsung menahan dana selamanya. Aplikasi HP nasabah akan memicu tantangan otentikasi tambahan:
+  1. **OTP SMS/WhatsApp** otomatis.
+  2. **Liveness Face Verification** (mencocokkan biometrik wajah depan dengan basis data e-KTP dukcapil secara live).
+* **Hasil:** Jika nasabah berhasil menyelesaikan tantangan tersebut, FDS mengubah status dari `REVIEW` menjadi `ALLOW` secara instan dan memproses transfer secara otomatis tanpa membebani analis bank.
+
+### B. Implementasi Device Fingerprinting SDK (SHIELD / ThreatMetrix)
+* **Tantangan Industri:** Penipu profesional sering menggunakan emulator, melakukan kloning aplikasi, atau mengganti `device_id` palsu dengan mudah.
+* **Solusi Lapangan:** Mengintegrasikan SDK pihak ketiga tingkat lanjut untuk mengumpulkan sidik jari perangkat keras yang tidak bisa dipalsukan:
+  * Sidik jari kanvas HTML5 (*Canvas Fingerprint*).
+  * Analisis sensor fisik (gyroscope, accelerometer) untuk memastikan HP dipegang oleh manusia asli, bukan robot/macro.
+  * Status deteksi root (Android Magisk) atau jailbreak (iOS).
+
+### C. Behavioral Biometrics (Analisis Perilaku Sentuhan Layar)
+* **Tantangan Industri:** Akun nasabah asli diambil alih paksa oleh pelaku kejahatan (*Account Takeover*) atau terhipnotis oleh sindikat penipuan (*Social Engineering*).
+* **Solusi Lapangan:** Menganalisis cara berinteraksi dengan layar HP:
+  * Kecepatan ketikan PIN/Nominal.
+  * Sudut kemiringan HP saat memegang.
+  * Pola geseran layar (*swipe speed* dan *pressure*).
+  * Penipu biasanya mengetik nominal transfer dengan sangat terburu-buru atau menggunakan fungsi *copy-paste*, sementara nasabah asli mengetik dengan ritme natural.
+
+### D. Federated Learning untuk Perlindungan Data Privasi (GDPR / UU PDP)
+* **Tantangan Industri:** Peraturan UU Pelindungan Data Pribadi (UU PDP No. 27/2022) melarang bank membagikan data identitas dan transaksi nasabah keluar sistem internal secara bebas.
+* **Solusi Lapangan:** Menerapkan **Federated Machine Learning**.
+  * Model GNN dilatih secara lokal di server internal masing-masing bank partner.
+  * Hanya parameter matematis (bobot model / gradien) yang dikirim ke server cloud Crypto-Sentinel untuk diagregasikan.
+  * Model FDS pusat menjadi cerdas secara kolektif tanpa pernah melihat satu pun data transaksi mentah atau identitas pribadi nasabah bank.
+
+### E. Graph Pipeline End-to-End dengan Graph Database (Neo4j / Amazon Neptune)
+* **Tantangan Industri:** Memori RAM tidak akan cukup memuat miliaran transaksi graf jika hanya menggunakan array in-memory NetworkX saat bank mulai go-live.
+* **Solusi Lapangan:** Menghubungkan log transaksi ke database grafis terdistribusi berskala besar seperti **Neo4j** or **Amazon Neptune**, dan menjalankan pipeline GNN secara end-to-end menggunakan **PyTorch Geometric** or **DGL (Deep Graph Library)** untuk melatih arsitektur **GraphSAGE / GCN** secara asinkron.
+
