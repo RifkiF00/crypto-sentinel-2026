@@ -170,7 +170,22 @@ def generate_100_accounts():
     city_codes = ["3171", "3273", "3578", "3374", "3175", "3275", "3573", "3671", "5171", "6171"]
 
     for i in range(1, 101):
-        acc_id = f"1000{i:06d}"
+        bank_modulo = i % 5
+        if bank_modulo == 0:
+            # BCA (10 digits)
+            acc_id = f"8012{i:06d}"
+        elif bank_modulo == 1:
+            # Mandiri (13 digits)
+            acc_id = f"13700{i:08d}"
+        elif bank_modulo == 2:
+            # BNI (10 digits)
+            acc_id = f"0912{i:06d}"
+        elif bank_modulo == 3:
+            # BRI (15 digits)
+            acc_id = f"888801{i:09d}"
+        else:
+            # CIMB Niaga (12 digits)
+            acc_id = f"7054{i:08d}"
         
         # Deterministic generation for NIK, Name, Device, IP, Balance
         city = city_codes[i % len(city_codes)]
