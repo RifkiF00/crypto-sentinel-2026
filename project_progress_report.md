@@ -1,6 +1,8 @@
 # 🛡️ Laporan Akhir Progres Proyek & Kajian Ilmiah: Crypto-Sentinel FDS
 
-Dokumen ini disusun sebagai panduan komprehensif, tinjauan ilmiah, dan spesifikasi arsitektur teknis dari sistem **Crypto-Sentinel Fraud Detection System (FDS)**. Laporan ini dirancang untuk memenuhi kebutuhan dokumentasi hackathon, presentasi investor (*pitching*), serta kebutuhan pengujian akademis.
+Laporan ini disusun sebagai dokumen panduan serah-terima teknis (*technical handoff*) komprehensif, tinjauan ilmiah, dan spesifikasi arsitektur proyek **Crypto-Sentinel Fraud Detection System (FDS)**. 
+
+Dokumen ini memuat status kemajuan terkini agar agen kecerdasan buatan (AI Agent) berikutnya dapat melanjutkan pengembangan tanpa kehilangan konteks.
 
 ---
 
@@ -66,10 +68,10 @@ graph TD
 ```
 
 ### Detail Alur Transaksi:
-1. **Inisiasi:** Billy Jonathan mengklik transfer Rp 15.000.000 ke PT Indodax BCA di aplikasi HP.
+1. **Inisiasi:** Nasabah Billy Jonathan mengklik transfer Rp 15.000.000 ke PT Indodax BCA di aplikasi HP.
 2. **SNAP BI Signature:** HP mengkalkulasi signature HMAC-SHA256 dan menyisipkannya ke header HTTP, lalu mengirimkannya ke `/bri/transfer` (`expresso-api`).
-3. **Verifikasi Core Banking:** Core Banking memvalidasi signature. Jika lolos, ia membaca database SQLite untuk mengambil data 5 transaksi terakhir pengirim, lalu meneruskan transaksi + koordinat + riwayat tersebut ke FDS API (`crypto-sentinel-api`).
-4. **FDS Assessment:** FDS memasukkan transaksi ke graf in-memory (NetworkX) untuk menghitung PageRank, menggabungkannya dengan ML Random Forest, mengevaluasi aturan anomali lokasi (Haversine), dan membalikkan keputusan (`BLOCK`).
+3. **Verifikasi Core Banking:** Core Banking memvalidasi signature. Jika lolos, ia membaca database SQLite untuk mengambil data 5 transaksi terakhir pengirim (termasuk status SUCCESS, PENDING, dan REVIEW), lalu meneruskan transaksi + koordinat + riwayat tersebut ke FDS API (`crypto-sentinel-api`).
+4. **FDS Assessment:** FDS memasukkan transaksi ke graf in-memory (NetworkX) untuk menghitung PageRank, menggabungkannya dengan ML Random Forest, mengevaluasi aturan anomali lokasi (Haversine), deteksi baseline historis (>5x avg), dan deteksi pola Smurfing.
 5. **Freeze & Lock:** Core Banking menerima keputusan `BLOCK`. Core banking membatalkan transfer, mencatat alarm, membekukan rekening Billy secara berantai (*Upstream Freezing*), dan mengirim respons error ke HP. Dashboard memperbarui datanya secara real-time.
 
 ---
@@ -81,7 +83,7 @@ Database core banking kita dikelola menggunakan SQLite dengan rincian skema tabe
 ### A. Tabel `accounts` (Data Rekening Nasabah)
 | Nama Kolom | Tipe Data | Keterangan |
 | :--- | :--- | :--- |
-| `account_id` | `VARCHAR(20)` [PK] | Nomor rekening unik 10-digit (e.g. `1234567890`). |
+| `account_id` | `VARCHAR(20)` [PK] | Nomor rekening unik 10-digit, 13-digit, atau 15-digit. |
 | `national_id` | `VARCHAR(16)` [Unique] | NIK KTP pemilik (digunakan untuk KYC & STR PPATK). |
 | `owner_name` | `VARCHAR(100)` | Nama lengkap pemilik rekening. |
 | `balance` | `BIGINT` | Saldo riil nasabah (dalam satuan Rupiah). |
@@ -100,7 +102,7 @@ Database core banking kita dikelola menggunakan SQLite dengan rincian skema tabe
 | `purpose_code` | `VARCHAR(10)` | Kode tujuan transfer ISO 20022 (e.g. `SALA`). |
 | `sentinel_score` | `FLOAT` | Skor risiko FDS terhitung (0-100%). |
 | `sentinel_decision`| `VARCHAR(10)` | Hasil evaluasi FDS (`ALLOW`, `REVIEW`, `BLOCK`). |
-| `status` | `VARCHAR(15)` | Status transaksi akhir (`SUCCESS`, `PENDING`, `FAILED`). |
+| `status` | `VARCHAR(15)` | Status transaksi akhir (`SUCCESS`, `PENDING`, `FAILED`, `REVIEW`). |
 | `latitude` / `longitude` | `FLOAT` | Titik koordinat GPS lokasi pengirim saat transaksi. |
 
 ### C. Tabel `sentinel_alerts` (Alarm FDS)
@@ -141,16 +143,39 @@ Database lokal kita telah di-seed dengan total **111 akun aktif** untuk mensimul
 | **`9012777777`** | Indodax Fraud Receiver | BRI | HIGH | Rp 10.000.000 | Akun terlarang/Scam (Blacklist HIGH). |
 | **`9012888888`** | PT Pintu Kemakmuran Bersama | BNI | MEDIUM | Rp 12.000.000 | Rekening Escrow Pintu Exchange. |
 
-### B. 100 Rekening Dummy Tambahan (`1000000001` s/d `1000000100`)
-Sistem secara otomatis memproduksi 100 akun nasabah realistis Indonesia (misal: "Citra Hidayat", "Mega Permana") dengan properti matematika deterministik:
-* **Nomor Rekening:** Mulai dari `1000000001` hingga `1000000100`.
-* **NIK (KTP):** Dihasilkan berdasarkan kode wilayah kependudukan asli Indonesia (misal: `3171` Jakarta Pusat, `3273` Bandung).
-* **Saldo Awal:** Didistribusikan secara acak matematis antara Rp 2.500.000 hingga Rp 150.000.000.
-* **Risk Profile:** 90% LOW, sisanya di-set sebagai HIGH/MEDIUM untuk menyediakan variasi analisis anomali pada grafik visualisasi dashboard.
+### B. 100 Rekening Dummy dengan Prefiks Bank Asli
+Sistem secara otomatis memproduksi 100 akun nasabah realistis Indonesia dengan properti matematika deterministik menggunakan prefiks rekening bank ril di Indonesia:
+* **BCA (Awalan `8012`):** total 20 akun.
+* **Mandiri (Awalan `13700`):** total 20 akun.
+* **BNI (Awalan `0912`):** total 20 akun.
+* **BRI (Awalan `888801`):** total 20 akun.
+* **CIMB Niaga (Awalan `7054`):** total 20 akun.
 
 ---
 
-## 5. Use Cases & Panduan Demo Uji Coba Hackathon
+## 5. Fitur Mutakhir & Pembaruan Terkini
+
+Berikut adalah fungsionalitas yang telah berhasil diselesaikan dan diintegrasikan secara penuh pada iterasi terakhir:
+
+### A. Autodeteksi Dropdown Bank di Aplikasi Mobile App
+* Di file **[transfer_screen.dart](file:///d:/Crypto-Sentinel%202026/crypto-sentinel-bank-kng/lib/screens/menus/transfer_screen.dart)**, saat pengirim mengetik nomor rekening tujuan, sistem secara dinamis mendeteksi prefiks nomor (e.g. `8012` BCA, `888801` BRI) dan **secara otomatis mengubah pilihan bank tujuan di dropdown** agar selaras dengan nomor rekening, menghilangkan risiko *mismatch bank* pada layar konfirmasi.
+* Sistem juga memanggil endpoint `/api/v1/bri/account/{account_id}` untuk melakukan **live query nama nasabah** dari database SQLite.
+
+### B. Pendeteksian Pola Smurfing/Structuring
+* Di file **[rule_engine.py](file:///d:/Crypto-Sentinel%202026/crypto-sentinel-api/app/rule_engine.py)**, kami mengimplementasikan aturan deteksi smurfing dengan meneliti parameter `past_transactions`.
+* Aturan menyaring seluruh transaksi pengirim dalam kurun waktu **1 jam terakhir** dengan status `SUCCESS`, `PENDING`, dan `REVIEW` menggunakan struktur data `set()` untuk mengukur jumlah penerima unik (*distinct destinations*).
+* Jika jumlah rekening tujuan unik mencapai $\ge 4$ rekening berbeda, skor risiko naik sebesar `+45`, memicu status **`BLOCK`** pada transaksi ke-4 dan seterusnya.
+
+### C. Script Simulator Smurfing (`simulate_smurfing.py`)
+* Kami menyediakan file **[simulate_smurfing.py](file:///d:/Crypto-Sentinel%202026/expresso-api/simulate_smurfing.py)** that simulates rapid transfers from Rifki's account (`0123456789`) to 6 different recipients.
+* Saat dijalankan (`python simulate_smurfing.py`), transaksi 1-3 berhasil lolos (status `REVIEW`), sementara transaksi 4-6 **langsung terblokir otomatis** oleh FDS.
+
+### D. Perbaikan Pemetaan Tipe Node pada Grafik Visualizer FDS
+* Di file **[main.py](file:///d:/Crypto-Sentinel%202026/crypto-sentinel-api/app/main.py)** endpoint `/demo-graph`, kami memperbaiki deteksi tipe node. Seluruh nomor rekening numerik lokal kini dipetakan dengan benar sebagai simpul **`"bank"` (berwarna biru)**, bukan terdeteksi salah sebagai `"exchange"` (oranye), sehingga grafis peta forensik di dashboard terwujud sempurna.
+
+---
+
+## 6. Panduan Demo Uji Coba Hackathon
 
 Gunakan tiga skenario teruji berikut untuk mendemonstrasikan pertahanan FDS di hadapan juri:
 
@@ -183,14 +208,3 @@ sequenceDiagram
     C->>U: Error Popup: Transaksi Diblokir 🔴
     C->>D: Real-time Blocked Alert + Upstream Freeze Tag
 ```
-
----
-
-## 6. Rencana Target Selanjutnya (Future Target Recommendations)
-
-1. **Step-Up Authentication Integration:**
-   Menyediakan halaman OTP khusus dan deteksi keaktifan biometrik (*Liveness Face Verification*) jika transaksi terdeteksi `REVIEW`. Hal ini meminimalisir intervensi manual analis bank dan meningkatkan kelancaran transaksi nasabah yang sah (*customer journey*).
-2. **Homomorphic Encryption:**
-   Menerapkan enkripsi data yang memungkinkan FDS API memproses dan memetakan model ML/GNN tanpa perlu membuka enkripsi data pribadi nasabah (menghormati privasi penuh di bawah UU Pelindungan Data Pribadi).
-3. **Graph Neural Network Terpusat (DGL / PyTorch Geometric):**
-   Meningkatkan *Graph Feature Engineering* saat ini ke model GNN penuh (seperti **GraphSAGE** atau **GAT**) yang dilatih secara dinamis menggunakan framework deep learning grafis guna mendeteksi rantai pencucian uang berstruktur kompleks secara otomatis.
