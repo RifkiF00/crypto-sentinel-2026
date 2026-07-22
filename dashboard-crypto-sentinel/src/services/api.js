@@ -326,19 +326,19 @@ export async function fetchGnnGraph() {
       if (n.type === 'bank') {
         const idx = bankNodes.findIndex(node => node.id === n.id);
         x = 80;
-        y = bankNodes.length > 1 ? 80 + (idx * 340) / (bankNodes.length - 1) : 250;
+        y = bankNodes.length > 1 ? 60 + (idx * 400) / (bankNodes.length - 1) : 260;
       } else if (n.type === 'mule') {
         const idx = muleNodes.findIndex(node => node.id === n.id);
         x = 300;
-        y = muleNodes.length > 1 ? 80 + (idx * 360) / (muleNodes.length - 1) : 250;
+        y = muleNodes.length > 1 ? 60 + (idx * 400) / (muleNodes.length - 1) : 260;
       } else if (n.type === 'wallet') {
         const idx = walletNodes.findIndex(node => node.id === n.id);
         x = 530;
-        y = walletNodes.length > 1 ? 100 + (idx * 300) / (walletNodes.length - 1) : 250;
+        y = walletNodes.length > 1 ? 60 + (idx * 400) / (walletNodes.length - 1) : 260;
       } else if (n.type === 'exchange') {
         const idx = exchangeNodes.findIndex(node => node.id === n.id);
         x = 730;
-        y = exchangeNodes.length > 1 ? 170 + (idx * 170) / (exchangeNodes.length - 1) : 250;
+        y = exchangeNodes.length > 1 ? 60 + (idx * 400) / (exchangeNodes.length - 1) : 260;
       }
 
       // Assign realistic risk score based on degree and role

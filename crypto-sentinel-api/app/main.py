@@ -513,96 +513,116 @@ def get_transaction_graph(limit: int = 100):
 def get_demo_graph():
     G = nx.DiGraph()
 
-    # 1. Add static demo laundering scenario transactions
-    for _, row in demo_df.iterrows():
-        sender = row["sender"]
-        receiver = row["receiver"]
+    if not transaction_logs:
+        return {
+            "scenario": "Synthetic crypto laundering demo",
+            "total_nodes": 0,
+            "total_edges": 0,
+            "mule_candidates": [],
+            "nodes": [],
+            "edges": []
+        }
 
-        G.add_node(sender)
-        G.add_node(receiver)
-        G.add_edge(
-            sender,
-            receiver,
-            amount=row["amount"],
-            transaction_type=row["type"],
-            scenario=row["scenario"]
-        )
-
-    # 2. Add dynamic sandbox logs transactions (including user simulations)
+    nodes_info = {}
+    
     for log in transaction_logs:
-        sender = log.get("senderAccount", "A001")
+        sender = log.get("senderAccount", "1234567890")
         receiver = log["transaction"]["destinationAccount"]
+        amount = log["transaction"]["amount"]
+        risk = log["risk_score"]
         
-        G.add_node(sender)
-        G.add_node(receiver)
+        # 1. SUMBER DANA (bank)
+        nodes_info[sender] = {
+            "label": get_name_for_account(sender),
+            "type": "bank",
+            "risk": 35
+        }
+        
+        # 2. REKENING MULE (mule)
+        nodes_info[receiver] = {
+            "label": get_name_for_account(receiver),
+            "type": "mule",
+            "risk": 95 if risk >= 80 else 74
+        }
+        
+        # Add edge: bank -> mule
         G.add_edge(
             sender,
             receiver,
-            amount=log["transaction"]["amount"],
-            transaction_type=log["transaction"]["type"],
-            scenario="sandbox_simulation"
+            amount=amount,
+            transaction_type="TRANSFER",
+            scenario="sandbox_simulation",
+            risk_level="high" if risk >= 80 else "medium"
         )
-
-    # 3. Create a lookup mapping for threat intelligence watchlist
-    threat_map = {row["account_id"]: row for _, row in threat_df.iterrows()}
+        
+        # 3. CRYPTO WALLET (wallet)
+        wallet_id = f"CRYPTO-{receiver}"
+        h = hashlib.md5(receiver.encode()).hexdigest()
+        wallet_label = f"0x{h[:6]}...{h[-4:]}"
+        nodes_info[wallet_id] = {
+            "label": wallet_label,
+            "type": "wallet",
+            "risk": 78
+        }
+        
+        # Add edge: mule -> wallet
+        G.add_edge(
+            receiver,
+            wallet_id,
+            amount=amount,
+            transaction_type="TRANSFER",
+            scenario="sandbox_simulation",
+            risk_level="medium"
+        )
+        
+        # 4. EXCHANGE (exchange)
+        exchange_id = f"EXCHANGE-{receiver}"
+        exchanges = ["Indodax", "Tokocrypto", "Binance", "Pintu"]
+        h_val = int(hashlib.md5(receiver.encode()).hexdigest(), 16)
+        exch_name = exchanges[h_val % len(exchanges)]
+        nodes_info[exchange_id] = {
+            "label": exch_name,
+            "type": "exchange",
+            "risk": 85
+        }
+        
+        # Add edge: wallet -> exchange
+        G.add_edge(
+            wallet_id,
+            exchange_id,
+            amount=amount,
+            transaction_type="TRANSFER",
+            scenario="sandbox_simulation",
+            risk_level="medium"
+        )
 
     nodes = []
-    for node in G.nodes():
-        if node.startswith("A"):
-            label = get_name_for_account(node)
-            node_type = "bank"
-        elif node.startswith("MULE"):
-            label = get_name_for_account(node)
-            node_type = "mule"
-        elif node.startswith("CRYPTO"):
-            h = hashlib.md5(node.encode()).hexdigest()
-            label = f"0x{h[:6]}...{h[-4:]}"
-            node_type = "wallet"
-        elif node in threat_map:
-            t_info = threat_map[node]
-            # Map labels based on watchlist type
-            if t_info["entity_type"] == "mule_account":
-                label = get_name_for_account(node)
-                node_type = "mule"
-            elif t_info["entity_type"] == "suspicious_wallet":
-                h = hashlib.md5(node.encode()).hexdigest()
-                label = f"0x{h[:6]}...{h[-4:]}"
-                node_type = "wallet"
-            else:
-                label = get_exchange_for_account(node)
-                node_type = "exchange"
-        else:
-            # Fallback
-            label = get_exchange_for_account(node)
-            node_type = "exchange"
-
+    for node_id, info in nodes_info.items():
         nodes.append({
-            "id": node,
-            "label": label,
-            "type": node_type,
-            "degree": G.degree(node),
-            "in_degree": G.in_degree(node),
-            "out_degree": G.out_degree(node)
+            "id": node_id,
+            "label": info["label"],
+            "type": info["type"],
+            "riskScore": info["risk"],
+            "degree": G.degree(node_id) if node_id in G else 0,
+            "in_degree": G.in_degree(node_id) if node_id in G else 0,
+            "out_degree": G.out_degree(node_id) if node_id in G else 0
         })
 
-    edges = [
-        {
+    edges = []
+    for source, target, data in G.edges(data=True):
+        edges.append({
             "source": source,
             "target": target,
             "amount": data["amount"],
             "transaction_type": data["transaction_type"],
-            "scenario": data["scenario"]
-        }
-        for source, target, data in G.edges(data=True)
-    ]
+            "scenario": data["scenario"],
+            "riskLevel": data.get("risk_level", "medium")
+        })
 
-    mule_candidates = [
-        node for node in G.nodes()
-        if G.in_degree(node) >= 3
-    ]
+    mule_candidates = [n for n, info in nodes_info.items() if info["type"] == "mule"]
 
     return {
-        "scenario": "Synthetic crypto laundering demo",
+        "scenario": "Dynamic Smurfing Detection Graph",
         "total_nodes": len(nodes),
         "total_edges": len(edges),
         "mule_candidates": mule_candidates,
