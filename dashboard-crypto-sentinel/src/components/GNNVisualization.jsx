@@ -18,7 +18,7 @@ import { checkHealth, fetchGnnGraph, simulateBackendDemo, gnnInference } from '.
 
 // Node shape renderers for SVG
 function NodeShape({ node, isHovered, isHighlighted, onMouseEnter, onMouseLeave, onClick }) {
-  const size = node.type === 'exchange' ? 28 : node.type === 'wallet' ? 24 : node.type === 'mule' ? 26 : 22;
+  const size = node.type === 'exchange' ? 36 : node.type === 'wallet' ? 30 : node.type === 'mule' ? 32 : 30;
   const colors = {
     bank: { fill: '#3b82f6', stroke: '#2563eb', bg: 'rgba(59,130,246,0.15)' },
     mule: { fill: '#ef4444', stroke: '#dc2626', bg: 'rgba(239,68,68,0.15)' },
@@ -29,6 +29,13 @@ function NodeShape({ node, isHovered, isHighlighted, onMouseEnter, onMouseLeave,
   const isActive = isHovered || isHighlighted;
   const opacity = isHighlighted === false ? 0.2 : 1;
 
+  // Truncate labels to avoid text clutter and overlap
+  const displayLabel = node.label.length > 13 ? node.label.substring(0, 11) + '...' : node.label;
+
+  // Custom bobbing parameters so nodes float asynchronously
+  const bobbingDuration = 3.5 + (node.id.charCodeAt(node.id.length - 1) % 4) * 0.5;
+  const bobbingDelay = (node.id.charCodeAt(0) % 5) * 0.3;
+
   return (
     <g
       transform={`translate(${node.x}, ${node.y})`}
@@ -37,63 +44,88 @@ function NodeShape({ node, isHovered, isHighlighted, onMouseEnter, onMouseLeave,
       onClick={onClick}
       style={{ cursor: 'pointer', opacity, transition: 'opacity 0.3s' }}
     >
-      {/* Pulse ring for high-risk nodes */}
-      {node.riskScore >= 85 && (
-        <circle r={size + 8} fill="none" stroke={c.fill} strokeWidth="1.5" opacity="0.3">
-          <animate attributeName="r" values={`${size + 4};${size + 14};${size + 4}`} dur="2s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.4;0;0.4" dur="2s" repeatCount="indefinite" />
-        </circle>
-      )}
-
-      {/* Glow */}
-      {isActive && (
-        <circle r={size + 6} fill={c.bg} stroke={c.fill} strokeWidth="1" strokeDasharray="3 2" opacity="0.5">
-          <animate attributeName="stroke-dashoffset" from="10" to="0" dur="1s" repeatCount="indefinite" />
-        </circle>
-      )}
-
-      {/* Shape based on type */}
-      {node.type === 'bank' && (
-        <circle r={size} fill={c.bg} stroke={c.fill} strokeWidth={isActive ? 2.5 : 1.5} />
-      )}
-      {node.type === 'mule' && (
-        <polygon
-          points={`0,${-size} ${size},0 0,${size} ${-size},0`}
-          fill={c.bg} stroke={c.fill} strokeWidth={isActive ? 2.5 : 1.5}
-        />
-      )}
-      {node.type === 'wallet' && (
-        <polygon
-          points={hexPoints(size)}
-          fill={c.bg} stroke={c.fill} strokeWidth={isActive ? 2.5 : 1.5}
-        />
-      )}
-      {node.type === 'exchange' && (
-        <rect
-          x={-size} y={-size} width={size * 2} height={size * 2}
-          rx="6" fill={c.bg} stroke={c.fill} strokeWidth={isActive ? 2.5 : 1.5}
-        />
-      )}
-
-      {/* Label */}
-      <text
-        y={size + 16}
-        textAnchor="middle"
-        fill="var(--text-primary)"
-        fontSize="10"
-        fontWeight="600"
-        fontFamily="var(--font-sans)"
+      <motion.g
+        animate={{ y: [-4, 4, -4] }}
+        transition={{
+          duration: bobbingDuration,
+          delay: bobbingDelay,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
       >
-        {node.label}
-      </text>
+        {/* Pulse ring for high-risk nodes */}
+        {node.riskScore >= 80 && (
+          <circle r={size + 10} fill="none" stroke={c.fill} strokeWidth="2" opacity="0.4">
+            <animate attributeName="r" values={`${size + 6};${size + 16};${size + 6}`} dur="1.8s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.5;0;0.5" dur="1.8s" repeatCount="indefinite" />
+          </circle>
+        )}
 
-      {/* Risk score badge */}
-      <g transform={`translate(${size - 4}, ${-size + 4})`}>
-        <circle r="10" fill={node.riskScore >= 80 ? '#ef4444' : node.riskScore >= 50 ? '#f59e0b' : '#10b981'} />
-        <text textAnchor="middle" y="3.5" fill="white" fontSize="8" fontWeight="700" fontFamily="var(--font-mono)">
-          {node.riskScore}
+        {/* Glow */}
+        {isActive && (
+          <circle r={size + 8} fill={c.bg} stroke={c.fill} strokeWidth="1.5" strokeDasharray="4 2" opacity="0.6">
+            <animate attributeName="stroke-dashoffset" from="12" to="0" dur="1s" repeatCount="indefinite" />
+          </circle>
+        )}
+
+        {/* Shape based on type */}
+        {node.type === 'bank' && (
+          <circle r={size} fill={c.bg} stroke={c.fill} strokeWidth={isActive ? 3.0 : 1.8} filter={isActive ? "url(#node-glow)" : "none"} />
+        )}
+        {node.type === 'mule' && (
+          <polygon
+            points={`0,${-size} ${size},0 0,${size} ${-size},0`}
+            fill={c.bg} stroke={c.fill} strokeWidth={isActive ? 3.0 : 1.8}
+            filter={isActive ? "url(#node-glow)" : "none"}
+          />
+        )}
+        {node.type === 'wallet' && (
+          <polygon
+            points={hexPoints(size)}
+            fill={c.bg} stroke={c.fill} strokeWidth={isActive ? 3.0 : 1.8}
+            filter={isActive ? "url(#node-glow)" : "none"}
+          />
+        )}
+        {node.type === 'exchange' && (
+          <rect
+            x={-size} y={-size} width={size * 2} height={size * 2}
+            rx="8" fill={c.bg} stroke={c.fill} strokeWidth={isActive ? 3.0 : 1.8}
+            filter={isActive ? "url(#node-glow)" : "none"}
+          />
+        )}
+
+        {/* Label Capsule Background Card */}
+        <rect
+          x={-60}
+          y={size + 6}
+          width={120}
+          height={18}
+          rx="5"
+          fill="rgba(15, 23, 42, 0.85)"
+          stroke={isActive ? c.fill : "rgba(255,255,255,0.08)"}
+          strokeWidth="1.2"
+        />
+
+        {/* Label */}
+        <text
+          y={size + 18}
+          textAnchor="middle"
+          fill="white"
+          fontSize="10"
+          fontWeight="700"
+          fontFamily="var(--font-sans)"
+        >
+          {displayLabel}
         </text>
-      </g>
+
+        {/* Risk score badge */}
+        <g transform={`translate(${size - 4}, ${-size + 4})`}>
+          <circle r="11" fill={node.riskScore >= 80 ? '#ef4444' : node.riskScore >= 50 ? '#f59e0b' : '#10b981'} stroke="white" strokeWidth="1.5" />
+          <text textAnchor="middle" y="3.5" fill="white" fontSize="9" fontWeight="800" fontFamily="var(--font-mono)">
+            {node.riskScore}
+          </text>
+        </g>
+      </motion.g>
     </g>
   );
 }
@@ -111,34 +143,44 @@ function hexPoints(size) {
 function Edge({ edge, sourceNode, targetNode, isHighlighted }) {
   const colors = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' };
   const color = colors[edge.riskLevel];
-  const thickness = edge.riskLevel === 'high' ? 2.5 : edge.riskLevel === 'medium' ? 1.8 : 1.2;
-  const opacity = isHighlighted === false ? 0.08 : isHighlighted === true ? 0.9 : 0.35;
+  const thickness = edge.riskLevel === 'high' ? 3.8 : edge.riskLevel === 'medium' ? 2.6 : 1.8;
+  const opacity = isHighlighted === false ? 0.08 : isHighlighted === true ? 0.95 : 0.5;
 
-  // Curved path
+  // Shorten paths to start/stop exactly at node boundaries to show arrowheads beautifully
   const dx = targetNode.x - sourceNode.x;
   const dy = targetNode.y - sourceNode.y;
-  const cx = sourceNode.x + dx * 0.5;
-  const cy = sourceNode.y + dy * 0.5 - (Math.abs(dy) < 80 ? 30 : 0);
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+
+  const sourceSize = sourceNode.type === 'exchange' ? 36 : sourceNode.type === 'wallet' ? 30 : sourceNode.type === 'mule' ? 32 : 30;
+  const targetSize = targetNode.type === 'exchange' ? 36 : targetNode.type === 'wallet' ? 30 : targetNode.type === 'mule' ? 32 : 30;
+
+  const startX = sourceNode.x + (dx / len) * (sourceSize + 4);
+  const startY = sourceNode.y + (dy / len) * (sourceSize + 4);
+  const endX = targetNode.x - (dx / len) * (targetSize + 10);
+  const endY = targetNode.y - (dy / len) * (targetSize + 10);
+
+  // Curved path calculation
+  const cx = startX + (endX - startX) * 0.5;
+  const cy = startY + (endY - startY) * 0.5 - (Math.abs(dy) < 80 ? 15 : 0);
 
   return (
     <g style={{ opacity, transition: 'opacity 0.3s' }}>
       <path
-        d={`M${sourceNode.x},${sourceNode.y} Q${cx},${cy} ${targetNode.x},${targetNode.y}`}
+        d={`M${startX},${startY} Q${cx},${cy} ${endX},${endY}`}
         stroke={color}
         strokeWidth={thickness}
         fill="none"
-        strokeDasharray={edge.riskLevel === 'low' ? '5 4' : 'none'}
+        strokeDasharray="6 4"
         markerEnd={`url(#arrowhead-${edge.riskLevel})`}
+        filter={`url(#edge-glow-${edge.riskLevel})`}
       >
-        {isHighlighted && (
-          <animate
-            attributeName="stroke-dashoffset"
-            from="20"
-            to="0"
-            dur="1s"
-            repeatCount="indefinite"
-          />
-        )}
+        <animate
+          attributeName="stroke-dashoffset"
+          from="20"
+          to="0"
+          dur={edge.riskLevel === 'high' ? "1.2s" : "2s"}
+          repeatCount="indefinite"
+        />
       </path>
     </g>
   );
@@ -327,8 +369,8 @@ export default function GNNVisualization({ addToast }) {
                 <svg
                   ref={svgRef}
                   width="100%"
-                  height="520"
-                  viewBox="0 0 820 520"
+                  height="720"
+                  viewBox="0 0 820 720"
                   style={{ background: 'var(--bg-input)', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)' }}
                 >
                   {/* Defs */}
@@ -346,6 +388,27 @@ export default function GNNVisualization({ addToast }) {
                     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
                       <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--border-color)" strokeWidth="0.5" />
                     </pattern>
+                    {/* Glow filters for edges */}
+                    <filter id="edge-glow-high" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#ef4444" floodOpacity="0.6"/>
+                    </filter>
+                    <filter id="edge-glow-medium" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#f59e0b" floodOpacity="0.6"/>
+                    </filter>
+                    <filter id="edge-glow-low" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#10b981" floodOpacity="0.6"/>
+                    </filter>
+                    {/* Glow filter for nodes */}
+                    <filter id="node-glow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feGaussianBlur stdDeviation="4" result="blur" />
+                      <feComponentTransfer in="blur" result="glow">
+                        <feFuncA type="linear" slope="0.8" />
+                      </feComponentTransfer>
+                      <feMerge>
+                        <feMergeNode in="glow" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
                   </defs>
 
                   {/* Grid background */}
@@ -358,9 +421,9 @@ export default function GNNVisualization({ addToast }) {
                   <text x="730" y="30" textAnchor="middle" fill="var(--text-muted)" fontSize="11" fontWeight="600">EXCHANGE</text>
 
                   {/* Column separators */}
-                  <line x1="190" y1="40" x2="190" y2="500" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
-                  <line x1="415" y1="40" x2="415" y2="500" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
-                  <line x1="630" y1="40" x2="630" y2="500" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
+                  <line x1="190" y1="40" x2="190" y2="700" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
+                  <line x1="415" y1="40" x2="415" y2="700" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
+                  <line x1="630" y1="40" x2="630" y2="700" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
 
                   {/* Edges */}
                   {graphData.edges.map((edge, i) => {
@@ -409,7 +472,7 @@ export default function GNNVisualization({ addToast }) {
                   <div className="gnn-tooltip" style={{
                     position: 'absolute',
                     left: `calc(${(tooltipData.x / 820) * 100}% + 20px)`,
-                    top: `calc(${(tooltipData.y / 520) * 100}% - 10px)`,
+                    top: `calc(${(tooltipData.y / 720) * 100}% - 10px)`,
                     transform: tooltipData.x > 600 ? 'translateX(-120%)' : 'none'
                   }}>
                     <div style={{ fontWeight: 700, marginBottom: 4 }}>{tooltipData.label}</div>

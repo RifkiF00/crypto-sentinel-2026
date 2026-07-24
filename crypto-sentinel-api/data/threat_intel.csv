@@ -1,6 +1,7 @@
 account_id,entity_type,risk_category,risk_level,description
-9012666666,mule_account,crypto_laundering,HIGH,Rekening penampung BCA yang terindikasi menerima dana sebelum cash-out ke Indodax
-9012999999,suspicious_wallet,mixer_activity,HIGH,Rekening penampung Mandiri yang terkait aktivitas pencampuran dana Tokocrypto
-9012123456,exchange_wallet,high_risk_exchange,MEDIUM,Rekening tujuan CIMB Niaga terhubung ke Binance Exchange Indonesia
+987654,mule_account,mule_relay,MEDIUM,Rekening nasabah Budi Santoso yang terindikasi sebagai mule relay transit
+9012666666,mule_account,crypto_laundering,MEDIUM,Rekening penampung BCA yang terindikasi menerima dana sebelum cash-out ke Indodax
+9012999999,suspicious_wallet,mixer_activity,MEDIUM,Rekening penampung Mandiri yang terkait aktivitas pencampuran dana Tokocrypto
+9012123456,exchange_wallet,high_risk_exchange,HIGH,Rekening tujuan CIMB Niaga terhubung ke Binance Exchange Indonesia
 9012777777,fraud_receiver,scam_network,HIGH,Rekening penerima BRI yang terindikasi jaringan scam
 9012888888,rapid_transfer_account,layering_pattern,MEDIUM,Rekening BNI yang sering muncul dalam pola transfer berantai Pintu Exchange

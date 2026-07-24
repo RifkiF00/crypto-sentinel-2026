@@ -274,7 +274,7 @@ a:hover {
 }
 
 .sidebar-header {
-  padding: 20px var(--space-lg);
+  padding: 14px var(--space-lg);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -284,17 +284,18 @@ a:hover {
 }
 
 .sidebar-logo {
-  width: 42px;
-  height: 42px;
-  border-radius: var(--radius-md);
-  background: var(--bg-logo-container);
-  border: 1px solid var(--border-logo-container);
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1.5px solid rgba(37, 99, 235, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px var(--shadow-logo-container);
-  padding: 4px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+  padding: 3px;
+  overflow: hidden;
   transition: all var(--transition-normal);
 }
 
@@ -302,6 +303,7 @@ a:hover {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  transform: scale(1.25);
 }
 
 .sidebar-brand {
@@ -311,21 +313,22 @@ a:hover {
 }
 
 .sidebar-brand h1 {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  background: var(--gradient-logo-text);
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   white-space: nowrap;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
 }
 
 .sidebar-brand span {
-  font-size: 0.72rem;
-  color: var(--text-muted);
+  font-size: 0.6rem;
+  color: #38bdf8;
   white-space: nowrap;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.8px;
+  font-weight: 700;
 }
 
 .sidebar-nav {
@@ -725,6 +728,8 @@ a:hover {
   transition: all var(--transition-normal);
   cursor: default;
   box-shadow: var(--shadow-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .stat-card::before {
@@ -739,8 +744,8 @@ a:hover {
 
 .stat-card:hover {
   transform: translateY(-3px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--border-color-hover);
+  box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.2), var(--shadow-lg);
+  border-color: var(--accent-primary-light);
 }
 
 .stat-card.primary::before { background: var(--gradient-primary); }
@@ -832,11 +837,13 @@ a:hover {
   overflow: hidden;
   transition: all var(--transition-normal), background var(--transition-theme), border-color var(--transition-theme);
   box-shadow: var(--shadow-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--border-color-hover);
+  box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.15), var(--shadow-md);
+  border-color: var(--accent-primary-light);
 }
 
 .card-header {

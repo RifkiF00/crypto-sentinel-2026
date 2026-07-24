@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { ThemeProvider } from './context/ThemeContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import LandingPage from './components/LandingPage';
 
 // Dynamic API Integration
 import { checkHealth, fetchTransactions, fetchAlerts } from './services/api';
@@ -38,7 +39,7 @@ import {
 // Initial Mock Data
 import { recentTransactions, alertFeed } from './data/mockData';
 
-function DashboardLayout() {
+function DashboardLayout({ onBackToLanding }) {
   const [activePage, setActivePage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [apiOnline, setApiOnline] = useState(false);
@@ -47,7 +48,10 @@ function DashboardLayout() {
   // UNIFIED AML SANDBOX STATES
   // ----------------------------------------------------
   const [transactions, setTransactions] = useState(recentTransactions);
-  const [alerts, setAlerts] = useState(alertFeed);
+  const [alerts, setAlerts] = useState(() => {
+    const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
+    return alertFeed.filter(a => !storedResolved.includes(a.id));
+  });
 
   // Polling mechanism to check health and load transaction data from backend
   useEffect(() => {
@@ -59,13 +63,14 @@ function DashboardLayout() {
         if (!active) return;
         setApiOnline(online);
         
-        if (online) {
-          const txs = await fetchTransactions();
-          const alts = await fetchAlerts();
-          if (active) {
+        const txs = await fetchTransactions();
+        const alts = await fetchAlerts();
+        if (active) {
+          if (txs && txs.length > 0) {
             setTransactions(txs);
-            setAlerts(alts);
           }
+          const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
+          setAlerts(alts.filter(a => !storedResolved.includes(a.id) && !storedResolved.includes(a.transaction_id)));
         }
       } catch (err) {
         console.error("Error loading API data:", err);
@@ -95,7 +100,7 @@ function DashboardLayout() {
   });
 
   const [rules, setRules] = useState({
-    riskThreshold: 80,
+    riskThreshold: 85,
     dailyLimit: 100000000,
     autoBlockEnabled: true,
     smurfingCheckEnabled: true
@@ -114,6 +119,26 @@ function DashboardLayout() {
     const id = Math.random().toString();
     setToasts(prev => [...prev, { id, message, type }]);
     
+    // Play cyber alert sound effect using Web Audio API
+    if (type === 'error' || type === 'warning' || message.includes('🔥') || message.includes('BLOCKED')) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(type === 'error' ? 880 : 587.33, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(type === 'error' ? 440 : 880, audioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      } catch (e) {
+        // AudioContext blocked or unsupported
+      }
+    }
+
     // Auto remove after 3.5 seconds
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
@@ -148,7 +173,7 @@ function DashboardLayout() {
       />
 
       <main className="main-content">
-        <Header onMenuToggle={toggleSidebar} apiOnline={apiOnline} />
+        <Header onMenuToggle={toggleSidebar} apiOnline={apiOnline} onBackToLanding={onBackToLanding} addToast={addToast} />
         
         <div className="page-content">
           <AnimatePresence mode="wait">
@@ -343,9 +368,34 @@ function DashboardLayout() {
 }
 
 export default function App() {
+  const [inDashboard, setInDashboard] = useState(false);
+
   return (
     <ThemeProvider>
-      <DashboardLayout />
+      <AnimatePresence mode="wait">
+        {!inDashboard ? (
+          <motion.div
+            key="landing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -30 }}
+            transition={{ duration: 0.4 }}
+            style={{ width: '100%' }}
+          >
+            <LandingPage onEnter={() => setInDashboard(true)} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="dashboard"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{ width: '100%' }}
+          >
+            <DashboardLayout onBackToLanding={() => setInDashboard(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </ThemeProvider>
   );
 }

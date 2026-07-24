@@ -139,42 +139,42 @@ export const alertFeed = [
     id: 1,
     type: 'critical',
     title: 'Structuring Terdeteksi',
-    description: 'Ahmad Faisal melakukan 5 transaksi pecahan ke Binance dalam 1 jam terakhir. Total: Rp 2,5M',
+    description: 'Nasabah N-8841 (BCA ****4816) melakukan 5 transaksi pecahan ke Binance dalam 1 jam terakhir. Total: Rp 2,5M',
     time: '2 menit lalu',
   },
   {
     id: 2,
     type: 'critical',
     title: 'Batas Harian Terlampaui',
-    description: 'Rizky Hidayat mencoba transfer Rp 500jt ke Tokocrypto, melebihi batas harian Rp 100jt',
+    description: 'Nasabah N-6612 (BNI ****6798) mencoba transfer Rp 500jt ke Tokocrypto, melebihi batas harian Rp 100jt',
     time: '15 menit lalu',
   },
   {
     id: 3,
     type: 'warning',
     title: 'Wallet Baru Terdeteksi',
-    description: 'Budi Santoso mengirim ke wallet crypto yang baru dibuat 2 hari lalu',
+    description: 'Nasabah N-9012 (BRI ****5878) mengirim ke wallet crypto yang baru dibuat 2 hari lalu',
     time: '28 menit lalu',
   },
   {
     id: 4,
     type: 'warning',
     title: 'Pola Transfer Tidak Biasa',
-    description: 'Siti Nurhaliza mengubah pola transfer dari domestik ke internasional crypto exchange',
+    description: 'Nasabah N-4412 (CIMB ****4887) mengubah pola transfer dari domestik ke internasional crypto exchange',
     time: '45 menit lalu',
   },
   {
     id: 5,
     type: 'info',
     title: 'Akun Baru dengan Aktivitas Tinggi',
-    description: 'Maria Kusuma (akun 3 hari) melakukan 8 transaksi besar dalam 24 jam terakhir',
+    description: 'Nasabah N-1092 (BCA ****1212) (akun 3 hari) melakukan 8 transaksi besar dalam 24 jam terakhir',
     time: '1 jam lalu',
   },
   {
     id: 6,
     type: 'warning',
     title: 'Transfer Lintas Negara',
-    description: 'Transaksi mencurigakan ke exchange yang berlokasi di jurisdiksi non-kooperatif',
+    description: 'Transaksi mencurigakan ke exchange yang berlokasi di yurisdiksi non-kooperatif',
     time: '1.5 jam lalu',
   },
 ];
@@ -261,43 +261,43 @@ export const timelineData = [
   {
     type: 'blocked',
     title: 'Transaksi Diblokir - Rp 750jt',
-    desc: 'Ahmad Faisal → Binance | Structuring terdeteksi',
+    desc: 'Nasabah N-8841 → Binance | Structuring terdeteksi',
     time: '07:45',
   },
   {
     type: 'flagged',
     title: 'Transaksi Ditandai - Rp 150jt',
-    desc: 'Budi Santoso → Indodax | Transfer besar ke exchange',
+    desc: 'Nasabah N-9012 → Indodax | Transfer besar ke exchange',
     time: '07:32',
   },
   {
     type: 'approved',
     title: 'Transaksi Disetujui - Rp 25jt',
-    desc: 'Dewi Cahyani → OVO | Transfer normal',
+    desc: 'Nasabah N-1092 → OVO | Transfer normal',
     time: '07:28',
   },
   {
     type: 'blocked',
     title: 'Transaksi Diblokir - Rp 500jt',
-    desc: 'Rizky Hidayat → Tokocrypto | Batas harian terlampaui',
+    desc: 'Nasabah N-6612 → Tokocrypto | Batas harian terlampaui',
     time: '07:15',
   },
   {
     type: 'flagged',
     title: 'Transaksi Ditandai - Rp 85jt',
-    desc: 'Siti Nurhaliza → Binance | Exchange internasional',
+    desc: 'Nasabah N-4412 → Binance | Exchange internasional',
     time: '07:05',
   },
   {
     type: 'blocked',
     title: 'Transaksi Diblokir - Rp 350jt',
-    desc: 'Maria Kusuma → Luno | Akun baru + High Volume',
+    desc: 'Nasabah N-3312 → Luno | Akun baru + High Volume',
     time: '06:42',
   },
   {
     type: 'info',
     title: 'Verifikasi Manual Diperlukan',
-    desc: 'Andi Prasetyo → Pintu | Menunggu analisis',
+    desc: 'Nasabah N-7788 → Pintu | Menunggu analisis',
     time: '06:30',
   },
 ];
@@ -313,7 +313,7 @@ export const weeklyComparison = {
 export const muleAccountsData = [
   {
     id: 'MULE-001',
-    name: 'Hendro Gunawan',
+    name: 'Rekening Mule L1-A',
     account: '7820194532',
     bank: 'BCA',
     role: 'Penampung Utama',
@@ -328,7 +328,7 @@ export const muleAccountsData = [
   },
   {
     id: 'MULE-002',
-    name: 'Rina Kartika',
+    name: 'Rekening Mule L1-B',
     account: '3310287654',
     bank: 'Mandiri',
     role: 'Relay',
@@ -343,7 +343,7 @@ export const muleAccountsData = [
   },
   {
     id: 'MULE-003',
-    name: 'Darmawan Putra',
+    name: 'Rekening Mule L2-A',
     account: '5540198732',
     bank: 'BRI',
     role: 'Kolektor',
@@ -358,7 +358,7 @@ export const muleAccountsData = [
   },
   {
     id: 'MULE-004',
-    name: 'Lestari Wulandari',
+    name: 'Rekening Mule L2-B',
     account: '8870654321',
     bank: 'BNI',
     role: 'Relay',
@@ -373,7 +373,7 @@ export const muleAccountsData = [
   },
   {
     id: 'MULE-005',
-    name: 'Surya Pratama',
+    name: 'Rekening Mule L1-C',
     account: '2210987654',
     bank: 'CIMB',
     role: 'Penampung Utama',
@@ -388,7 +388,7 @@ export const muleAccountsData = [
   },
   {
     id: 'MULE-006',
-    name: 'Fitri Handayani',
+    name: 'Rekening Mule L2-C',
     account: '6650321987',
     bank: 'BCA',
     role: 'Kolektor',
@@ -403,7 +403,7 @@ export const muleAccountsData = [
   },
   {
     id: 'MULE-007',
-    name: 'Bambang Setiawan',
+    name: 'Rekening Mule L1-D',
     account: '4430567891',
     bank: 'Mandiri',
     role: 'Relay',
@@ -424,14 +424,14 @@ export const muleAccountsData = [
 export const gnnGraphData = {
   nodes: [
     // Bank accounts (source)
-    { id: 'N1', label: 'Ahmad Faisal', type: 'bank', bank: 'BCA', riskScore: 92, x: 80, y: 120 },
-    { id: 'N2', label: 'Budi Santoso', type: 'bank', bank: 'Mandiri', riskScore: 76, x: 80, y: 250 },
-    { id: 'N3', label: 'Rizky Hidayat', type: 'bank', bank: 'BRI', riskScore: 88, x: 80, y: 380 },
+    { id: 'N1', label: 'Rekening Sumber A', type: 'bank', bank: 'BCA', riskScore: 92, x: 80, y: 120 },
+    { id: 'N2', label: 'Rekening Sumber B', type: 'bank', bank: 'Mandiri', riskScore: 76, x: 80, y: 250 },
+    { id: 'N3', label: 'Rekening Sumber C', type: 'bank', bank: 'BRI', riskScore: 88, x: 80, y: 380 },
     // Mule accounts (intermediary)
-    { id: 'N4', label: 'Hendro G.', type: 'mule', bank: 'BCA', riskScore: 96, x: 300, y: 80 },
-    { id: 'N5', label: 'Rina K.', type: 'mule', bank: 'Mandiri', riskScore: 89, x: 300, y: 200 },
-    { id: 'N6', label: 'Darmawan P.', type: 'mule', bank: 'BRI', riskScore: 91, x: 300, y: 320 },
-    { id: 'N7', label: 'Surya P.', type: 'mule', bank: 'CIMB', riskScore: 94, x: 300, y: 440 },
+    { id: 'N4', label: 'Rekening Mule L1-A', type: 'mule', bank: 'BCA', riskScore: 96, x: 300, y: 80 },
+    { id: 'N5', label: 'Rekening Mule L1-B', type: 'mule', bank: 'Mandiri', riskScore: 89, x: 300, y: 200 },
+    { id: 'N6', label: 'Rekening Mule L2-A', type: 'mule', bank: 'BRI', riskScore: 91, x: 300, y: 320 },
+    { id: 'N7', label: 'Rekening Mule L2-B', type: 'mule', bank: 'CIMB', riskScore: 94, x: 300, y: 440 },
     // Crypto wallets
     { id: 'N8', label: '0x1a2b...cd34', type: 'wallet', riskScore: 88, x: 530, y: 100 },
     { id: 'N9', label: '0x9abc...de12', type: 'wallet', riskScore: 72, x: 530, y: 250 },
@@ -464,28 +464,32 @@ export const gnnGraphData = {
 };
 
 export const gnnModelMetrics = {
-  accuracy: 96.8,
-  precision: 94.2,
-  recall: 97.5,
-  f1Score: 95.8,
+  accuracy: 99.8,
+  precision: 99.2,
+  recall: 98.6,
+  f1Score: 98.9,
   nodesAnalyzed: 12847,
   edgesProcessed: 34521,
-  anomaliesDetected: 342,
+  anomaliesDetected: 525,
   embeddingDimension: 128,
   messagePasses: 3,
-  trainingEpochs: 150,
-  lastUpdated: '2026-05-29 08:00:00'
+  trainingEpochs: 100,
+  lastUpdated: '2026-07-24 01:00:00'
 };
 
 export const formatCurrency = (amount) => {
+  if (!amount && amount !== 0) return 'Rp 0';
   if (amount >= 1000000000000) {
-    return `Rp ${(amount / 1000000000000).toFixed(1)}T`;
+    const val = amount / 1000000000000;
+    return `Rp ${val % 1 === 0 ? val : val.toFixed(1)}T`;
   }
   if (amount >= 1000000000) {
-    return `Rp ${(amount / 1000000000).toFixed(1)}M`;
+    const val = amount / 1000000000;
+    return `Rp ${val % 1 === 0 ? val : val.toFixed(1)}M`;
   }
   if (amount >= 1000000) {
-    return `Rp ${(amount / 1000000).toFixed(0)}jt`;
+    const val = amount / 1000000;
+    return `Rp ${val % 1 === 0 ? val : val.toFixed(1)}jt`;
   }
   return `Rp ${amount.toLocaleString('id-ID')}`;
 };

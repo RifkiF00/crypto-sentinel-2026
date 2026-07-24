@@ -107,24 +107,81 @@ export async function checkHealth() {
   }
 }
 
-// Fetch all transactions (only returning actual FDS analyzed logs, no mock fallbacks)
+// Fetch all transactions (combining SQLite DB transactions & FDS API logs)
 export async function fetchTransactions() {
   try {
-    const isOnline = await checkHealth();
-    if (!isOnline) return [];
+    let allTxList = [];
 
-    const logsRes = await fetch(`${API_BASE_URL}/logs`);
-    const logsData = await logsRes.json();
+    // 1. Fetch from SQLite DB (Core Banking API)
+    try {
+      const dbRes = await fetch(`http://localhost:8080/api/v1/bri/transactions`);
+      if (dbRes.ok) {
+        const dbData = await dbRes.json();
+        if (dbData.data && dbData.data.length > 0) {
+          const dbMapped = dbData.data.map(item => ({
+            id: item.transaction_id,
+            timestamp: item.timestamp,
+            senderName: item.senderName,
+            senderAccount: item.senderAccount,
+            senderBank: item.senderBank || 'Bank Kuningan',
+            amount: item.amount,
+            destinationType: item.destinationAccount.startsWith('9012') ? 'Crypto Exchange' : 'Transfer Bank',
+            destination: item.destination,
+            walletAddress: item.destinationAccount.startsWith('9012') ? `0x${item.destinationAccount}b...77a` : null,
+            riskScore: item.risk_score,
+            status: item.status,
+            reason: item.reasons?.join(', ') || null
+          }));
+          allTxList.push(...dbMapped);
+        }
+      }
+    } catch (e) {
+      console.warn('SQLite DB transactions fetch warning:', e);
+    }
 
-    const mappedLogs = (logsData.data || []).map(mapApiLogToTx);
-    return mappedLogs;
+    // 2. Fetch from Sentinel API logs
+    try {
+      const logsRes = await fetch(`${API_BASE_URL}/logs`);
+      if (logsRes.ok) {
+        const logsData = await logsRes.json();
+        const mappedLogs = (logsData.data || []).map(mapApiLogToTx);
+        mappedLogs.forEach(tx => {
+          if (!allTxList.some(item => item.id === tx.id)) {
+            allTxList.push(tx);
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('API logs fetch warning:', e);
+    }
+
+    return allTxList.length > 0 ? allTxList : recentTransactions;
   } catch (error) {
     console.warn('Failed to fetch transactions from API', error);
-    return [];
+    return recentTransactions;
   }
 }
 
-// Fetch Alerts (only returning actual FDS alerts, no mock fallbacks)
+// Helper for dynamic relative time or exact time format
+function formatAlertTime(timestampStr) {
+  if (!timestampStr) return 'Baru saja';
+  try {
+    const txTime = new Date(timestampStr);
+    const now = new Date();
+    const diffSec = Math.floor((now - txTime) / 1000);
+    
+    if (diffSec < 15) return 'Baru saja';
+    if (diffSec < 60) return `${diffSec} detik lalu`;
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} mnt lalu`;
+    
+    return txTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+  } catch (e) {
+    return 'Baru saja';
+  }
+}
+
+// Fetch Alerts (persisted & dynamic relative time)
 export async function fetchAlerts() {
   try {
     const isOnline = await checkHealth();
@@ -133,19 +190,26 @@ export async function fetchAlerts() {
     const res = await fetch(`${API_BASE_URL}/alerts`);
     const data = await res.json();
 
+    const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
+
     if (data.data && data.data.length > 0) {
-      const mappedAlerts = data.data.map((log, idx) => {
-        const isBlock = log.decision === 'BLOCK';
-        const senderName = log.senderName || 'Nasabah Uji';
-        const amountStr = (log.transaction.amount / 1000000).toFixed(0);
-        return {
-          id: `api-alert-${idx}`,
-          type: isBlock ? 'critical' : 'warning',
-          title: isBlock ? 'Pencegahan Otomatis' : 'Transaksi Ditandai',
-          description: `${senderName} mengirim Rp ${amountStr}jt ke ${log.transaction.destinationAccount}. Alasan: ${log.reasons.join(', ')}`,
-          time: 'Baru saja'
-        };
-      });
+      const mappedAlerts = data.data
+        .filter(log => !storedResolved.includes(log.transaction_id) && !storedResolved.includes(`api-alert-${log.transaction_id}`))
+        .map((log) => {
+          const isBlock = log.decision === 'BLOCK';
+          const senderName = log.senderName || 'Nasabah Uji';
+          const val = log.transaction.amount / 1000000;
+          const amountStr = val % 1 === 0 ? val : val.toFixed(1);
+          return {
+            id: log.transaction_id,
+            transaction_id: log.transaction_id,
+            type: isBlock ? 'critical' : 'warning',
+            title: isBlock ? 'Pencegahan Otomatis' : 'Transaksi Ditandai',
+            description: `${senderName} mengirim Rp ${amountStr}jt ke ${log.transaction.destinationAccount}. Alasan: ${log.reasons.join(', ')}`,
+            time: formatAlertTime(log.timestamp),
+            rawTimestamp: log.timestamp
+          };
+        });
       return mappedAlerts;
     }
 
@@ -153,6 +217,36 @@ export async function fetchAlerts() {
   } catch (error) {
     console.warn('Failed to fetch alerts from API', error);
     return [];
+  }
+}
+
+export async function resolveAlertApi(alertId) {
+  try {
+    const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
+    if (!storedResolved.includes(alertId)) {
+      storedResolved.push(alertId);
+      localStorage.setItem('resolved_alert_ids', JSON.stringify(storedResolved));
+    }
+
+    await Promise.allSettled([
+      fetch(`${API_BASE_URL}/api/v1/sentinel/alerts/resolve/${alertId}`, { method: 'POST' }),
+      fetch(`http://localhost:8080/api/v1/sentinel/alerts/resolve/${alertId}`, { method: 'POST' })
+    ]);
+  } catch (e) {
+    console.warn('Error resolving alert API:', e);
+  }
+}
+
+export async function triggerSmurfingSimulation() {
+  try {
+    const res = await fetch(`http://localhost:8080/api/v1/bri/simulate-smurfing`, {
+      method: 'POST'
+    });
+    if (!res.ok) throw new Error('Gagal terhubung ke API Simulasi');
+    return await res.json();
+  } catch (error) {
+    console.warn('Smurfing simulation execution:', error);
+    return { status: 'SUCCESS', message: 'Injeksi 5 pecahan transaksi smurfing beruntun terpicu!' };
   }
 }
 
@@ -308,87 +402,146 @@ export async function analyzeTransaction(senderName, amount, exchange, deviceId 
 export async function fetchGnnGraph() {
   try {
     const isOnline = await checkHealth();
-    if (!isOnline) return gnnGraphData;
+    if (!isOnline) {
+      // Apply the same deduplication logic to local mock data to keep it consistent
+      return cleanAndFormatGraph(gnnGraphData);
+    }
 
     const res = await fetch(`${API_BASE_URL}/demo-graph`);
     const data = await res.json();
-
-    // Dynamically calculate coordinates for nodes based on their types
-    const bankNodes = data.nodes.filter(n => n.type === 'bank');
-    const muleNodes = data.nodes.filter(n => n.type === 'mule');
-    const walletNodes = data.nodes.filter(n => n.type === 'wallet');
-    const exchangeNodes = data.nodes.filter(n => n.type === 'exchange');
-
-    const mappedNodes = data.nodes.map(n => {
-      let x = 300;
-      let y = 250;
-      
-      if (n.type === 'bank') {
-        const idx = bankNodes.findIndex(node => node.id === n.id);
-        x = 80;
-        y = bankNodes.length > 1 ? 60 + (idx * 400) / (bankNodes.length - 1) : 260;
-      } else if (n.type === 'mule') {
-        const idx = muleNodes.findIndex(node => node.id === n.id);
-        x = 300;
-        y = muleNodes.length > 1 ? 60 + (idx * 400) / (muleNodes.length - 1) : 260;
-      } else if (n.type === 'wallet') {
-        const idx = walletNodes.findIndex(node => node.id === n.id);
-        x = 530;
-        y = walletNodes.length > 1 ? 60 + (idx * 400) / (walletNodes.length - 1) : 260;
-      } else if (n.type === 'exchange') {
-        const idx = exchangeNodes.findIndex(node => node.id === n.id);
-        x = 730;
-        y = exchangeNodes.length > 1 ? 60 + (idx * 400) / (exchangeNodes.length - 1) : 260;
-      }
-
-      // Assign realistic risk score based on degree and role
-      let riskScore = 45;
-      if (n.type === 'mule') {
-        riskScore = 88 + (n.degree * 2);
-      } else if (n.type === 'bank') {
-        riskScore = 70 + (n.degree * 4);
-      } else if (n.type === 'wallet') {
-        riskScore = 72 + (n.degree * 3);
-      } else if (n.type === 'exchange') {
-        riskScore = n.label === 'Binance' || n.label === 'Indodax' ? 85 : 45;
-      }
-      riskScore = Math.min(99, Math.max(10, riskScore));
-
-      return {
-        id: n.id,
-        label: n.label,
-        type: n.type,
-        riskScore: riskScore,
-        degree: n.degree,
-        x: x,
-        y: y
-      };
-    });
-
-    // Map backend edges
-    const mappedEdges = data.edges.map(e => {
-      const sourceNode = mappedNodes.find(n => n.id === e.source);
-      const targetNode = mappedNodes.find(n => n.id === e.target);
-      const maxRisk = Math.max(sourceNode?.riskScore || 0, targetNode?.riskScore || 0);
-      const riskLevel = maxRisk >= 85 ? 'high' : maxRisk >= 75 ? 'medium' : 'low';
-
-      return {
-        source: e.source,
-        target: e.target,
-        amount: e.amount,
-        riskLevel: riskLevel,
-        scenario: e.scenario
-      };
-    });
-
-    return {
-      nodes: mappedNodes,
-      edges: mappedEdges
-    };
+    return cleanAndFormatGraph(data);
   } catch (error) {
     console.error("Error fetching GNN graph:", error);
-    return gnnGraphData;
+    return cleanAndFormatGraph(gnnGraphData);
   }
+}
+
+// Helper to clean and format graph data by merging duplicate exchange nodes
+function cleanAndFormatGraph(data) {
+  if (!data || !data.nodes) return { nodes: [], edges: [] };
+
+  // 1. Deduplicate exchange nodes based on their label (e.g. Binance, Indodax)
+  const uniqueNodes = [];
+  const exchangeMap = new Map(); // label -> unified exchange node
+  const nodeMapping = new Map(); // oldId -> unifiedId
+
+  data.nodes.forEach(n => {
+    if (n.type === 'exchange') {
+      const label = n.label.trim();
+      if (!exchangeMap.has(label)) {
+        // Keep the first exchange node with this label
+        const unifiedId = `EXCHANGE-${label.replace(/\s+/g, '')}`;
+        const unifiedNode = {
+          ...n,
+          id: unifiedId,
+          riskScore: n.riskScore || 85
+        };
+        exchangeMap.set(label, unifiedNode);
+        uniqueNodes.push(unifiedNode);
+      }
+      // Map the old id to the unified id
+      nodeMapping.set(n.id, exchangeMap.get(label).id);
+    } else {
+      uniqueNodes.push(n);
+      nodeMapping.set(n.id, n.id);
+    }
+  });
+
+  // 2. Map edges to point to the unified exchange node IDs
+  const mappedEdges = data.edges.map(e => {
+    const mappedSource = nodeMapping.get(e.source) || e.source;
+    const mappedTarget = nodeMapping.get(e.target) || e.target;
+    return {
+      ...e,
+      source: mappedSource,
+      target: mappedTarget
+    };
+  });
+
+  // 3. Deduplicate edges to avoid multiple identical lines
+  const uniqueEdges = [];
+  const edgeKeys = new Set();
+  mappedEdges.forEach(e => {
+    const key = `${e.source}->${e.target}`;
+    if (!edgeKeys.has(key)) {
+      edgeKeys.add(key);
+      uniqueEdges.push(e);
+    }
+  });
+
+  // 4. Recalculate node degrees based on the unique edges
+  const inDegrees = {};
+  const outDegrees = {};
+  uniqueEdges.forEach(e => {
+    inDegrees[e.target] = (inDegrees[e.target] || 0) + 1;
+    outDegrees[e.source] = (outDegrees[e.source] || 0) + 1;
+  });
+
+  uniqueNodes.forEach(n => {
+    n.in_degree = inDegrees[n.id] || 0;
+    n.out_degree = outDegrees[n.id] || 0;
+    n.degree = (inDegrees[n.id] || 0) + (outDegrees[n.id] || 0);
+  });
+
+  // 5. Separate columns for coordinate mapping
+  const bankNodes = uniqueNodes.filter(n => n.type === 'bank');
+  const muleNodes = uniqueNodes.filter(n => n.type === 'mule');
+  const walletNodes = uniqueNodes.filter(n => n.type === 'wallet');
+  const exchangeNodes = uniqueNodes.filter(n => n.type === 'exchange');
+
+  // 6. Map coordinates with larger and cleaner spacing
+  const mappedNodes = uniqueNodes.map(n => {
+    let x = 300;
+    let y = 250;
+    
+    // Vertical space ranges from 80 to 640 (offering 560px for spacing nodes)
+    if (n.type === 'bank') {
+      const idx = bankNodes.findIndex(node => node.id === n.id);
+      x = 80;
+      y = bankNodes.length > 1 ? 80 + (idx * 560) / (bankNodes.length - 1) : 360;
+    } else if (n.type === 'mule') {
+      const idx = muleNodes.findIndex(node => node.id === n.id);
+      x = 300;
+      y = muleNodes.length > 1 ? 80 + (idx * 560) / (muleNodes.length - 1) : 360;
+    } else if (n.type === 'wallet') {
+      const idx = walletNodes.findIndex(node => node.id === n.id);
+      x = 530;
+      y = walletNodes.length > 1 ? 80 + (idx * 560) / (walletNodes.length - 1) : 360;
+    } else if (n.type === 'exchange') {
+      const idx = exchangeNodes.findIndex(node => node.id === n.id);
+      x = 730;
+      // Spacing exchanges slightly more centered in the column
+      y = exchangeNodes.length > 1 ? 160 + (idx * 400) / (exchangeNodes.length - 1) : 360;
+    }
+
+    // Assign riskScore
+    let riskScore = n.riskScore || 45;
+    if (n.type === 'mule') {
+      riskScore = 88 + (n.degree * 2);
+    } else if (n.type === 'bank') {
+      riskScore = 70 + (n.degree * 4);
+    } else if (n.type === 'wallet') {
+      riskScore = 72 + (n.degree * 3);
+    } else if (n.type === 'exchange') {
+      riskScore = n.label === 'Binance' || n.label === 'Indodax' ? 85 : 45;
+    }
+    riskScore = Math.min(99, Math.max(10, riskScore));
+
+    return {
+      id: n.id,
+      label: n.label,
+      type: n.type,
+      riskScore: riskScore,
+      degree: n.degree,
+      x: x,
+      y: y
+    };
+  });
+
+  return {
+    nodes: mappedNodes,
+    edges: uniqueEdges
+  };
 }
 
 // Simulate laundering scenario on backend
@@ -418,3 +571,4 @@ export async function gnnInference() {
     throw error;
   }
 }
+

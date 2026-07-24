@@ -6,10 +6,13 @@ import requests
 from datetime import datetime, timezone
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from models.db_models import Account
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = os.path.join(BASE_DIR, "expresso.db")
+database_url = os.getenv("DATABASE_URL", f"sqlite:///{DB_FILE}")
 
-database_url = os.getenv("DATABASE_URL", "sqlite:///./expresso.db")
+from models.db_models import Base, Account
 engine = create_engine(database_url, connect_args={"check_same_thread": False} if "sqlite" in database_url else {})
+Base.metadata.create_all(bind=engine)
 
 def add_balance_to_rifki():
     """Menambahkan saldo Rp 500.000.000 ke Rifki Firmansyah agar cukup untuk simulasi transfer beruntun."""

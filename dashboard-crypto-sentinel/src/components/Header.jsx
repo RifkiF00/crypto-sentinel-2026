@@ -1,8 +1,26 @@
-import { Bell, Sun, Moon, Filter, Menu } from 'lucide-react';
+import { Bell, Sun, Moon, Filter, Menu, Zap, Home } from 'lucide-react';
+import { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { triggerSmurfingSimulation } from '../services/api';
 
-export default function Header({ onMenuToggle, apiOnline = false }) {
+export default function Header({ onMenuToggle, apiOnline = false, onBackToLanding, addToast }) {
   const { theme, toggleTheme } = useTheme();
+  const [isSimulating, setIsSimulating] = useState(false);
+
+  const handleSimulateSmurfing = async () => {
+    setIsSimulating(true);
+    if (addToast) addToast('🔥 Menjalankan 10 transfer smurfing beruntun...', 'warning');
+    try {
+      const res = await triggerSmurfingSimulation();
+      if (addToast) {
+        addToast(`✅ Simulasi Selesai! ${res.message || ''}`, 'success');
+      }
+    } catch (e) {
+      if (addToast) addToast(`⚠️ Gagal menjalankan simulasi: ${e.message}`, 'error');
+    } finally {
+      setIsSimulating(false);
+    }
+  };
 
   return (
     <header className="header" id="main-header">
@@ -16,6 +34,40 @@ export default function Header({ onMenuToggle, apiOnline = false }) {
         </div>
       </div>
       <div className="header-right">
+        {onBackToLanding && (
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={onBackToLanding}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}
+          >
+            <Home size={16} />
+            <span>Landing Page</span>
+          </button>
+        )}
+
+        <button
+          className="btn btn-sm"
+          onClick={handleSimulateSmurfing}
+          disabled={isSimulating}
+          style={{
+            background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: 'var(--radius-md)',
+            padding: '6px 14px',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+            cursor: isSimulating ? 'wait' : 'pointer'
+          }}
+        >
+          <Zap size={14} className={isSimulating ? 'animate-bounce' : ''} />
+          <span>{isSimulating ? 'Menjalankan...' : '🔥 Simulasikan Smurfing'}</span>
+        </button>
+
         <div 
           className="live-indicator animate-pulse" 
           id="live-status"
@@ -40,13 +92,7 @@ export default function Header({ onMenuToggle, apiOnline = false }) {
             {apiOnline ? 'SENTINEL API: ONLINE' : 'SENTINEL: OFFLINE MODE'}
           </span>
         </div>
-        <button className="header-btn tooltip" data-tooltip="Filter" id="btn-filter">
-          <Filter size={18} />
-        </button>
-        <button className="header-btn tooltip" data-tooltip="Notifikasi" id="btn-notifications">
-          <Bell size={18} />
-          <span className="notification-dot" />
-        </button>
+
         <button
           className="theme-toggle tooltip"
           data-tooltip={theme === 'light' ? 'Mode Gelap' : 'Mode Terang'}

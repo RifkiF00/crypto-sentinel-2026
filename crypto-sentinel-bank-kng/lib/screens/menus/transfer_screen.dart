@@ -40,6 +40,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
 
   final List<Map<String, String>> _favorites = [
     {'name': 'Siti Rahma', 'account': '9876543210', 'bank': 'Bank Kuningan'},
+    {'name': 'Budi Santoso (Mule Relay)', 'account': '987654', 'bank': 'Bank Kuningan'},
     {'name': 'PT Indodax Nasional Indonesia', 'account': '9012666666', 'bank': 'BCA'},
     {'name': 'PT Binance Exchange Indonesia', 'account': '9012123456', 'bank': 'CIMB Niaga'},
   ];

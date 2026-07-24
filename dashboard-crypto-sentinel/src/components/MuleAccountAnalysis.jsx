@@ -55,9 +55,9 @@ export default function MuleAccountAnalysis({ addToast }) {
 
   // Flow diagram data
   const flowLayers = [
-    { label: 'Sumber Dana', color: '#3b82f6', icon: '🏦', items: ['Ahmad F.', 'Budi S.', 'Rizky H.'] },
-    { label: 'Mule Layer 1', color: '#ef4444', icon: '🔴', items: ['Hendro G.', 'Rina K.'] },
-    { label: 'Mule Layer 2', color: '#f59e0b', icon: '🟡', items: ['Darmawan P.', 'Surya P.'] },
+    { label: 'Sumber Dana', color: '#3b82f6', icon: '🏦', items: ['Rekening Sumber A', 'Rekening Sumber B', 'Rekening Sumber C'] },
+    { label: 'Mule Layer 1', color: '#ef4444', icon: '🔴', items: ['Rekening Mule L1-A', 'Rekening Mule L1-B'] },
+    { label: 'Mule Layer 2', color: '#f59e0b', icon: '🟡', items: ['Rekening Mule L2-A', 'Rekening Mule L2-B'] },
     { label: 'Crypto Wallet', color: '#a855f7', icon: '💜', items: ['0x1a2b…', '0x9abc…', '0x3456…'] },
     { label: 'Exchange', color: '#f97316', icon: '🔶', items: ['Binance', 'Indodax'] }
   ];
