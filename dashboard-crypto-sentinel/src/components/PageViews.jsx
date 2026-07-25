@@ -60,6 +60,7 @@ import { formatCurrency, formatNumber, cryptoExchangeData, topBlockedPatterns, m
 import { useChartTheme } from '../hooks/useChartTheme';
 import MuleAccountAnalysis from './MuleAccountAnalysis';
 import GNNVisualization from './GNNVisualization';
+import ResponsiveChartWrapper from './ResponsiveChartWrapper';
 
 // Dynamic API Integration
 import { checkHealth, analyzeTransaction, mapApiLogToTx, fetchCryptoExchanges, fetchBlockedPatterns, fetchMuleAccounts, fetchStatistics, fetchTransactions, resolveAlertApi } from '../services/api';
@@ -1168,21 +1169,21 @@ AUDITOR SYSTEM    : CRYPTO-SENTINEL FDS ENGINE v3.2
                   <h3 className="card-title"><FileWarning /> Analisis Tipe Pola AML Terdeteksi</h3>
                 </div>
                 <div className="card-body">
-                  <div className="chart-container" style={{ height: 260 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={patterns} layout="vertical">
+                  <ResponsiveChartWrapper height={260}>
+                    {(w, h) => (
+                      <BarChart width={w} height={h} data={patterns} layout="vertical" margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} horizontal={false} />
                         <XAxis type="number" stroke={chartTheme.axis} fontSize={11} />
-                        <YAxis dataKey="pattern" type="category" stroke={chartTheme.axis} width={130} fontSize={10} />
+                        <YAxis dataKey="pattern" type="category" stroke={chartTheme.axis} width={Math.min(w * 0.38, 110)} fontSize={10} />
                         <Tooltip contentStyle={chartTheme.tooltip} />
-                        <Bar dataKey="count" fill="var(--accent-primary)" radius={[0, 4, 4, 0]}>
+                        <Bar dataKey="count" fill="var(--accent-primary)" radius={[0, 4, 4, 0]} barSize={18}>
                           {patterns.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--status-danger)' : index === 1 ? 'var(--status-warning)' : 'var(--accent-primary)'} />
                           ))}
                         </Bar>
                       </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                    )}
+                  </ResponsiveChartWrapper>
                 </div>
               </div>
 
