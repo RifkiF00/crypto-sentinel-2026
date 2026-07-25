@@ -179,10 +179,15 @@ export default function MuleAccountAnalysis({ addToast }) {
       </motion.div>
 
       {/* Table + Detail Split */}
-      <div className="content-grid-wide">
+      <div className="content-grid-wide" style={{ width: '100%', minWidth: 0 }}>
         {/* Mule accounts table */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <div className="card" style={{ marginBottom: 16, padding: 14 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          style={{ minWidth: 0, width: '100%', overflowX: 'hidden' }}
+        >
+          <div className="card" style={{ marginBottom: 16, padding: 14, width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
             <div className="mule-table-header">
               <div className="header-search" style={{ margin: 0, width: '100%' }}>
                 <Search />
@@ -194,7 +199,7 @@ export default function MuleAccountAnalysis({ addToast }) {
                   style={{ width: '100%' }}
                 />
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <span className="badge badge-blocked">{muleAccounts.filter(m => m.status === 'active').length} Aktif</span>
                 <span className="badge badge-pending">{muleAccounts.filter(m => m.status === 'frozen').length} Dibekukan</span>
                 <span className="badge badge-flagged">{muleAccounts.filter(m => m.status === 'monitored').length} Dipantau</span>
@@ -202,10 +207,10 @@ export default function MuleAccountAnalysis({ addToast }) {
             </div>
           </div>
 
-          <div className="card" style={{ width: '100%', overflow: 'hidden' }}>
-            <div className="card-body" style={{ padding: 0, width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-              <div className="table-container" style={{ maxHeight: 420, overflowY: 'auto', overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', display: 'block' }}>
-                <table className="data-table" style={{ minWidth: 720, width: '100%' }}>
+          <div className="card" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
+            <div className="card-body" style={{ padding: 0, width: '100%', minWidth: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y' }}>
+              <div className="table-container" style={{ maxHeight: 420, overflowY: 'auto', overflowX: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y', width: '100%', display: 'block' }}>
+                <table className="data-table" style={{ minWidth: 680, width: '100%' }}>
                   <thead>
                     <tr>
                       <th>ID & Nama</th>
