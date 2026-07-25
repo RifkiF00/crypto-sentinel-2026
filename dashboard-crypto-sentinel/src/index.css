@@ -2008,15 +2008,16 @@ a:hover {
 
   .gnn-graph-container {
     width: 100% !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
+    overflow: hidden !important;
     border-radius: 0 0 var(--radius-md) var(--radius-md);
   }
 
   .gnn-graph-container svg {
-    min-width: 830px !important;
-    width: 830px !important;
-    height: 500px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
   }
 
   .table-container {

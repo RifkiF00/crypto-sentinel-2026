@@ -424,21 +424,21 @@ export const muleAccountsData = [
 export const gnnGraphData = {
   nodes: [
     // Bank accounts (source)
-    { id: 'N1', label: 'Rekening Sumber A', type: 'bank', bank: 'BCA', riskScore: 92, x: 80, y: 120 },
-    { id: 'N2', label: 'Rekening Sumber B', type: 'bank', bank: 'Mandiri', riskScore: 76, x: 80, y: 250 },
-    { id: 'N3', label: 'Rekening Sumber C', type: 'bank', bank: 'BRI', riskScore: 88, x: 80, y: 380 },
+    { id: 'N1', label: 'Rekening Sumber A', type: 'bank', bank: 'BCA', riskScore: 92, x: 65, y: 110 },
+    { id: 'N2', label: 'Rekening Sumber B', type: 'bank', bank: 'Mandiri', riskScore: 76, x: 65, y: 230 },
+    { id: 'N3', label: 'Rekening Sumber C', type: 'bank', bank: 'BRI', riskScore: 88, x: 65, y: 350 },
     // Mule accounts (intermediary)
-    { id: 'N4', label: 'Rekening Mule L1-A', type: 'mule', bank: 'BCA', riskScore: 96, x: 300, y: 80 },
-    { id: 'N5', label: 'Rekening Mule L1-B', type: 'mule', bank: 'Mandiri', riskScore: 89, x: 300, y: 200 },
-    { id: 'N6', label: 'Rekening Mule L2-A', type: 'mule', bank: 'BRI', riskScore: 91, x: 300, y: 320 },
-    { id: 'N7', label: 'Rekening Mule L2-B', type: 'mule', bank: 'CIMB', riskScore: 94, x: 300, y: 440 },
+    { id: 'N4', label: 'Rekening Mule L1-A', type: 'mule', bank: 'BCA', riskScore: 96, x: 230, y: 70 },
+    { id: 'N5', label: 'Rekening Mule L1-B', type: 'mule', bank: 'Mandiri', riskScore: 89, x: 230, y: 180 },
+    { id: 'N6', label: 'Rekening Mule L2-A', type: 'mule', bank: 'BRI', riskScore: 91, x: 230, y: 290 },
+    { id: 'N7', label: 'Rekening Mule L2-B', type: 'mule', bank: 'CIMB', riskScore: 94, x: 230, y: 400 },
     // Crypto wallets
-    { id: 'N8', label: '0x1a2b...cd34', type: 'wallet', riskScore: 88, x: 530, y: 100 },
-    { id: 'N9', label: '0x9abc...de12', type: 'wallet', riskScore: 72, x: 530, y: 250 },
-    { id: 'N10', label: '0x3456...ef78', type: 'wallet', riskScore: 90, x: 530, y: 400 },
+    { id: 'N8', label: '0x1a2b...cd34', type: 'wallet', riskScore: 88, x: 410, y: 90 },
+    { id: 'N9', label: '0x9abc...de12', type: 'wallet', riskScore: 72, x: 410, y: 230 },
+    { id: 'N10', label: '0x3456...ef78', type: 'wallet', riskScore: 90, x: 410, y: 370 },
     // Exchanges (destination)
-    { id: 'N11', label: 'Binance', type: 'exchange', riskScore: 85, x: 730, y: 170 },
-    { id: 'N12', label: 'Indodax', type: 'exchange', riskScore: 45, x: 730, y: 340 },
+    { id: 'N11', label: 'Binance', type: 'exchange', riskScore: 85, x: 585, y: 160 },
+    { id: 'N12', label: 'Indodax', type: 'exchange', riskScore: 45, x: 585, y: 310 },
   ],
   edges: [
     // Source → Mule

@@ -374,9 +374,10 @@ export default function GNNVisualization({ addToast }) {
                 <svg
                   ref={svgRef}
                   width="100%"
-                  height="480"
-                  viewBox="0 0 820 540"
-                  style={{ background: 'var(--bg-input)', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)' }}
+                  height="auto"
+                  viewBox="0 0 660 460"
+                  preserveAspectRatio="xMidYMid meet"
+                  style={{ background: 'var(--bg-input)', width: '100%', height: 'auto', display: 'block', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)' }}
                 >
                   {/* Defs */}
                   <defs>
@@ -420,14 +421,15 @@ export default function GNNVisualization({ addToast }) {
                   <rect width="100%" height="100%" fill="url(#grid)" opacity="0.5" />
 
                   {/* Column labels */}
-                  <text x="80" y="30" textAnchor="middle" fill="var(--text-muted)" fontSize="11" fontWeight="600">SUMBER DANA</text>
-                  <text x="300" y="30" textAnchor="middle" fill="var(--text-muted)" fontSize="11" fontWeight="600">REKENING MULE</text>
-                  <text x="530" y="30" textAnchor="middle" fill="var(--text-muted)" fontSize="11" fontWeight="600">CRYPTO WALLET</text>
-                  <text x="730" y="30" textAnchor="middle" fill="var(--text-muted)" fontSize="11" fontWeight="600">EXCHANGE</text>
+                  <text x="65" y="28" textAnchor="middle" fill="var(--text-muted)" fontSize="10" fontWeight="700">SUMBER DANA</text>
+                  <text x="230" y="28" textAnchor="middle" fill="var(--text-muted)" fontSize="10" fontWeight="700">REKENING MULE</text>
+                  <text x="410" y="28" textAnchor="middle" fill="var(--text-muted)" fontSize="10" fontWeight="700">CRYPTO WALLET</text>
+                  <text x="585" y="28" textAnchor="middle" fill="var(--text-muted)" fontSize="10" fontWeight="700">EXCHANGE</text>
 
                   {/* Column separators */}
-                  <line x1="190" y1="40" x2="190" y2="700" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
-                  <line x1="415" y1="40" x2="415" y2="700" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
+                  <line x1="145" y1="35" x2="145" y2="450" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
+                  <line x1="320" y1="35" x2="320" y2="450" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
+                  <line x1="495" y1="35" x2="495" y2="450" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
                   <line x1="630" y1="40" x2="630" y2="700" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
 
                   {/* Edges */}
