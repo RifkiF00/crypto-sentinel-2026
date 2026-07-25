@@ -448,11 +448,24 @@ export default function LandingPage({ onEnter }) {
           .landing-stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
-        @media (max-width: 600px) {
-          .landing-title { font-size: 2.2rem; }
-          .landing-stats-grid { grid-template-columns: 1fr; }
-          .landing-logo-box { width: 64px; height: 64px; }
-          .landing-brand h1 { font-size: 1.8rem; }
+        @media (max-width: 640px) {
+          .landing-container { padding: 20px 14px; }
+          .landing-header { flex-direction: column; gap: 16px; align-items: center; margin-bottom: 30px; text-align: center; }
+          .landing-header-brand { flex-direction: column; gap: 10px; align-items: center; }
+          .landing-title { font-size: 2.1rem; letter-spacing: -0.5px; line-height: 1.25; }
+          .landing-subtitle { font-size: 0.95rem; line-height: 1.5; margin-bottom: 24px; }
+          .landing-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 36px; }
+          .landing-stat-card { padding: 14px 10px; min-height: 90px; border-radius: 14px; }
+          .landing-stat-value { font-size: 1.5rem; }
+          .landing-stat-label { font-size: 0.65rem; }
+          .landing-enter-btn { width: 100%; justify-content: center; padding: 14px 20px; font-size: 1.0rem; border-radius: 12px; }
+          .landing-logo-box { width: 48px; height: 48px; border-radius: 12px; }
+          .landing-brand h1 { font-size: 1.5rem; }
+          .landing-brand span { font-size: 0.65rem; }
+          .landing-console-box { padding: 12px; border-radius: 14px; }
+          .console-line { font-size: 0.72rem; flex-direction: column; gap: 2px; }
+          .doc-tabs-header { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+          .doc-tab-btn { flex-shrink: 0; white-space: nowrap; font-size: 0.78rem; padding: 8px 14px; }
         }
       `}</style>
 
