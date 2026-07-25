@@ -202,7 +202,9 @@ export default function GNNVisualization({ addToast }) {
         const online = await checkHealth();
         if (online) {
           const dynamicGraph = await fetchGnnGraph();
-          setGraphData(dynamicGraph);
+          if (dynamicGraph && dynamicGraph.nodes && dynamicGraph.nodes.length > 0) {
+            setGraphData(dynamicGraph);
+          }
         }
       } catch (err) {
         console.error("Failed to load GNN graph from API:", err);
@@ -369,8 +371,8 @@ export default function GNNVisualization({ addToast }) {
                 <svg
                   ref={svgRef}
                   width="100%"
-                  height="720"
-                  viewBox="0 0 820 720"
+                  height="480"
+                  viewBox="0 0 820 540"
                   style={{ background: 'var(--bg-input)', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)' }}
                 >
                   {/* Defs */}
