@@ -77,7 +77,7 @@ export default function MuleAccountAnalysis({ addToast }) {
   return (
     <div className="mule-analysis-view">
       {/* Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="mule-stats-grid">
         <motion.div className="card" style={{ padding: 18 }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--status-danger-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--status-danger)' }}>
@@ -183,15 +183,15 @@ export default function MuleAccountAnalysis({ addToast }) {
         {/* Mule accounts table */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <div className="card" style={{ marginBottom: 16, padding: 14 }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
-              <div className="header-search" style={{ margin: 0 }}>
+            <div className="mule-table-header">
+              <div className="header-search" style={{ margin: 0, width: '100%' }}>
                 <Search />
                 <input
                   type="text"
                   placeholder="Cari nama, rekening, atau ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ width: 260 }}
+                  style={{ width: '100%' }}
                 />
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
