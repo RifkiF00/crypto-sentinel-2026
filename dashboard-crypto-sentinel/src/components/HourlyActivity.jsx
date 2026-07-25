@@ -51,9 +51,9 @@ export default function HourlyActivityChart() {
         </div>
       </div>
       <div className="card-body">
-        <div className="chart-container small">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={hourlyActivity} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+        <div className="chart-container small" style={{ minHeight: 220 }}>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={hourlyActivity} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
               <XAxis
                 dataKey="hour"

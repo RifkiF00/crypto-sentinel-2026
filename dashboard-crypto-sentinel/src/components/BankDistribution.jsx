@@ -57,8 +57,8 @@ export default function BankDistribution() {
         </div>
       </div>
       <div className="card-body">
-        <div className="chart-container">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="chart-container" style={{ minHeight: 220 }}>
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart data={bankDistribution} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
               <XAxis

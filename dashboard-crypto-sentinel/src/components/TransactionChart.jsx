@@ -86,9 +86,9 @@ export default function TransactionChart() {
         </div>
       </div>
       <div className="card-body">
-        <div className="chart-container large">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={transactionTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <div className="chart-container large" style={{ minHeight: 260 }}>
+          <ResponsiveContainer width="100%" height={260}>
+            <AreaChart data={transactionTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="gradientApproved" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />

@@ -68,8 +68,8 @@ export default function RiskDistributionChart() {
         </div>
       </div>
       <div className="card-body">
-        <div className="chart-container small" style={{ display: 'flex', alignItems: 'center' }}>
-          <ResponsiveContainer width="55%" height="100%">
+        <div className="chart-container small" style={{ display: 'flex', alignItems: 'center', minHeight: 220, height: 230 }}>
+          <ResponsiveContainer width="48%" height={210}>
             <PieChart>
               <Pie
                 data={riskDistribution}

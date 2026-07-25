@@ -50,12 +50,12 @@ export default function BlockedPatternsChart() {
         </div>
       </div>
       <div className="card-body">
-        <div className="chart-container">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="chart-container" style={{ minHeight: 220 }}>
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart
               data={topBlockedPatterns}
               layout="vertical"
-              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+              margin={{ top: 5, right: 15, left: 0, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} horizontal={false} />
               <XAxis
@@ -67,7 +67,7 @@ export default function BlockedPatternsChart() {
               <YAxis
                 dataKey="pattern"
                 type="category"
-                width={160}
+                width={110}
                 stroke={chartTheme.axis}
                 tick={{ fill: chartTheme.axis, fontSize: 11 }}
                 axisLine={{ stroke: chartTheme.axisLine }}
