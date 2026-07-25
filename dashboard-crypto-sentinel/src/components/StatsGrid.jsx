@@ -84,24 +84,12 @@ export default function StatsGrid() {
   return (
     <div style={{ marginBottom: 20 }}>
       {/* Dataset Source Badge Header */}
-      <div 
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 12,
-          padding: '8px 16px',
-          background: 'rgba(56, 189, 248, 0.06)',
-          border: '1px solid rgba(56, 189, 248, 0.2)',
-          borderRadius: 12,
-          fontSize: '0.8rem'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#38bdf8', fontWeight: 600 }}>
-          <Database size={15} />
+      <div className="dataset-source-banner">
+        <div className="dataset-source-text">
+          <Database size={15} style={{ flexShrink: 0 }} />
           <span>SUMBER DATASET: PaySim Synthetic Financial Fraud Dataset + Telemetri Live Stream API SNAP BI Expresso</span>
         </div>
-        <span style={{ fontSize: '0.72rem', color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '3px 10px', borderRadius: 6 }}>
+        <span className="dataset-source-tag">
           Sample Size: 50.000 Transaksi
         </span>
       </div>
