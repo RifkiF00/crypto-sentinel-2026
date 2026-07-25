@@ -187,7 +187,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     final bankName = isSesama ? 'Bank Kuningan' : _selectedBank;
     final amountInt = int.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
     final amountText = 'Rp ${_amountController.text}';
-    final adminFee = isSesama ? 'GRATIS' : 'Rp ${_selectedTransferMethod == 'BI-FAST' ? "2.500" : "6.500"} ($_selectedTransferMethod)';
+    final adminFee = isSesama ? 'GRATIS (Rp 0)' : 'Rp ${_selectedTransferMethod == 'BI-FAST' ? "2.500" : "6.500"} ($_selectedTransferMethod)';
     final totalAmountText = isSesama ? amountText : 'Rp ${_amountController.text} (+ Rp ${_selectedTransferMethod == 'BI-FAST' ? "2.500" : "6.500"})';
 
     PinConfirmationModal.show(
@@ -225,8 +225,8 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
           senderAccount: '1234567890', // Rekening Billy Jonathan di Core Banking
           receiverAccount: sanitizedReceiver,
           amount: amountInt > 0 ? amountInt : 100000,
-          method: _selectedTransferMethod,
-          description: _noteController.text.isEmpty ? 'Transfer $bankName' : _noteController.text,
+          method: isSesama ? 'OVERBOOKING' : _selectedTransferMethod,
+          description: _noteController.text.isEmpty ? (isSesama ? 'Transfer Sesama Bank Kuningan' : 'Transfer $bankName') : _noteController.text,
         );
 
         if (mounted) Navigator.of(context).pop();
