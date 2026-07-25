@@ -1824,7 +1824,80 @@ a:hover {
    Responsive Adjustments for New Components
    ========================================== */
 
+@media (max-width: 1024px) {
+  .content-grid-wide {
+    grid-template-columns: 1fr;
+  }
+  .content-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  .page-content {
+    padding: 14px 12px !important;
+  }
+
+  .header {
+    padding: 0 14px !important;
+  }
+
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .content-grid-wide {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .content-grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .chart-container {
+    width: 100% !important;
+    min-height: 260px !important;
+    height: 300px !important;
+  }
+
+  .chart-container.large {
+    height: 320px !important;
+  }
+
+  .gnn-graph-container {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+  }
+
+  .gnn-graph-container svg {
+    min-width: 680px !important;
+    height: 480px !important;
+  }
+
+  .table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+  }
+
   .analysis-tab-navigation {
     flex-direction: column;
   }
@@ -1840,12 +1913,7 @@ a:hover {
 
   .gnn-legend-items {
     flex-direction: column;
-    gap: 16px;
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
+    gap: 12px;
   }
 
   .header-actions {
@@ -1857,11 +1925,6 @@ a:hover {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
-  }
-
-  .table-responsive-container {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
   }
 
   .modal-container {
@@ -1884,16 +1947,35 @@ a:hover {
   }
 
   .page-title {
-    font-size: 1.3rem !important;
+    font-size: 1.2rem !important;
+  }
+
+  .header-title-group h2 {
+    font-size: 1.0rem !important;
+  }
+
+  .header-title-group p {
+    font-size: 0.68rem !important;
   }
 
   .dashboard-main {
-    padding: 12px !important;
+    padding: 10px !important;
   }
 
   .filter-bar {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px !important;
+  }
+
+  .card-body {
+    padding: 14px !important;
   }
 }
