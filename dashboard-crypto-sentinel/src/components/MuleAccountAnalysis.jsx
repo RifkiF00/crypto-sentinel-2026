@@ -204,8 +204,8 @@ export default function MuleAccountAnalysis({ addToast }) {
 
           <div className="card">
             <div className="card-body" style={{ padding: 0 }}>
-              <div className="table-container" style={{ maxHeight: 420, overflowY: 'auto' }}>
-                <table className="data-table">
+              <div className="table-container" style={{ maxHeight: 420, overflowY: 'auto', overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
+                <table className="data-table" style={{ minWidth: 720 }}>
                   <thead>
                     <tr>
                       <th>ID & Nama</th>
