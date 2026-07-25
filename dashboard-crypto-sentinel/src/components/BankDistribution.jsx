@@ -6,12 +6,12 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
   Legend,
 } from 'recharts';
 import { Building2 } from 'lucide-react';
 import { bankDistribution } from '../data/mockData';
 import { useChartTheme } from '../hooks/useChartTheme';
+import ResponsiveChartWrapper from './ResponsiveChartWrapper';
 
 function ChartTooltip({ active, payload, label, colors }) {
   if (!active || !payload) return null;
@@ -57,9 +57,9 @@ export default function BankDistribution() {
         </div>
       </div>
       <div className="card-body">
-        <div className="chart-container" style={{ minHeight: 220 }}>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={bankDistribution} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+        <ResponsiveChartWrapper height={220}>
+          {(w, h) => (
+            <BarChart width={w} height={h} data={bankDistribution} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
               <XAxis
                 dataKey="bank"
@@ -74,12 +74,12 @@ export default function BankDistribution() {
               />
               <Tooltip content={<ChartTooltip colors={chartTheme.tooltip} />} cursor={{ fill: chartTheme.cursor }} />
               <Legend wrapperStyle={{ fontSize: '0.78rem' }} />
-              <Bar dataKey="total" name="Total" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={18} />
-              <Bar dataKey="flagged" name="Ditandai" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={18} />
-              <Bar dataKey="blocked" name="Diblokir" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={18} />
+              <Bar dataKey="total" name="Total" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={14} />
+              <Bar dataKey="flagged" name="Ditandai" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={14} />
+              <Bar dataKey="blocked" name="Diblokir" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={14} />
             </BarChart>
-          </ResponsiveContainer>
-        </div>
+          )}
+        </ResponsiveChartWrapper>
       </div>
     </motion.div>
   );

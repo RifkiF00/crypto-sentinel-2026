@@ -6,11 +6,11 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
 } from 'recharts';
 import { BarChart3 } from 'lucide-react';
 import { topBlockedPatterns } from '../data/mockData';
 import { useChartTheme } from '../hooks/useChartTheme';
+import ResponsiveChartWrapper from './ResponsiveChartWrapper';
 
 function ChartTooltip({ active, payload, label, colors }) {
   if (!active || !payload) return null;
@@ -50,9 +50,11 @@ export default function BlockedPatternsChart() {
         </div>
       </div>
       <div className="card-body">
-        <div className="chart-container" style={{ minHeight: 220 }}>
-          <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveChartWrapper height={220}>
+          {(w, h) => (
             <BarChart
+              width={w}
+              height={h}
               data={topBlockedPatterns}
               layout="vertical"
               margin={{ top: 5, right: 15, left: 0, bottom: 5 }}
@@ -67,13 +69,13 @@ export default function BlockedPatternsChart() {
               <YAxis
                 dataKey="pattern"
                 type="category"
-                width={110}
+                width={Math.min(w * 0.38, 110)}
                 stroke={chartTheme.axis}
-                tick={{ fill: chartTheme.axis, fontSize: 11 }}
+                tick={{ fill: chartTheme.axis, fontSize: 10 }}
                 axisLine={{ stroke: chartTheme.axisLine }}
               />
               <Tooltip content={<ChartTooltip colors={chartTheme.tooltip} />} cursor={{ fill: chartTheme.cursor }} />
-              <Bar dataKey="count" fill="url(#barGradient)" radius={[0, 6, 6, 0]} barSize={20} />
+              <Bar dataKey="count" fill="url(#barGradient)" radius={[0, 6, 6, 0]} barSize={18} />
               <defs>
                 <linearGradient id="barGradient" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stopColor="#6366f1" />
@@ -81,8 +83,8 @@ export default function BlockedPatternsChart() {
                 </linearGradient>
               </defs>
             </BarChart>
-          </ResponsiveContainer>
-        </div>
+          )}
+        </ResponsiveChartWrapper>
       </div>
     </motion.div>
   );

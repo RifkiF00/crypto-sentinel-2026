@@ -7,11 +7,11 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
 } from 'recharts';
 import { Clock } from 'lucide-react';
 import { hourlyActivity } from '../data/mockData';
 import { useChartTheme } from '../hooks/useChartTheme';
+import ResponsiveChartWrapper from './ResponsiveChartWrapper';
 
 function ChartTooltip({ active, payload, label, colors }) {
   if (!active || !payload) return null;
@@ -51,9 +51,9 @@ export default function HourlyActivityChart() {
         </div>
       </div>
       <div className="card-body">
-        <div className="chart-container small" style={{ minHeight: 220 }}>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={hourlyActivity} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+        <ResponsiveChartWrapper height={220}>
+          {(w, h) => (
+            <BarChart width={w} height={h} data={hourlyActivity} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
               <XAxis
                 dataKey="hour"
@@ -77,8 +77,8 @@ export default function HourlyActivityChart() {
                 ))}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
-        </div>
+          )}
+        </ResponsiveChartWrapper>
       </div>
     </motion.div>
   );

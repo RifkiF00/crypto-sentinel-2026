@@ -7,12 +7,12 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
   Legend,
 } from 'recharts';
 import { TrendingUp } from 'lucide-react';
 import { transactionTrend } from '../data/mockData';
 import { useChartTheme } from '../hooks/useChartTheme';
+import ResponsiveChartWrapper from './ResponsiveChartWrapper';
 
 function ChartTooltip({ active, payload, label, colors }) {
   if (!active || !payload) return null;
@@ -86,9 +86,9 @@ export default function TransactionChart() {
         </div>
       </div>
       <div className="card-body">
-        <div className="chart-container large" style={{ minHeight: 260 }}>
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={transactionTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+        <ResponsiveChartWrapper height={260}>
+          {(w, h) => (
+            <AreaChart width={w} height={h} data={transactionTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="gradientApproved" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
@@ -142,8 +142,8 @@ export default function TransactionChart() {
                 fill="url(#gradientBlocked)"
               />
             </AreaChart>
-          </ResponsiveContainer>
-        </div>
+          )}
+        </ResponsiveChartWrapper>
       </div>
     </motion.div>
   );

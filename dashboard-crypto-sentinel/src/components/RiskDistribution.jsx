@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { PieChart as PieIcon } from 'lucide-react';
 import { riskDistribution } from '../data/mockData';
 import { useChartTheme } from '../hooks/useChartTheme';
+import ResponsiveChartWrapper from './ResponsiveChartWrapper';
 
 const RADIAN = Math.PI / 180;
 
@@ -68,51 +69,53 @@ export default function RiskDistributionChart() {
         </div>
       </div>
       <div className="card-body">
-        <div className="chart-container small" style={{ display: 'flex', alignItems: 'center', minHeight: 220, height: 230 }}>
-          <ResponsiveContainer width="48%" height={210}>
-            <PieChart>
-              <Pie
-                data={riskDistribution}
-                cx="50%"
-                cy="50%"
-                innerRadius={55}
-                outerRadius={85}
-                paddingAngle={3}
-                dataKey="value"
-                labelLine={false}
-                label={renderCustomLabel}
-              >
-                {riskDistribution.map((entry, index) => (
-                  <Cell key={index} fill={entry.color} stroke="none" />
+        <ResponsiveChartWrapper height={220}>
+          {(w, h) => (
+            <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: h }}>
+              <PieChart width={Math.max(w * 0.48, 140)} height={h}>
+                <Pie
+                  data={riskDistribution}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={45}
+                  outerRadius={75}
+                  paddingAngle={3}
+                  dataKey="value"
+                  labelLine={false}
+                  label={renderCustomLabel}
+                >
+                  {riskDistribution.map((entry, index) => (
+                    <Cell key={index} fill={entry.color} stroke="none" />
+                  ))}
+                </Pie>
+                <Tooltip content={<ChartTooltip colors={chartTheme.tooltip} />} />
+              </PieChart>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 10 }}>
+                {riskDistribution.map((item) => (
+                  <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        background: item.color,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {item.name}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        {item.value.toLocaleString('id-ID')} ({((item.value / total) * 100).toFixed(1)}%)
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </Pie>
-              <Tooltip content={<ChartTooltip colors={chartTheme.tooltip} />} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {riskDistribution.map((item) => (
-              <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: '50%',
-                    background: item.color,
-                    flexShrink: 0,
-                  }}
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                    {item.name}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {item.value.toLocaleString('id-ID')} ({((item.value / total) * 100).toFixed(1)}%)
-                  </div>
-                </div>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          )}
+        </ResponsiveChartWrapper>
       </div>
     </motion.div>
   );
