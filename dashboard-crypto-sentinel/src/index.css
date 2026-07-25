@@ -2014,8 +2014,9 @@ a:hover {
   }
 
   .gnn-graph-container svg {
-    min-width: 580px !important;
-    height: 380px !important;
+    min-width: 830px !important;
+    width: 830px !important;
+    height: 500px !important;
   }
 
   .table-container {

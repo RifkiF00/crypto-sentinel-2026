@@ -361,6 +361,9 @@ export default function GNNVisualization({ addToast }) {
             <div className="card-header">
               <h3 className="card-title"><GitBranch size={18} /> Graph Neural Network — Peta Jaringan Transaksi</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="gnn-swipe-hint" style={{ fontSize: '0.7rem', color: '#38bdf8', background: 'rgba(56,189,248,0.1)', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>
+                  👈 Usap/Geser Grafis
+                </span>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                   {graphData.nodes.length} nodes • {graphData.edges.length} edges
                 </span>
