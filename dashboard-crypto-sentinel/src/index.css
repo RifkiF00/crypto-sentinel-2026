@@ -1834,50 +1834,64 @@ a:hover {
 }
 
 @media (max-width: 768px) {
+  html {
+    font-size: 12px !important;
+  }
+
   .main-content {
     margin-left: 0 !important;
   }
 
   .page-content {
-    padding: 14px 12px !important;
+    padding: 10px 8px !important;
+    zoom: 0.88;
   }
 
   .header {
-    padding: 0 14px !important;
+    padding: 0 10px !important;
+    min-height: 52px !important;
+    height: 52px !important;
   }
 
   .mobile-menu-btn {
     display: flex !important;
   }
 
-  .content-grid {
-    grid-template-columns: 1fr !important;
-    gap: 14px !important;
-  }
-
-  .content-grid-wide {
-    grid-template-columns: 1fr !important;
-    gap: 14px !important;
-  }
-
+  .content-grid,
+  .content-grid-wide,
   .content-grid-3 {
     grid-template-columns: 1fr !important;
-    gap: 14px !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
   }
 
   .stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
+    gap: 8px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .stat-card {
+    padding: 10px 10px !important;
+    border-radius: 12px !important;
+  }
+
+  .stat-value {
+    font-size: 1.3rem !important;
+  }
+
+  .stat-label {
+    font-size: 0.72rem !important;
   }
 
   .chart-container {
     width: 100% !important;
-    min-height: 260px !important;
-    height: 300px !important;
+    min-height: 220px !important;
+    height: 250px !important;
   }
 
   .chart-container.large {
-    height: 320px !important;
+    height: 270px !important;
   }
 
   .gnn-graph-container {
@@ -1888,8 +1902,8 @@ a:hover {
   }
 
   .gnn-graph-container svg {
-    min-width: 680px !important;
-    height: 480px !important;
+    min-width: 580px !important;
+    height: 400px !important;
   }
 
   .table-container {
@@ -1904,7 +1918,7 @@ a:hover {
 
   .mule-flow-container {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
   }
 
   .mule-flow-arrow {
@@ -1912,70 +1926,76 @@ a:hover {
   }
 
   .gnn-legend-items {
-    flex-direction: column;
-    gap: 12px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
   .header-actions {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
   }
 
-  .card-header-responsive {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+  .card-header {
+    padding: 10px 12px !important;
+  }
+
+  .card-body {
+    padding: 10px 12px !important;
+  }
+
+  .card-title {
+    font-size: 0.88rem !important;
   }
 
   .modal-container {
     width: 95% !important;
-    padding: 16px !important;
+    padding: 14px !important;
   }
 }
 
 @media (max-width: 480px) {
+  html {
+    font-size: 11px !important;
+  }
+
+  .page-content {
+    zoom: 0.82;
+    padding: 8px 6px !important;
+  }
+
   .stats-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
   }
 
   .stat-card {
-    padding: 14px 12px !important;
+    padding: 8px 8px !important;
   }
 
   .stat-value {
-    font-size: 1.4rem !important;
-  }
-
-  .page-title {
     font-size: 1.2rem !important;
   }
 
+  .page-title {
+    font-size: 1.1rem !important;
+  }
+
   .header-title-group h2 {
-    font-size: 1.0rem !important;
+    font-size: 0.92rem !important;
   }
 
   .header-title-group p {
-    font-size: 0.68rem !important;
+    font-size: 0.62rem !important;
   }
 
   .dashboard-main {
-    padding: 10px !important;
+    padding: 8px !important;
   }
 
   .filter-bar {
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
-  }
-
-  .card-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 14px !important;
-  }
-
-  .card-body {
-    padding: 14px !important;
+    gap: 8px;
   }
 }
