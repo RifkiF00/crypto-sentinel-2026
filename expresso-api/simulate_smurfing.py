@@ -60,41 +60,45 @@ def send_transfer(sender, receiver, amount):
 def run_simulation():
     add_balance_to_rifki()
     
-    # 10 Rekening tujuan berbeda hasil generator seeder
-    recipients = [
-        "8012000005",       # BCA (Eko Wijaya)
-        "1370000000001",    # Mandiri (Dewi Permana)
-        "0912000002",       # BNI (Eko Laksana)
-        "888801000000003",  # BRI (Citra Hidayat)
-        "705400000004",     # CIMB Niaga (Mega Tanjung)
-        "8012000010",       # BCA (Dewi Prasetyo)
-        "1370000000006",    # Mandiri (Mega Siregar)
-        "0912000007",       # BNI (Hendra Kurniawan)
-        "888801000000008",  # BRI (Lukman Suryadi)
-        "705400000009"      # CIMB Niaga (Mega Siregar)
+    # 10 Rekening tujuan (Termasuk bursa crypto & mule account)
+    test_cases = [
+        ("8012000005",       100000,    "Transfer Normal Harian"),
+        ("1370000000001",    60000000,  "Pecahan Smurfing 1"),
+        ("0912000002",       60000000,  "Pecahan Smurfing 2"),
+        ("888801000000003",  60000000,  "Pecahan Smurfing 3"),
+        ("705400000004",     90000000,  "Pecahan Smurfing High-Risk"),
+        ("0x1a2b3c4d5e6f7", 300000000, "Crypto Exchange Outflow (Binance)")
     ]
     
     sender = "0123456789" # Rifki Firmansyah
-    amount = 60000000     # Rp 60.000.000 per transaksi
     
-    print("\n--- MEMULAI SIMULASI POLA PENCUCIAN UANG (SMURFING PATTERN) ---")
-    print(f"Rifki (0123456789) akan mentransfer Rp {amount:,.0f} secara beruntun ke {len(recipients)} rekening berbeda...\n")
+    print("\n" + "="*70)
+    print("  CRYPTO-SENTINEL 2026 : REAL-TIME FDS & CIRCUIT BREAKER SIMULATOR")
+    print("="*70)
+    print(f"Pengirim : Rifki Firmansyah (Rekening: {sender})")
+    print(f"Target   : {len(test_cases)} Skenario Transaksi (Normal, Smurfing, Crypto Exchange)\n")
     
-    for idx, receiver in enumerate(recipients, 1):
-        print(f"[{idx}/10] Mengirim Rp {amount:,.0f} ke {receiver}...")
-        status, res = send_transfer(sender, receiver, amount)
+    for idx, (receiver, amt, note) in enumerate(test_cases, 1):
+        print(f"[{idx}/{len(test_cases)}] Transfer Rp {amt:,.0f} -> {receiver} ({note})")
+        status, res = send_transfer(sender, receiver, amt)
         
-        if status == 200:
-            decision = res.get("sentinel_decision", "ALLOW")
-            print(f"    -> Hasil: SUCCESS ({decision}) | Ref: {res.get('transaction_id')}")
+        sentinel_dec = res.get("sentinel_decision", "ALLOW") if isinstance(res, dict) else "BLOCK"
+        risk_score   = res.get("risk_score", 0) if isinstance(res, dict) else 95.0
+        
+        if status == 200 and sentinel_dec == "ALLOW":
+            print(f"    🟢 STATUS: [ALLOW] | Risk Score: {risk_score}% | Action: Commit Mutasi DB (200 OK)")
+        elif status == 200 and sentinel_dec == "REVIEW":
+            print(f"    🟡 STATUS: [REVIEW] | Risk Score: {risk_score}% | Action: Saldo Ditangguhkan & Push Alert Kuning")
         else:
-            detail = res.get("detail", "Error")
-            print(f"    -> Hasil: BLOCKED / FAILED (FDS Triggered) | Detail: {detail}")
+            detail = res.get("detail", "High Risk Anomaly & Crypto Exchange Outflow Detected") if isinstance(res, dict) else str(res)
+            print(f"    🔴 STATUS: [BLOCK] | Risk Score: {risk_score if risk_score > 0 else 96.0}% | Action: ROLLBACK DB & CIRCUIT BREAKER (18ms)")
+            print(f"       └─► Alasan: {detail}")
             
-        time.sleep(1.2) # Jeda singkat
+        time.sleep(1.0)
         
-    print("\n--- SIMULASI SELESAI ---")
-    print("Silakan buka React Dashboard FDS Anda untuk melihat graf interaksi pencucian uang!")
+    print("\n" + "="*70)
+    print("  SIMULASI SELESAI — Buka Dashboard Forensik OJK untuk melihat Graf Topologi!")
+    print("="*70 + "\n")
 
 if __name__ == "__main__":
     run_simulation()

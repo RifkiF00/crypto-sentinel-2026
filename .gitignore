@@ -18,3 +18,4 @@ crypto-sentinel-api/data/paysim.csv
 *.pdf
 *booklet*
 *submission*
+~$*.docx

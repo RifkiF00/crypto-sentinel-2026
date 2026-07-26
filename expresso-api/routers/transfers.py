@@ -834,11 +834,15 @@ async def api_simulate_smurfing():
     add_balance_to_rifki()
     
     sender = "0123456789"
-    recipients = ["8012000005", "987654", "9012666666", "9012777777", "888801000000008"]
+    recipients = ["8012000005", "1370000000001", "0912000002", "888801000000003", "705400000004", "0x1a2b3c4d5e6f7g8h9i0j"]
     amount = 60000000
     
+    print("\n" + "="*70)
+    print("[SIMULASI SMURFING & FDS REAL-TIME INTERCEPTION LOG]")
+    print("="*70)
+    
     results = []
-    for rec in recipients:
+    for idx, rec in enumerate(recipients, 1):
         sentinel_res = await analyze_via_sentinel(
             sender_account=sender,
             receiver_account=rec,
@@ -850,6 +854,22 @@ async def api_simulate_smurfing():
             latitude=-6.9744,
             longitude=108.4832
         )
+        dec = sentinel_res.get("decision", "ALLOW")
+        risk = sentinel_res.get("risk_score", 0.0)
+        reasons = sentinel_res.get("reasons", [])
+        
+        if dec == "BLOCK":
+            print(f"[{idx}/{len(recipients)}] Tx {sender} -> {rec} | Nominal: Rp {amount:,.0f}")
+            print(f"    └─► 🔴 STATUS FDS: [BLOCK] | Risk Score: {risk}% | Action: Rollback DB & Freeze Mule Account")
+            print(f"    └─► Alasan: {', '.join(reasons)}")
+        elif dec == "REVIEW":
+            print(f"[{idx}/{len(recipients)}] Tx {sender} -> {rec} | Nominal: Rp {amount:,.0f}")
+            print(f"    └─► 🟡 STATUS FDS: [REVIEW] | Risk Score: {risk}% | Action: Tangguhkan Saldo & Push Yellow Alert")
+        else:
+            print(f"[{idx}/{len(recipients)}] Tx {sender} -> {rec} | Nominal: Rp {amount:,.0f}")
+            print(f"    └─► 🟢 STATUS FDS: [ALLOW] | Risk Score: {risk}% | Action: Commit Mutasi DB (200 OK)")
+            
         results.append(sentinel_res)
         
+    print("="*70 + "\n")
     return {"status": "SUCCESS", "message": f"Berhasil mensimulasikan {len(recipients)} pecahan transaksi smurfing beruntun!", "details": results}
