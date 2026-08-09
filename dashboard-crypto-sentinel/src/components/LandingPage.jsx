@@ -147,8 +147,7 @@ export default function LandingPage({ onEnter }) {
 
         /* ---- NAV ---- */
         .lp-nav {
-          position: sticky;
-          top: 0;
+          position: relative;
           z-index: 100;
           width: 100%;
           background: rgba(240,245,255,0.92);
