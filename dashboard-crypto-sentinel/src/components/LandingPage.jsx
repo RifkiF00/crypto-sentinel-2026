@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, ArrowRight, Brain, Zap, FileText,
-  ChevronDown, Radio, CheckCircle
+  ChevronDown, Radio, CheckCircle, Play, Check, Clock, Lock
 } from 'lucide-react';
 
 // ---- Scroll reveal wrapper ----
@@ -224,78 +224,222 @@ export default function LandingPage({ onEnter }) {
           box-shadow: 0 8px 24px rgba(30,58,138,0.4);
         }
 
-        /* ---- HERO ---- */
-        .lp-hero {
-          position: relative;
-          max-width: 1200px;
+        /* ---- HERO MATCHING MOCKUP IMAGE ---- */
+        .lp-hero-wrapper {
+          max-width: 1260px;
           margin: 0 auto;
-          padding: 110px 48px 100px;
+          padding: 50px 48px 40px;
+          position: relative;
+        }
+
+        .lp-hero-grid {
           display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 80px;
+          grid-template-columns: 1.1fr 0.9fr;
+          gap: 40px;
           align-items: center;
         }
 
         .lp-hero-badge {
           display: inline-flex; align-items: center; gap: 8px;
           padding: 6px 16px;
-          background: rgba(30,58,138,0.08);
-          border: 1px solid rgba(30,58,138,0.2);
+          background: rgba(37,99,235,0.06);
+          border: 1px solid rgba(37,99,235,0.2);
           border-radius: 9999px;
-          font-size: 0.75rem; font-weight: 700; color: #1e3a8a;
+          font-size: 0.75rem; font-weight: 700; color: #2563eb;
           letter-spacing: 0.8px; text-transform: uppercase;
-          margin-bottom: 28px;
+          margin-bottom: 24px;
         }
 
         .lp-hero-title {
-          font-family: 'Playfair Display', serif;
-          font-size: 4.2rem; font-weight: 900;
-          line-height: 1.08; letter-spacing: -1px;
-          margin-bottom: 24px; color: #111111;
+          font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+          font-size: 3.4rem; font-weight: 800;
+          line-height: 1.15; letter-spacing: -0.8px;
+          margin-bottom: 20px; color: #0b1329;
         }
 
-        .lp-hero-title .red { color: #1e3a8a; font-style: italic; }
+        .lp-hero-title .highlight-blue { color: #2563eb; }
 
         .lp-hero-sub {
           font-family: 'Plus Jakarta Sans', sans-serif;
-          font-size: 1.05rem; color: #666666;
-          line-height: 1.8; margin-bottom: 40px;
+          font-size: 1.0rem; color: #475569;
+          line-height: 1.7; margin-bottom: 32px;
+          max-width: 560px;
         }
 
-        .lp-hero-sub strong { color: #333333; font-weight: 600; }
-
-        .lp-hero-btns { display: flex; align-items: center; gap: 14px; }
+        .lp-hero-btns { display: flex; align-items: center; gap: 14px; margin-bottom: 40px; }
 
         .lp-btn-primary {
           display: inline-flex; align-items: center; gap: 10px;
-          background: #1e3a8a; border: none;
-          border-radius: 9999px; padding: 15px 34px;
-          font-size: 0.95rem; font-weight: 700; color: white;
+          background: #2563eb; border: none;
+          border-radius: 12px; padding: 14px 28px;
+          font-size: 0.92rem; font-weight: 700; color: white;
           cursor: pointer; font-family: 'Outfit', sans-serif;
-          box-shadow: 0 8px 28px rgba(30,58,138,0.35);
-          transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+          box-shadow: 0 6px 20px rgba(37,99,235,0.35);
+          transition: all 0.3s ease;
         }
 
         .lp-btn-primary:hover {
-          background: #1e40af;
-          transform: translateY(-3px);
-          box-shadow: 0 14px 40px rgba(30,58,138,0.45);
+          background: #1d4ed8;
+          transform: translateY(-2px);
+          box-shadow: 0 10px 28px rgba(37,99,235,0.45);
         }
 
         .lp-btn-secondary {
           display: inline-flex; align-items: center; gap: 8px;
-          background: transparent;
-          border: 1.5px solid rgba(0,0,0,0.15);
-          border-radius: 9999px; padding: 14px 28px;
-          font-size: 0.95rem; font-weight: 600; color: #555555;
+          background: white;
+          border: 1px solid rgba(0,0,0,0.12);
+          border-radius: 12px; padding: 14px 24px;
+          font-size: 0.92rem; font-weight: 600; color: #334155;
           cursor: pointer; font-family: 'Outfit', sans-serif;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
           transition: all 0.3s ease;
         }
 
         .lp-btn-secondary:hover {
-          border-color: rgba(0,0,0,0.3);
-          color: #111111;
-          background: rgba(0,0,0,0.03);
+          border-color: rgba(0,0,0,0.25);
+          color: #0f172a;
+          background: #f8fafc;
+        }
+
+        /* Bottom Feature Strip (Dark Navy 3-Column Card) */
+        .lp-hero-strip {
+          background: #09132e;
+          border-radius: 16px;
+          padding: 20px 24px;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+          box-shadow: 0 12px 36px rgba(9,19,46,0.3);
+          color: white;
+        }
+
+        .lp-strip-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .lp-strip-icon {
+          width: 38px;
+          height: 38px;
+          border-radius: 12px;
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.12);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #38bdf8;
+          flex-shrink: 0;
+        }
+
+        .lp-strip-title {
+          font-size: 0.86rem;
+          font-weight: 700;
+          color: #f8fafc;
+          margin-bottom: 2px;
+        }
+
+        .lp-strip-desc {
+          font-size: 0.72rem;
+          color: #94a3b8;
+          line-height: 1.35;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* Right column illustration & risk card */
+        .lp-hero-visual-box {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .lp-hero-shield-img {
+          width: 100%;
+          max-width: 440px;
+          border-radius: 20px;
+          display: block;
+        }
+
+        /* Glassmorphism Risk Panel (matching exact mockup) */
+        .lp-risk-glass-panel {
+          position: absolute;
+          right: -15px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 260px;
+          background: rgba(255, 255, 255, 0.4);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.7);
+          border-radius: 18px;
+          padding: 18px;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+          color: #0f172a;
+          z-index: 10;
+        }
+
+        .lp-risk-glass-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 14px;
+        }
+
+        .lp-risk-score-num {
+          font-size: 1.6rem;
+          font-weight: 900;
+          color: #ef4444;
+          line-height: 1;
+        }
+
+        .lp-risk-score-num span {
+          font-size: 0.95rem;
+          color: #64748b;
+          font-weight: 600;
+        }
+
+        .lp-risk-label {
+          font-size: 0.72rem;
+          font-weight: 700;
+          color: #ef4444;
+          margin-top: 3px;
+        }
+
+        .lp-risk-decision-title {
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: #475569;
+          margin-bottom: 10px;
+        }
+
+        .lp-decision-box {
+          border-radius: 10px;
+          padding: 8px 12px;
+          margin-bottom: 6px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 0.75rem;
+          font-weight: 700;
+        }
+
+        .lp-decision-box.allow {
+          background: rgba(34, 197, 94, 0.12);
+          border: 1px solid rgba(34, 197, 94, 0.3);
+          color: #16a34a;
+        }
+
+        .lp-decision-box.review {
+          background: rgba(234, 179, 8, 0.12);
+          border: 1px solid rgba(234, 179, 8, 0.3);
+          color: #d97706;
+        }
+
+        .lp-decision-box.block {
+          background: rgba(239, 68, 68, 0.12);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #dc2626;
         }
 
         /* ---- HERO MOCKUP (terminal — keep dark) ---- */
@@ -953,121 +1097,159 @@ export default function LandingPage({ onEnter }) {
           <div className="lp-nav-logo">
             <img src="/img/LOGO1.jpeg" alt="Logo" />
           </div>
-          <div className="lp-nav-name">Crypto<span>-Sentinel</span></div>
+          <div className="lp-nav-name">Crypto<span>-Sentinel 2026</span></div>
         </div>
         <ul className="lp-nav-links">
+          <li><a href="#beranda" style={{ color: '#2563eb', borderBottom: '2px solid #2563eb', paddingBottom: 4 }}>Beranda</a></li>
           <li><a href="#solusi">Solusi</a></li>
           <li><a href="#teknologi">Teknologi</a></li>
-          <li><a href="#tim">Tim Kami</a></li>
-          <li><a href="#regulasi">Kepatuhan</a></li>
+          <li><a href="#dampak">Dampak</a></li>
+          <li><a href="#tim">Tentang Kami</a></li>
         </ul>
-        <button className="lp-nav-cta" onClick={onEnter}>
-          Dashboard Forensik <ArrowRight size={15} />
+        <button className="lp-nav-cta" onClick={onEnter} style={{ background: '#09132e', borderRadius: '9999px', padding: '10px 24px' }}>
+          Hubungi Kami <ArrowRight size={15} />
         </button>
       </nav>
 
-      {/* HERO */}
-      <section className="lp-hero">
-        <Reveal>
-          <div>
-            <div className="lp-hero-badge">
-              <Radio size={12} />
-              Digdaya × PIDI 2026 · Tim EXPRESSO S1251 · Top 80 Finalis
-            </div>
-            <h1 className="lp-hero-title">
-              Hentikan Pelarian<br />Dana ke Kripto,<br />
-              <span className="red">Sebelum Terlambat.</span>
-            </h1>
-            <p className="lp-hero-sub">
-              Crypto-Sentinel adalah <strong>Security Middleware AI</strong> yang berdiri di antara
-              nasabah dan core banking — memeriksa setiap transaksi SNAP BI dalam{' '}
-              <strong>kurang dari 20ms</strong>, memblokir pola smurfing dan mule ring
-              sebelum saldo berubah.
-            </p>
-            <div className="lp-hero-btns">
-              <button className="lp-btn-primary" onClick={onEnter}>
-                <Shield size={18} />
-                Masuk Dashboard Forensik
-              </button>
-              <button className="lp-btn-secondary" onClick={onEnter}>
-                Lihat Demo <ArrowRight size={16} />
-              </button>
-            </div>
-          </div>
-        </Reveal>
-
-        <Reveal delay={0.2} direction="left">
-          <div className="lp-hero-mockup">
-            <motion.div
-              animate={{ 
-                y: [0, -12, 0],
-                rotate: [0, 0.5, 0, -0.5, 0]
-              }}
-              transition={{ 
-                duration: 5, 
-                repeat: Infinity, 
-                ease: 'easeInOut' 
-              }}
-              style={{ position: 'relative' }}
-            >
-              <div className="lp-hero-float top-left" style={{ zIndex: 10 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 9, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CheckCircle size={18} color="#16a34a" />
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#16a34a' }}>ALLOW</div>
-                  <div style={{ fontSize: '0.65rem', color: '#888888', fontFamily: 'JetBrains Mono, monospace' }}>Score: 8% · 16ms</div>
-                </div>
+      {/* HERO SECTION MATCHING MOCKUP IMAGE */}
+      <section className="lp-hero-wrapper" id="beranda">
+        <div className="lp-hero-grid">
+          <Reveal>
+            <div>
+              <div className="lp-hero-badge">
+                <span style={{ color: '#2563eb', marginRight: 4 }}>●</span> NEXT-GEN ANTI-MONEY LAUNDERING
+              </div>
+              <h1 className="lp-hero-title">
+                Melindungi Setiap Transaksi,<br />
+                Menjaga <span className="highlight-blue">Kedaulatan Ekonomi.</span>
+              </h1>
+              <p className="lp-hero-sub">
+                Crypto-Sentinel 2026 adalah middleware AI cerdas yang bertindak sebagai <strong>Smart Circuit Breaker</strong>, mendeteksi dan menghentikan transaksi berisiko dalam hitungan milidetik sebelum kerugian terjadi.
+              </p>
+              <div className="lp-hero-btns">
+                <button className="lp-btn-primary" onClick={onEnter}>
+                  Pelajari Solusi Kami <ArrowRight size={16} />
+                </button>
+                <button className="lp-btn-secondary" onClick={onEnter}>
+                  <Play size={15} fill="#2563eb" color="#2563eb" /> Lihat Demo
+                </button>
               </div>
 
-              <div className="lp-mockup-frame">
-                <motion.div
-                  animate={{ scale: [1, 1.015, 1] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                  style={{ borderRadius: '14px', overflow: 'hidden', position: 'relative' }}
-                >
+              {/* Bottom Feature Strip (Dark Navy 3-Column Card) */}
+              <div className="lp-hero-strip">
+                <div className="lp-strip-item">
+                  <div className="lp-strip-icon">
+                    <Zap size={20} />
+                  </div>
+                  <div>
+                    <div className="lp-strip-title">Deteksi &lt; 18ms</div>
+                    <div className="lp-strip-desc">Hentikan transaksi berisiko sebelum dana keluar.</div>
+                  </div>
+                </div>
+                <div className="lp-strip-item">
+                  <div className="lp-strip-icon">
+                    <Brain size={20} />
+                  </div>
+                  <div>
+                    <div className="lp-strip-title">GNN Intelligence</div>
+                    <div className="lp-strip-desc">Temukan pola mule ring tersembunyi secara akurat.</div>
+                  </div>
+                </div>
+                <div className="lp-strip-item">
+                  <div className="lp-strip-icon">
+                    <Shield size={20} />
+                  </div>
+                  <div>
+                    <div className="lp-strip-title">Kepatuhan Terjamin</div>
+                    <div className="lp-strip-desc">Ototomatisasi STR/LTKM sesuai regulasi OJK &amp; UU TPPU.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+
+          {/* Right Column: Animated heroo.jpeg + Floating Translucent Risk Score Panel */}
+          <Reveal delay={0.2} direction="left">
+            <div className="lp-hero-visual-box">
+              <motion.div
+                animate={{ 
+                  y: [0, -10, 0],
+                }}
+                transition={{ 
+                  duration: 5, 
+                  repeat: Infinity, 
+                  ease: 'easeInOut' 
+                }}
+                style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}
+              >
+                {/* Main 3D Shield Image */}
+                <div style={{ borderRadius: '24px', overflow: 'hidden', filter: 'drop-shadow(0 20px 40px rgba(37,99,235,0.25))' }}>
                   <img
                     src="/img/heroo.jpeg"
-                    alt="Crypto-Sentinel AI Shield"
-                    style={{
-                      width: '100%',
-                      height: 'auto',
-                      borderRadius: '14px',
-                      display: 'block',
-                      objectFit: 'cover'
-                    }}
+                    alt="Crypto-Sentinel 3D Shield"
+                    className="lp-hero-shield-img"
                   />
-                  <div 
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: '14px',
-                      boxShadow: 'inset 0 0 25px rgba(30,58,138,0.2)',
-                      pointerEvents: 'none'
-                    }}
-                  />
+                </div>
+
+                {/* Floating Translucent Glassmorphism Risk Panel */}
+                <motion.div
+                  animate={{ y: [0, 8, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  className="lp-risk-glass-panel"
+                >
+                  <div className="lp-risk-glass-header">
+                    <div>
+                      <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>Risk Score</div>
+                      <div className="lp-risk-score-num">
+                        92 <span>/ 100</span>
+                      </div>
+                      <div className="lp-risk-label">Risiko Tinggi</div>
+                    </div>
+                    {/* Sparkline curve graph */}
+                    <svg width="60" height="32" viewBox="0 0 60 32" fill="none">
+                      <path d="M2 28L15 22L28 25L42 12L58 4" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+
+                  <div className="lp-risk-decision-title">Keputusan (18ms)</div>
+
+                  {/* Decision 1: ALLOW */}
+                  <div className="lp-decision-box allow">
+                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Check size={12} color="white" strokeWidth={3} />
+                    </div>
+                    <div>
+                      <div style={{ color: '#15803d', fontWeight: 800 }}>ALLOW</div>
+                      <div style={{ fontSize: '0.64rem', color: '#16a34a', fontWeight: 500 }}>Skor &lt; 50</div>
+                    </div>
+                  </div>
+
+                  {/* Decision 2: PENDING & REVIEW */}
+                  <div className="lp-decision-box review">
+                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#eab308', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Clock size={12} color="white" strokeWidth={3} />
+                    </div>
+                    <div>
+                      <div style={{ color: '#b45309', fontWeight: 800 }}>PENDING &amp; REVIEW</div>
+                      <div style={{ fontSize: '0.64rem', color: '#d97706', fontWeight: 500 }}>Skor 50 - 85</div>
+                    </div>
+                  </div>
+
+                  {/* Decision 3: BLOCK / ROLLBACK */}
+                  <div className="lp-decision-box block">
+                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Lock size={12} color="white" strokeWidth={3} />
+                    </div>
+                    <div>
+                      <div style={{ color: '#b91c1c', fontWeight: 800 }}>BLOCK / ROLLBACK</div>
+                      <div style={{ fontSize: '0.64rem', color: '#dc2626', fontWeight: 500 }}>Skor ≥ 85</div>
+                    </div>
+                  </div>
                 </motion.div>
-
-                <div className="lp-mockup-dots" style={{ marginTop: 14 }}>
-                  <div className="lp-mockup-dot r" />
-                  <div className="lp-mockup-dot y" />
-                  <div className="lp-mockup-dot g" />
-                  <span style={{ fontSize: '0.65rem', color: '#64748b', marginLeft: 8, fontFamily: 'JetBrains Mono, monospace' }}>
-                    crypto-sentinel-fds · 3D AI Circuit Breaker Active
-                  </span>
-                </div>
-              </div>
-
-              <div className="lp-hero-float bottom-right" style={{ zIndex: 10 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 9, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🛡️</div>
-                <div>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#2563eb' }}>BLOCKED</div>
-                  <div style={{ fontSize: '0.65rem', color: '#888888', fontFamily: 'JetBrains Mono, monospace' }}>Rp 90jt · Indodax</div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </Reveal>
+              </motion.div>
+            </div>
+          </Reveal>
+        </div>
       </section>
 
       <div className="lp-divider" />
