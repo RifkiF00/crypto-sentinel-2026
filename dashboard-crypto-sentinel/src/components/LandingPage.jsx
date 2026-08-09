@@ -93,6 +93,15 @@ const team = [
   },
 ];
 
+// ---- FAQ ----
+const faqs = [
+  { q: 'Apa itu Crypto-Sentinel FDS?', a: 'Crypto-Sentinel adalah Security Middleware Layer yang berjalan sebagai lapisan intersepsi antara aplikasi mobile banking nasabah dan core banking bank. Setiap transaksi melewati mesin AI kami sebelum saldo berubah — memastikan tidak ada dana yang keluar ke tangan yang salah.' },
+  { q: 'Bagaimana sistem bekerja dalam <20ms?', a: 'Mesin rule engine kami dioptimalkan untuk berjalan di RAM tanpa akses disk. Graf transaksi (NetworkX) disimpan in-memory dan diperbarui secara incremental. Model Random Forest hanya memerlukan forward pass pada vektor 12 fitur — total komputasi selesai dalam <20ms per transaksi.' },
+  { q: 'Apakah sistem ini patuh regulasi OJK dan PPATK?', a: 'Ya. Crypto-Sentinel mematuhi SNAP BI (PADG No. 23/18/PADG/2021) untuk autentikasi API, ISO 20022 untuk standardisasi pesan transaksi, dan menghasilkan laporan LTKM sesuai format PPATK goAML berdasarkan UU No. 8 Tahun 2010 tentang TPPU.' },
+  { q: 'Bagaimana integrasi ke core banking yang sudah ada?', a: 'Sistem dirancang sebagai plug-and-play middleware. Bank cukup mengarahkan traffic transfer API ke endpoint Crypto-Sentinel sebelum meneruskan ke core banking. Tidak ada perubahan pada sistem core banking yang sudah berjalan.' },
+  { q: 'Apakah data nasabah aman?', a: 'Data nasabah diproses secara in-memory dan tidak disimpan oleh Crypto-Sentinel. Hanya log transaksi anonim dan skor risiko yang dicatat untuk keperluan audit. Roadmap kami mencakup implementasi Federated Learning (UU PDP No. 27/2022 compliant).' },
+];
+
 // ---- Animated Interception Pipeline Component ----
 function AnimatedFlowDiagram() {
   const [activeStep, setActiveStep] = useState(0);
