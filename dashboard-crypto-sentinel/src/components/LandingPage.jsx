@@ -1102,7 +1102,7 @@ export default function LandingPage({ onEnter }) {
         <div className="lp-nav-container">
           <div className="lp-nav-brand">
             <div className="lp-nav-logo">
-              <img src="/img/logoo2.jpeg" alt="Logo" />
+              <img src="/img/logo_transparent.png" alt="Logo" />
             </div>
             <div className="lp-nav-name">Crypto<span>-Sentinel 2026</span></div>
           </div>
