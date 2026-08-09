@@ -226,7 +226,7 @@ export default function LandingPage({ onEnter }) {
 
         /* ---- HERO MATCHING MOCKUP IMAGE ---- */
         .lp-hero-wrapper {
-          max-width: 1260px;
+          max-width: 1340px;
           margin: 0 auto;
           padding: 50px 48px 40px;
           position: relative;
@@ -234,8 +234,8 @@ export default function LandingPage({ onEnter }) {
 
         .lp-hero-grid {
           display: grid;
-          grid-template-columns: 1.1fr 0.9fr;
-          gap: 40px;
+          grid-template-columns: 1fr 1.05fr;
+          gap: 48px;
           align-items: center;
         }
 
@@ -352,29 +352,31 @@ export default function LandingPage({ onEnter }) {
           display: flex;
           align-items: center;
           justify-content: center;
+          width: 100%;
         }
 
         .lp-hero-shield-img {
           width: 100%;
-          max-width: 440px;
-          border-radius: 20px;
+          max-width: 580px;
+          border-radius: 24px;
           display: block;
+          transform: scale(1.05);
         }
 
         /* Glassmorphism Risk Panel (matching exact mockup) */
         .lp-risk-glass-panel {
           position: absolute;
-          right: -15px;
+          right: -25px;
           top: 50%;
           transform: translateY(-50%);
-          width: 260px;
-          background: rgba(255, 255, 255, 0.4);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 255, 255, 0.7);
-          border-radius: 18px;
-          padding: 18px;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+          width: 270px;
+          background: rgba(255, 255, 255, 0.45);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+          border: 1px solid rgba(255, 255, 255, 0.75);
+          border-radius: 20px;
+          padding: 20px;
+          box-shadow: 0 24px 50px rgba(0, 0, 0, 0.14);
           color: #0f172a;
           z-index: 10;
         }
