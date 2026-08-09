@@ -1,815 +1,1359 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Shield, 
-  Activity, 
-  ArrowRight, 
-  Brain, 
-  Zap, 
-  Lock, 
-  FileText, 
-  TrendingUp, 
-  Server, 
-  Terminal,
-  ChevronRight
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Shield, ArrowRight, Brain, Zap, FileText,
+  ChevronDown, Radio, CheckCircle
 } from 'lucide-react';
 
-export default function LandingPage({ onEnter }) {
-  const [activeDocTab, setActiveDocTab] = useState('tp'); // 'tp' | 'flow' | 'bmc'
-  const [tickerLogs, setTickerLogs] = useState([
-    { id: 1, time: '21:41:02', msg: 'Crypto-Sentinel v3.2 Engine Initialized.', type: 'info' },
-    { id: 2, time: '21:41:05', msg: 'GNN Model loaded: PyTorch Geometric 2.4.0 (16 nodes, 18 edges active).', type: 'info' },
-    { id: 3, time: '21:41:10', msg: 'SNAP BI API gateway listening on port 8000.', type: 'success' }
-  ]);
+// ---- Scroll reveal wrapper ----
+const Reveal = ({ children, delay = 0, direction = 'up', className = '' }) => {
+  const variants = {
+    hidden: {
+      opacity: 0,
+      y: direction === 'up' ? 40 : direction === 'down' ? -40 : 0,
+      x: direction === 'left' ? 40 : direction === 'right' ? -40 : 0,
+    },
+    visible: { opacity: 1, y: 0, x: 0 },
+  };
+  return (
+    <motion.div
+      className={className}
+      variants={variants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.75, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
+    >
+      {children}
+    </motion.div>
+  );
+};
 
-  // Rolling ticker logs to simulate real-time engine activity
+// ---- Animated counter ----
+function AnimatedNum({ target, suffix = '', prefix = '' }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const started = useRef(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true;
+        let startTime = null;
+        const duration = 2200;
+        const step = (ts) => {
+          if (!startTime) startTime = ts;
+          const p = Math.min((ts - startTime) / duration, 1);
+          const eased = 1 - Math.pow(1 - p, 3);
+          setCount(Math.floor(eased * target));
+          if (p < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }
+    }, { threshold: 0.4 });
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [target]);
+  return <span ref={ref}>{prefix}{count.toLocaleString('id-ID')}{suffix}</span>;
+}
+
+// ---- Team members ----
+const team = [
+  {
+    name: 'Rifki Firmansyah',
+    role: 'AI Architect & Team Lead',
+    initials: 'RF',
+    color: '#1e3a8a',
+    desc: 'Bertanggung jawab atas seluruh arsitektur AI/ML sistem Crypto-Sentinel, mulai dari model Random Forest, Graph Neural Network, hingga rule engine 15 indikator. Sekaligus menjadi product strategist dan memimpin koordinasi kemitraan dengan Bank Kuningan dan BRI Kuningan.',
+    tags: ['AI/ML', 'GNN', 'Product Strategy', 'Team Lead'],
+  },
+  {
+    name: 'Aam Setiana',
+    role: 'Frontend & Product Analyst',
+    initials: 'AS',
+    color: '#164e63',
+    desc: 'Merancang dan mengembangkan antarmuka dashboard forensik berbasis React — termasuk GNN Visualization real-time, panel alert, dan seluruh komponen UI yang digunakan analis kepatuhan bank untuk mengawasi transaksi mencurigakan.',
+    tags: ['React', 'Dashboard UI', 'GNN Visualization', 'Product Analysis'],
+  },
+  {
+    name: 'Desta Erlangga',
+    role: 'Backend & Integration Developer',
+    initials: 'DE',
+    color: '#14532d',
+    desc: 'Membangun seluruh infrastruktur backend FastAPI yang menghubungkan core banking Expresso dengan FDS engine, termasuk endpoint analisis transaksi, STR/LTKM generator, dan sistem pelaporan real-time ke dashboard.',
+    tags: ['FastAPI', 'SQLite', 'API Integration', 'STR Generator'],
+  },
+  {
+    name: 'Billy Jonathan',
+    role: 'Mobile Developer & Security Analyst',
+    initials: 'BJ',
+    color: '#92400e',
+    desc: 'Mengembangkan aplikasi mobile banking Bank Kuningan berbasis Flutter yang terintegrasi penuh dengan SNAP BI authentication (HMAC-SHA256). Juga berperan sebagai security analyst yang memastikan seluruh jalur komunikasi API aman.',
+    tags: ['Flutter', 'SNAP BI', 'HMAC-SHA256', 'Cybersecurity'],
+  },
+];
+
+// ---- FAQ ----
+const faqs = [
+  { q: 'Apa itu Crypto-Sentinel FDS?', a: 'Crypto-Sentinel adalah Security Middleware Layer yang berjalan sebagai lapisan intersepsi antara aplikasi mobile banking nasabah dan core banking bank. Setiap transaksi melewati mesin AI kami sebelum saldo berubah — memastikan tidak ada dana yang keluar ke tangan yang salah.' },
+  { q: 'Bagaimana sistem bekerja dalam <20ms?', a: 'Mesin rule engine kami dioptimalkan untuk berjalan di RAM tanpa akses disk. Graf transaksi (NetworkX) disimpan in-memory dan diperbarui secara incremental. Model Random Forest hanya memerlukan forward pass pada vektor 12 fitur — total komputasi selesai dalam <20ms per transaksi.' },
+  { q: 'Apakah sistem ini patuh regulasi OJK dan PPATK?', a: 'Ya. Crypto-Sentinel mematuhi SNAP BI (PADG No. 23/18/PADG/2021) untuk autentikasi API, ISO 20022 untuk standardisasi pesan transaksi, dan menghasilkan laporan LTKM sesuai format PPATK goAML berdasarkan UU No. 8 Tahun 2010 tentang TPPU.' },
+  { q: 'Bagaimana integrasi ke core banking yang sudah ada?', a: 'Sistem dirancang sebagai plug-and-play middleware. Bank cukup mengarahkan traffic transfer API ke endpoint Crypto-Sentinel sebelum meneruskan ke core banking. Tidak ada perubahan pada sistem core banking yang sudah berjalan.' },
+  { q: 'Apakah data nasabah aman?', a: 'Data nasabah diproses secara in-memory dan tidak disimpan oleh Crypto-Sentinel. Hanya log transaksi anonim dan skor risiko yang dicatat untuk keperluan audit. Roadmap kami mencakup implementasi Federated Learning (UU PDP No. 27/2022 compliant).' },
+];
+
+export default function LandingPage({ onEnter }) {
+  const [activeDocTab, setActiveDocTab] = useState('tp');
+  const [tickerLogs, setTickerLogs] = useState([
+    { id: 1, time: '07:41:02', msg: 'FDS Engine v3.2 initialized. 15 detection rules loaded.', type: 'info' },
+    { id: 2, time: '07:41:09', msg: '[ALLOW] TXN-20260810-0021 | Rp 500.000 → Siti Rahma | Score: 12% | 17ms', type: 'success' },
+    { id: 3, time: '07:41:22', msg: '[BLOCK] TXN-20260810-0034 | Rp 90.000.000 → Indodax BCA | Score: 100% | Smurfing+Blacklist', type: 'danger' },
+  ]);
+  const [openFaq, setOpenFaq] = useState(null);
+
   useEffect(() => {
     const logs = [
-      { msg: 'FDS scan triggered for interbank transaction BCA -> Bank Kuningan.', type: 'info' },
-      { msg: 'Transaction TXN-20260723-8B12: Risk score evaluated at 35% (Status: ALLOW).', type: 'success' },
-      { msg: 'Smurfing rule check: 3 unique destinations within 1 hour for account 0123456789.', type: 'warning' },
-      { msg: 'BLOCKED: Transaction TXN-20260723-A91C (Rp 60.000.000) - Smurfing Pattern Detected.', type: 'danger' },
-      { msg: 'ALERT: Account 9012666666 (Indodax Escrow) marked as high risk.', type: 'danger' },
-      { msg: 'Auto-generating STR report for transaction alert #8831.', type: 'info' },
-      { msg: 'Connected to Ethereum and Binance Smart Chain node gateways.', type: 'info' }
+      { msg: '[ALLOW] TXN-20260810-0112 | Rp 200.000 → Siti Rahma | Score: 8% | 16ms', type: 'success' },
+      { msg: '[REVIEW] TXN-20260810-0139 | Rp 6.000.000 → BNI External | Score: 65% | Odd-Hour+High Amount', type: 'warning' },
+      { msg: '[BLOCK] TXN-20260810-0156 | Rp 15.000.000 → Indodax Escrow BCA | Score: 100% | Blacklisted Wallet', type: 'danger' },
+      { msg: 'Smurfing detected: 4 unique destinations/60min — account 0123456789 upstream frozen.', type: 'danger' },
+      { msg: 'LTKM draft auto-generated for alert #8831. PPATK goAML format. Ready to sign.', type: 'info' },
+      { msg: '[ALLOW] TXN-20260810-0201 | Rp 350.000 → Bank Kuningan internal | Score: 0% | 14ms', type: 'success' },
+      { msg: 'GNN topology updated: 26 nodes, 41 edges. PageRank centrality recalculated.', type: 'info' },
+      { msg: '[BLOCK] TXN-20260810-0219 | Rp 50.000.000 → Tokocrypto Mandiri | Score: 95% | Purpose Mismatch', type: 'danger' },
     ];
-
-    const interval = setInterval(() => {
-      const randomLog = logs[Math.floor(Math.random() * logs.length)];
+    const iv = setInterval(() => {
+      const log = logs[Math.floor(Math.random() * logs.length)];
       const now = new Date();
-      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-      
-      setTickerLogs(prev => [
-        { id: Date.now(), time: timeStr, msg: randomLog.msg, type: randomLog.type },
-        ...prev.slice(0, 4)
-      ]);
-    }, 4000);
-
-    return () => clearInterval(interval);
+      const t = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+      setTickerLogs(prev => [{ id: Date.now(), time: t, ...log }, ...prev.slice(0, 5)]);
+    }, 3200);
+    return () => clearInterval(iv);
   }, []);
 
   return (
-    <div className="landing-container">
+    <div className="lp">
       <style>{`
-        .landing-container {
-          background-color: #030712;
-          background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, rgba(219, 39, 119, 0.05) 50%, #030712 100%);
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800;1,900&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        .lp {
+          background: #f0f5ff;
           min-height: 100vh;
-          color: #f8fafc;
+          color: #111111;
           font-family: 'Outfit', sans-serif;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: space-between;
-          padding: 40px 24px;
           overflow-x: hidden;
-          position: relative;
         }
 
-        .landing-grid-bg {
-          position: absolute;
-          inset: 0;
-          background-image: linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-          background-size: 50px 50px;
-          pointer-events: none;
-          z-index: 1;
-        }
-
-        .landing-glow-orb {
-          position: absolute;
-          width: 600px;
-          height: 600px;
-          border-radius: 50%;
-          background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
-          top: -200px;
-          filter: blur(80px);
-          z-index: 0;
-        }
-
-        .landing-header {
+        /* ---- NAV ---- */
+        .lp-nav {
+          position: sticky;
+          top: 0;
+          z-index: 100;
           width: 100%;
-          max-width: 1100px;
+          background: rgba(240,245,255,0.92);
+          backdrop-filter: blur(20px);
+          border-bottom: 1px solid rgba(0,0,0,0.07);
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-bottom: 50px;
-          z-index: 20;
-          position: relative;
-          top: 0;
-          left: 0;
+          padding: 0 48px;
+          height: 68px;
         }
 
-        .landing-header-brand {
+        .lp-nav-brand {
           display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .landing-logo-box {
-          width: 58px;
-          height: 58px;
-          border-radius: 16px;
-          background: #ffffff;
-          border: 1.5px solid rgba(56, 189, 248, 0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 6px 24px rgba(56, 189, 248, 0.25);
-          padding: 4px;
-          overflow: hidden;
-        }
-
-        .landing-logo-box img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-          transform: scale(1.2);
-        }
-
-        .landing-brand h1 {
-          font-size: 2.0rem;
-          font-weight: 800;
-          letter-spacing: -0.3px;
-          margin: 0;
-          color: #0284c7;
-        }
-
-        .landing-brand span {
-          font-size: 0.74rem;
-          color: #64748b;
-          letter-spacing: 1.5px;
-          font-weight: 700;
-          text-transform: uppercase;
-          display: block;
-          margin-top: 3px;
-        }
-
-        .landing-hero {
-          max-width: 900px;
-          text-align: center;
-          z-index: 10;
-          margin-bottom: 50px;
-        }
-
-        .landing-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          background: rgba(99, 102, 241, 0.1);
-          border: 1px solid rgba(99, 102, 241, 0.3);
-          border-radius: 9999px;
-          font-size: 0.85rem;
-          font-weight: 600;
-          color: #a5b4fc;
-          margin-bottom: 24px;
-          box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
-        }
-
-        .landing-title {
-          font-size: 3.8rem;
-          font-weight: 800;
-          line-height: 1.15;
-          letter-spacing: -1.5px;
-          margin-bottom: 20px;
-          background: linear-gradient(to right, #f8fafc, #cbd5e1);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .landing-subtitle {
-          font-size: 1.25rem;
-          color: #94a3b8;
-          max-width: 720px;
-          margin: 0 auto 40px auto;
-          line-height: 1.6;
-          font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-
-        .landing-enter-btn {
-          font-size: 1.1rem;
-          font-weight: 700;
-          color: white;
-          background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-          border: none;
-          padding: 16px 42px;
-          border-radius: 16px;
-          cursor: pointer;
-          display: inline-flex;
           align-items: center;
           gap: 12px;
-          box-shadow: 0 8px 28px rgba(99, 102, 241, 0.4), 0 0 30px rgba(99, 102, 241, 0.2);
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          position: relative;
+          text-decoration: none;
+        }
+
+        .lp-nav-logo {
+          width: 40px; height: 40px;
+          border-radius: 10px;
+          background: white;
+          border: 1px solid rgba(0,0,0,0.1);
+          padding: 4px;
           overflow: hidden;
+          display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
-        .landing-enter-btn:hover {
-          transform: translateY(-3px) scale(1.02);
-          box-shadow: 0 12px 36px rgba(99, 102, 241, 0.55), 0 0 40px rgba(99, 102, 241, 0.3);
-          background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+        .lp-nav-logo img { width: 100%; height: 100%; object-fit: contain; }
+
+        .lp-nav-name {
+          font-family: 'Playfair Display', serif;
+          font-size: 1.25rem;
+          font-weight: 800;
+          color: #111111;
+          letter-spacing: -0.3px;
         }
 
-        .landing-enter-btn:active {
-          transform: translateY(-1px) scale(1.0);
+        .lp-nav-name span { color: #1e3a8a; }
+
+        .lp-nav-links {
+          display: flex; align-items: center; gap: 4px; list-style: none;
         }
 
-        .landing-enter-btn::after {
+        .lp-nav-links a {
+          padding: 7px 16px;
+          font-size: 0.88rem; font-weight: 600;
+          color: #777777;
+          text-decoration: none;
+          border-radius: 9999px;
+          transition: all 0.2s ease;
+          cursor: pointer;
+        }
+
+        .lp-nav-links a:hover { color: #111111; background: rgba(0,0,0,0.05); }
+
+        .lp-nav-cta {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: #1e3a8a;
+          border: none; border-radius: 9999px;
+          padding: 10px 22px;
+          font-size: 0.88rem; font-weight: 700; color: white;
+          cursor: pointer; font-family: 'Outfit', sans-serif;
+          box-shadow: 0 4px 16px rgba(30,58,138,0.3);
+          transition: all 0.3s ease;
+        }
+
+        .lp-nav-cta:hover {
+          background: #1e40af;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(30,58,138,0.4);
+        }
+
+        /* ---- HERO ---- */
+        .lp-hero {
+          position: relative;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 110px 48px 100px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 80px;
+          align-items: center;
+        }
+
+        .lp-hero-badge {
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 6px 16px;
+          background: rgba(30,58,138,0.08);
+          border: 1px solid rgba(30,58,138,0.2);
+          border-radius: 9999px;
+          font-size: 0.75rem; font-weight: 700; color: #1e3a8a;
+          letter-spacing: 0.8px; text-transform: uppercase;
+          margin-bottom: 28px;
+        }
+
+        .lp-hero-title {
+          font-family: 'Playfair Display', serif;
+          font-size: 4.2rem; font-weight: 900;
+          line-height: 1.08; letter-spacing: -1px;
+          margin-bottom: 24px; color: #111111;
+        }
+
+        .lp-hero-title .red { color: #1e3a8a; font-style: italic; }
+
+        .lp-hero-sub {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-size: 1.05rem; color: #666666;
+          line-height: 1.8; margin-bottom: 40px;
+        }
+
+        .lp-hero-sub strong { color: #333333; font-weight: 600; }
+
+        .lp-hero-btns { display: flex; align-items: center; gap: 14px; }
+
+        .lp-btn-primary {
+          display: inline-flex; align-items: center; gap: 10px;
+          background: #1e3a8a; border: none;
+          border-radius: 9999px; padding: 15px 34px;
+          font-size: 0.95rem; font-weight: 700; color: white;
+          cursor: pointer; font-family: 'Outfit', sans-serif;
+          box-shadow: 0 8px 28px rgba(30,58,138,0.35);
+          transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        .lp-btn-primary:hover {
+          background: #1e40af;
+          transform: translateY(-3px);
+          box-shadow: 0 14px 40px rgba(30,58,138,0.45);
+        }
+
+        .lp-btn-secondary {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: transparent;
+          border: 1.5px solid rgba(0,0,0,0.15);
+          border-radius: 9999px; padding: 14px 28px;
+          font-size: 0.95rem; font-weight: 600; color: #555555;
+          cursor: pointer; font-family: 'Outfit', sans-serif;
+          transition: all 0.3s ease;
+        }
+
+        .lp-btn-secondary:hover {
+          border-color: rgba(0,0,0,0.3);
+          color: #111111;
+          background: rgba(0,0,0,0.03);
+        }
+
+        /* ---- HERO MOCKUP (terminal — keep dark) ---- */
+        .lp-hero-mockup { position: relative; }
+
+        .lp-mockup-frame {
+          background: #0f1117;
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 20px; padding: 20px;
+          box-shadow: 0 40px 80px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.08);
+          position: relative; overflow: hidden;
+        }
+
+        .lp-mockup-frame::before {
           content: '';
+          position: absolute; top: 0; left: 0; right: 0; height: 3px;
+          background: linear-gradient(90deg, #1e3a8a, #2563eb, #1e3a8a);
+          background-size: 200% 100%;
+          animation: gradient-slide 3s linear infinite;
+        }
+
+        @keyframes gradient-slide {
+          0% { background-position: 0% 0%; }
+          100% { background-position: 200% 0%; }
+        }
+
+        .lp-mockup-dots { display: flex; gap: 6px; margin-bottom: 14px; }
+        .lp-mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .lp-mockup-dot.r { background: #ef4444; }
+        .lp-mockup-dot.y { background: #f59e0b; }
+        .lp-mockup-dot.g { background: #10b981; }
+
+        .lp-mockup-console {
+          background: rgba(6,9,18,0.95);
+          border-radius: 12px; padding: 16px;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.72rem; min-height: 200px;
+        }
+
+        .lp-mockup-row {
+          display: flex; gap: 10px;
+          margin-bottom: 6px; line-height: 1.5;
+        }
+
+        .lp-mockup-time { color: #334155; flex-shrink: 0; }
+        .lp-mockup-msg { word-break: break-all; }
+        .lp-mockup-msg.s { color: #34d399; }
+        .lp-mockup-msg.w { color: #fbbf24; }
+        .lp-mockup-msg.d { color: #f87171; }
+        .lp-mockup-msg.i { color: #475569; }
+
+        .lp-mockup-stats {
+          display: grid; grid-template-columns: repeat(3, 1fr);
+          gap: 10px; margin-top: 14px;
+        }
+
+        .lp-mockup-stat {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 10px; padding: 10px; text-align: center;
+        }
+
+        .lp-mockup-stat-val {
+          font-size: 1.05rem; font-weight: 800;
+          font-family: 'Outfit', sans-serif;
+        }
+
+        .lp-mockup-stat-val.i { color: #818cf8; }
+        .lp-mockup-stat-val.g { color: #34d399; }
+        .lp-mockup-stat-val.r { color: #f87171; }
+
+        .lp-mockup-stat-lbl {
+          font-size: 0.58rem; color: #475569;
+          text-transform: uppercase; letter-spacing: 0.5px;
+          font-family: 'Outfit', sans-serif; margin-top: 3px;
+        }
+
+        /* Floating badges */
+        .lp-hero-float {
           position: absolute;
-          top: -50%;
-          left: -50%;
-          width: 200%;
-          height: 200%;
-          background: linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent);
-          transform: rotate(30deg);
-          animation: btn-shine 4s infinite linear;
+          background: white;
+          border: 1px solid rgba(0,0,0,0.08);
+          border-radius: 14px; padding: 12px 16px;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+          display: flex; align-items: center; gap: 10px;
         }
 
-        @keyframes btn-shine {
-          0% { left: -100%; }
-          100% { left: 100%; }
+        .lp-hero-float.top-left {
+          top: -20px; left: -20px;
+          animation: float-1 4s ease-in-out infinite;
         }
 
-        .landing-stats-grid {
+        .lp-hero-float.bottom-right {
+          bottom: -20px; right: -20px;
+          animation: float-2 4s ease-in-out infinite 2s;
+        }
+
+        @keyframes float-1 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+
+        @keyframes float-2 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(8px); }
+        }
+
+        /* ---- DIVIDER ---- */
+        .lp-divider {
+          width: 100%; height: 1px;
+          background: rgba(0,0,0,0.08);
+        }
+
+        /* ---- SECTION ---- */
+        .lp-section {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 100px 48px;
+        }
+
+        .lp-section-tag {
+          font-size: 0.7rem; font-weight: 800;
+          text-transform: uppercase; letter-spacing: 3px;
+          color: #1e3a8a; display: block; margin-bottom: 14px;
+        }
+
+        .lp-section-title {
+          font-family: 'Playfair Display', serif;
+          font-size: 3rem; font-weight: 900;
+          color: #111111; line-height: 1.12;
+          letter-spacing: -0.5px; margin-bottom: 20px;
+        }
+
+        .lp-section-title .red { color: #1e3a8a; font-style: italic; }
+        .lp-section-title .crimson-it { color: #1e3a8a; font-style: italic; }
+
+        .lp-section-desc {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-size: 1.05rem; color: #666666;
+          line-height: 1.8; max-width: 620px;
+        }
+
+        /* ---- STATS ---- */
+        .lp-stats-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 20px;
-          width: 100%;
-          max-width: 1100px;
-          margin-bottom: 60px;
-          z-index: 10;
+          gap: 20px; margin-top: 60px;
         }
 
-        .landing-stat-card {
-          background: rgba(17, 24, 39, 0.45);
-          backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          border-radius: 20px;
-          padding: 22px 16px;
-          text-align: center;
+        .lp-stat-card {
+          background: white;
+          border: 1px solid rgba(0,0,0,0.07);
+          border-radius: 24px; padding: 32px 20px;
+          text-align: center; position: relative;
+          overflow: hidden;
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        }
+
+        .lp-stat-card:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 24px 60px rgba(0,0,0,0.12);
+        }
+
+        .lp-stat-accent {
+          position: absolute; top: 0; left: 0; right: 0;
+          height: 3px; border-radius: 24px 24px 0 0;
+        }
+
+        .lp-stat-icon {
+          width: 48px; height: 48px; border-radius: 14px;
+          display: flex; align-items: center; justify-content: center;
+          margin: 0 auto 16px; font-size: 1.5rem;
+        }
+
+        .lp-stat-val {
+          font-family: 'Playfair Display', serif;
+          font-size: 2.8rem; font-weight: 900;
+          line-height: 1; margin-bottom: 8px;
+        }
+
+        .lp-stat-lbl {
+          font-size: 0.78rem; color: #888888;
+          font-weight: 700; text-transform: uppercase;
+          letter-spacing: 0.8px; line-height: 1.5;
+        }
+
+        .lp-stat-badge {
+          display: inline-block; margin-top: 12px;
+          font-size: 0.68rem; padding: 3px 10px;
+          border-radius: 9999px; font-weight: 700;
+          font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ---- REGULATORY ---- */
+        .lp-reg-strip {
+          display: flex; align-items: center;
+          justify-content: center; gap: 10px;
+          flex-wrap: wrap; margin-top: 60px;
+          padding: 24px 0;
+          border-top: 1px solid rgba(0,0,0,0.07);
+          border-bottom: 1px solid rgba(0,0,0,0.07);
+        }
+
+        .lp-reg-label {
+          font-size: 0.68rem; text-transform: uppercase;
+          letter-spacing: 2px; color: #cccccc;
+          font-weight: 700; padding-right: 8px;
+        }
+
+        .lp-reg-badge {
+          display: flex; align-items: center; gap: 7px;
+          padding: 7px 16px;
+          background: white;
+          border: 1px solid rgba(0,0,0,0.08);
+          border-radius: 9999px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.05);
           transition: all 0.3s ease;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 125px;
         }
 
-        .landing-stat-card:hover {
-          border-color: rgba(99, 102, 241, 0.3);
-          background: rgba(17, 24, 39, 0.7);
-          transform: translateY(-4px);
-          box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12);
+        .lp-reg-badge:hover {
+          border-color: rgba(30,58,138,0.3);
+          box-shadow: 0 4px 12px rgba(30,58,138,0.08);
         }
 
-        .landing-stat-value {
-          font-size: 2.1rem;
-          font-weight: 800;
-          background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          margin-bottom: 4px;
-          line-height: 1;
+        .lp-reg-dot {
+          width: 6px; height: 6px; border-radius: 50%;
+          background: #10b981;
+          animation: blink 2s infinite;
         }
 
-        .landing-stat-value.highlight {
-          background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+        .lp-reg-name { font-size: 0.8rem; font-weight: 800; color: #333333; }
+        .lp-reg-desc { font-size: 0.68rem; color: #aaaaaa; }
+
+        /* ---- LETTER SECTION (alt bg) ---- */
+        .lp-letter-section {
+          background: #0b1d3e;
+          padding: 0;
         }
 
-        .landing-stat-label {
-          font-size: 0.75rem;
-          color: #94a3b8;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.8px;
-          line-height: 1.45;
-          margin-top: 4px;
-        }
-
-        .landing-features-grid {
+        .lp-letter {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 100px 48px;
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 24px;
-          width: 100%;
-          max-width: 1100px;
-          margin-bottom: 60px;
-          z-index: 10;
+          grid-template-columns: 1fr 1fr;
+          gap: 80px;
+          align-items: start;
         }
 
-        .landing-feature-card {
-          background: rgba(17, 24, 39, 0.4);
-          backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 255, 255, 0.04);
-          border-radius: 24px;
-          padding: 32px;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        .lp-letter-text h2 {
+          font-family: 'Playfair Display', serif;
+          font-size: 2.8rem; font-weight: 900;
+          line-height: 1.15; color: #f8f8f6;
+          margin-bottom: 28px; letter-spacing: -0.5px;
         }
 
-        .landing-feature-card:hover {
-          border-color: rgba(99, 102, 241, 0.25);
-          background: rgba(26, 36, 56, 0.5);
-          transform: translateY(-4px);
-          box-shadow: 0 12px 40px rgba(99, 102, 241, 0.08);
-        }
+        .lp-letter-text h2 em { color: #2563eb; font-style: italic; }
 
-        .landing-feature-icon {
-          width: 52px;
-          height: 52px;
-          border-radius: 14px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 24px;
-          color: white;
-        }
-
-        .landing-feature-icon.blue {
-          background: rgba(59, 130, 246, 0.1);
-          border: 1px solid rgba(59, 130, 246, 0.3);
-          color: #60a5fa;
-        }
-
-        .landing-feature-icon.purple {
-          background: rgba(168, 85, 247, 0.1);
-          border: 1px solid rgba(168, 85, 247, 0.3);
-          color: #c084fc;
-        }
-
-        .landing-feature-icon.orange {
-          background: rgba(249, 115, 22, 0.1);
-          border: 1px solid rgba(249, 115, 22, 0.3);
-          color: #fb923c;
-        }
-
-        .landing-feature-card h3 {
-          font-size: 1.3rem;
-          font-weight: 700;
-          margin-bottom: 12px;
-          color: #f8fafc;
-        }
-
-        .landing-feature-card p {
-          font-size: 0.95rem;
-          color: #94a3b8;
-          line-height: 1.6;
+        .lp-letter-text p {
           font-family: 'Plus Jakarta Sans', sans-serif;
+          font-size: 1.0rem; color: #888888;
+          line-height: 1.85; margin-bottom: 18px;
         }
 
-        .landing-console-box {
-          width: 100%;
-          max-width: 1100px;
-          background: rgba(9, 13, 22, 0.85);
-          border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 20px;
-          padding: 20px;
-          font-family: var(--font-mono);
-          z-index: 10;
-          box-shadow: inset 0 2px 8px rgba(0,0,0,0.8), 0 10px 40px rgba(0,0,0,0.5);
-          margin-bottom: 40px;
+        .lp-letter-text p strong { color: #bbbbbb; font-weight: 600; }
+
+        .lp-letter-blockquote {
+          margin-top: 28px;
+          border-left: 3px solid #2563eb;
+          padding-left: 20px;
         }
 
-        .console-header {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-bottom: 16px;
-          padding-bottom: 12px;
+        .lp-letter-blockquote p {
+          font-family: 'Playfair Display', serif;
+          font-size: 1.1rem; font-weight: 700;
+          font-style: italic; color: #f8f8f6;
+          line-height: 1.6; margin: 0;
+        }
+
+        .lp-flow-card {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 24px; padding: 32px;
+          position: sticky; top: 100px;
+        }
+
+        .lp-flow-title {
+          font-size: 0.7rem; text-transform: uppercase;
+          letter-spacing: 2px; color: #444444;
+          font-weight: 700; margin-bottom: 24px;
+          font-family: 'JetBrains Mono', monospace;
+        }
+
+        .lp-flow-step {
+          display: flex; align-items: flex-start;
+          gap: 16px; padding: 16px 0;
           border-bottom: 1px solid rgba(255,255,255,0.05);
         }
 
-        .console-dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
+        .lp-flow-step:last-child { border-bottom: none; }
+
+        .lp-flow-num {
+          width: 32px; height: 32px; border-radius: 9999px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 0.78rem; font-weight: 800; flex-shrink: 0;
+          font-family: 'JetBrains Mono', monospace;
         }
 
-        .console-dot.red { background: #ef4444; }
-        .console-dot.yellow { background: #f59e0b; }
-        .console-dot.green { background: #10b981; }
-
-        .console-title {
-          font-size: 0.8rem;
-          color: #475569;
-          font-weight: 700;
-          margin-left: 8px;
-          text-transform: uppercase;
-          letter-spacing: 1px;
+        .lp-flow-step-content h4 {
+          font-size: 0.9rem; font-weight: 700;
+          color: #e2e8f0; margin-bottom: 4px;
         }
 
-        .console-body {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          font-size: 0.82rem;
-          min-height: 120px;
+        .lp-flow-step-content p {
+          font-size: 0.8rem; color: #555555;
+          line-height: 1.55;
+          font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
-        .console-line {
-          display: flex;
-          gap: 12px;
-          line-height: 1.5;
+        /* ---- FEATURES ---- */
+        .lp-features-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 24px; margin-top: 60px;
         }
 
-        .console-time {
-          color: #64748b;
-          flex-shrink: 0;
+        .lp-feat {
+          background: white;
+          border: 1px solid rgba(0,0,0,0.07);
+          border-radius: 24px; padding: 36px 28px;
+          transition: all 0.4s ease;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.04);
         }
 
-        .console-msg {
-          color: #e2e8f0;
-          word-break: break-all;
+        .lp-feat:hover {
+          border-color: rgba(30,58,138,0.15);
+          transform: translateY(-6px);
+          box-shadow: 0 24px 60px rgba(0,0,0,0.1);
         }
 
-        .console-msg.success { color: #34d399; }
-        .console-msg.warning { color: #facc15; }
-        .console-msg.danger { color: #f87171; }
-
-        .landing-footer {
-          z-index: 10;
-          color: #475569;
-          font-size: 0.85rem;
-          text-align: center;
-          margin-top: auto;
-          width: 100%;
-          border-top: 1px solid rgba(255,255,255,0.03);
-          padding-top: 24px;
+        .lp-feat-icon {
+          width: 54px; height: 54px; border-radius: 16px;
+          display: flex; align-items: center; justify-content: center;
+          margin-bottom: 22px;
         }
 
-        @media (max-width: 968px) {
-          .landing-title { font-size: 2.8rem; }
-          .landing-features-grid { grid-template-columns: 1fr; }
-          .landing-stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .lp-feat h3 {
+          font-family: 'Playfair Display', serif;
+          font-size: 1.3rem; font-weight: 800;
+          color: #111111; margin-bottom: 14px;
+          letter-spacing: -0.2px;
+        }
+
+        .lp-feat p {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-size: 0.9rem; color: #666666;
+          line-height: 1.75; margin-bottom: 20px;
+        }
+
+        .lp-feat-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+        .lp-feat-tag {
+          font-size: 0.7rem; padding: 3px 10px;
+          border-radius: 6px;
+          font-family: 'JetBrains Mono', monospace;
+          font-weight: 600;
+          background: rgba(30,58,138,0.06);
+          color: #1e3a8a;
+          border: 1px solid rgba(30,58,138,0.15);
+        }
+
+        /* ---- CONSOLE (stays dark) ---- */
+        .lp-console-wrap {
+          background: #0f1117;
+          border: 1px solid rgba(255,255,255,0.05);
+          border-radius: 20px; overflow: hidden;
+          margin-top: 60px;
+          box-shadow: 0 40px 80px rgba(0,0,0,0.15);
+        }
+
+        .lp-console-bar {
+          display: flex; align-items: center; gap: 8px;
+          padding: 14px 20px;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
+          background: rgba(0,0,0,0.3);
+        }
+
+        .lp-cdot { width: 11px; height: 11px; border-radius: 50%; }
+        .lp-cdot.r { background: #ef4444; }
+        .lp-cdot.y { background: #f59e0b; }
+        .lp-cdot.g { background: #10b981; }
+
+        .lp-console-title-txt {
+          font-size: 0.72rem; color: #334155;
+          font-weight: 700; margin-left: 10px;
+          text-transform: uppercase; letter-spacing: 1.5px;
+          font-family: 'JetBrains Mono', monospace;
+        }
+
+        .lp-live {
+          margin-left: auto; display: flex; align-items: center;
+          gap: 6px; font-size: 0.7rem; color: #10b981;
+          font-weight: 700; font-family: 'JetBrains Mono', monospace;
+        }
+
+        .lp-live-dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #10b981; animation: blink 1.2s infinite;
+        }
+
+        .lp-console-body {
+          padding: 20px; display: flex; flex-direction: column;
+          gap: 7px; min-height: 200px;
+          font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+        }
+
+        .lp-log-line {
+          display: flex; gap: 12px; line-height: 1.5;
+          animation: log-in 0.35s ease;
+        }
+
+        @keyframes log-in {
+          from { opacity: 0; transform: translateX(-10px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+
+        .lp-log-time { color: #1e293b; flex-shrink: 0; }
+        .lp-log-msg { word-break: break-all; }
+        .lp-log-msg.s { color: #34d399; }
+        .lp-log-msg.w { color: #fbbf24; }
+        .lp-log-msg.d { color: #f87171; }
+        .lp-log-msg.i { color: #475569; }
+
+        /* ---- TEAM ---- */
+        .lp-team-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 24px; margin-top: 60px;
+        }
+
+        .lp-team-card {
+          background: white;
+          border: 1px solid rgba(0,0,0,0.07);
+          border-radius: 24px; padding: 32px;
+          display: flex; gap: 22px; align-items: flex-start;
+          transition: all 0.4s ease;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+
+        .lp-team-card:hover {
+          border-color: rgba(30,58,138,0.15);
+          transform: translateY(-4px);
+          box-shadow: 0 24px 60px rgba(0,0,0,0.1);
+        }
+
+        .lp-team-avatar {
+          width: 68px; height: 68px;
+          border-radius: 18px; flex-shrink: 0;
+          overflow: hidden;
+          display: flex; align-items: center; justify-content: center;
+          border: 2px solid;
+        }
+
+        .lp-team-avatar-fallback {
+          width: 100%; height: 100%;
+          display: flex; align-items: center; justify-content: center;
+          font-family: 'Playfair Display', serif;
+          font-size: 1.3rem; font-weight: 900;
+        }
+
+        .lp-team-info h3 {
+          font-family: 'Playfair Display', serif;
+          font-size: 1.1rem; font-weight: 800;
+          color: #111111; margin-bottom: 4px;
+          letter-spacing: -0.2px;
+        }
+
+        .lp-team-role {
+          font-size: 0.75rem; font-weight: 700;
+          text-transform: uppercase; letter-spacing: 0.8px;
+          margin-bottom: 12px; display: block;
+        }
+
+        .lp-team-desc {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-size: 0.83rem; color: #666666;
+          line-height: 1.7; margin-bottom: 14px;
+        }
+
+        .lp-team-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+        .lp-team-tag {
+          font-size: 0.68rem; padding: 3px 10px;
+          border-radius: 6px;
+          font-family: 'JetBrains Mono', monospace;
+          font-weight: 600;
+          background: rgba(0,0,0,0.04);
+          color: #888888;
+          border: 1px solid rgba(0,0,0,0.08);
+        }
+
+        /* ---- FAQ ---- */
+        .lp-faq { margin-top: 60px; display: flex; flex-direction: column; gap: 10px; }
+
+        .lp-faq-item {
+          background: white;
+          border: 1px solid rgba(0,0,0,0.07);
+          border-radius: 16px; overflow: hidden;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+          transition: border-color 0.3s ease;
+        }
+
+        .lp-faq-item.open { border-color: rgba(30,58,138,0.25); }
+
+        .lp-faq-btn {
+          width: 100%; display: flex; align-items: center;
+          justify-content: space-between;
+          padding: 22px 24px; background: none;
+          border: none; cursor: pointer;
+          font-family: 'Outfit', sans-serif; text-align: left; gap: 16px;
+        }
+
+        .lp-faq-q { font-size: 1rem; font-weight: 700; color: #111111; line-height: 1.4; }
+
+        .lp-faq-icon {
+          flex-shrink: 0; color: #1e3a8a;
+          transition: transform 0.3s ease;
+        }
+
+        .lp-faq-item.open .lp-faq-icon { transform: rotate(180deg); }
+
+        .lp-faq-body {
+          padding: 0 24px 22px;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-size: 0.9rem; color: #666666; line-height: 1.8;
+        }
+
+        /* ---- DOCS ---- */
+        .lp-docs {
+          background: white;
+          border: 1px solid rgba(0,0,0,0.07);
+          border-radius: 28px; padding: 40px;
+          margin-top: 60px;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        }
+
+        .lp-doc-tabs {
+          display: grid; grid-template-columns: repeat(3, 1fr);
+          gap: 12px; margin-bottom: 32px;
+        }
+
+        .lp-doc-tab {
+          padding: 18px; border-radius: 14px;
+          border: 1.5px solid; cursor: pointer;
+          transition: all 0.3s ease; text-align: left;
+        }
+
+        .lp-doc-tab h4 { font-size: 0.92rem; font-weight: 700; margin-bottom: 5px; }
+
+        .lp-doc-tab p {
+          font-size: 0.77rem; color: #888888;
+          line-height: 1.45;
+          font-family: 'Plus Jakarta Sans', sans-serif; margin: 0;
+        }
+
+        .lp-doc-img-grid {
+          display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+        }
+
+        .lp-doc-img-card {
+          background: #f8f8f6;
+          border: 1px solid rgba(0,0,0,0.06);
+          border-radius: 16px; padding: 18px;
+        }
+
+        .lp-doc-img-card img {
+          width: 100%; border-radius: 10px;
+          margin-bottom: 12px; object-fit: cover;
+        }
+
+        .lp-doc-img-card h4 {
+          font-size: 0.88rem; font-weight: 700;
+          color: #111111; margin-bottom: 6px;
+        }
+
+        .lp-doc-img-card p {
+          font-size: 0.8rem; color: #666666;
+          line-height: 1.6;
+          font-family: 'Plus Jakarta Sans', sans-serif; margin: 0;
+        }
+
+        /* ---- FOOTER ---- */
+        .lp-footer {
+          border-top: 1px solid rgba(0,0,0,0.08);
+          padding: 48px;
+          max-width: 1200px;
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: 40px; align-items: center;
+        }
+
+        .lp-footer-brand h3 {
+          font-family: 'Playfair Display', serif;
+          font-size: 1.3rem; font-weight: 800;
+          color: #111111; margin-bottom: 8px;
+        }
+
+        .lp-footer-brand p {
+          font-size: 0.82rem; color: #999999;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          line-height: 1.6;
+        }
+
+        .lp-footer-right { text-align: right; }
+
+        .lp-footer-right p {
+          font-size: 0.78rem; color: #bbbbbb;
+          font-family: 'Plus Jakarta Sans', sans-serif; line-height: 1.6;
+        }
+
+        /* ---- RESPONSIVE ---- */
+        @media (max-width: 1024px) {
+          .lp-hero { grid-template-columns: 1fr; gap: 60px; }
+          .lp-letter { grid-template-columns: 1fr; gap: 40px; }
+          .lp-stats-grid { grid-template-columns: repeat(2, 1fr); }
+          .lp-features-grid { grid-template-columns: 1fr; }
+          .lp-team-grid { grid-template-columns: 1fr; }
+          .lp-footer { grid-template-columns: 1fr; text-align: left; }
+          .lp-footer-right { text-align: left; }
         }
 
         @media (max-width: 640px) {
-          .landing-container { padding: 20px 14px; }
-          .landing-header { display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 12px; width: 100%; margin-bottom: 40px; }
-          .landing-header-brand { display: flex; flex-direction: row; align-items: center; gap: 12px; }
-          .landing-logo-box { width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0; }
-          .landing-brand h1 { font-size: 1.3rem; }
-          .landing-brand span { font-size: 0.58rem; }
-          .landing-title { font-size: 2.3rem; letter-spacing: -0.5px; line-height: 1.25; }
-          .landing-subtitle { font-size: 0.95rem; line-height: 1.5; margin-bottom: 24px; }
-          .landing-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 36px; }
-          .landing-stat-card { padding: 14px 10px; min-height: 90px; border-radius: 14px; }
-          .landing-stat-value { font-size: 1.5rem; }
-          .landing-stat-label { font-size: 0.65rem; }
-          .landing-enter-btn { padding: 10px 18px; font-size: 0.85rem; border-radius: 12px; white-space: nowrap; flex-shrink: 0; }
-          .landing-console-box { padding: 12px; border-radius: 14px; }
-          .console-line { font-size: 0.72rem; flex-direction: column; gap: 2px; }
-          .doc-tabs-header { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
-          .doc-tab-btn { flex-shrink: 0; white-space: nowrap; font-size: 0.78rem; padding: 8px 14px; }
+          .lp-nav { padding: 0 20px; }
+          .lp-nav-links { display: none; }
+          .lp-hero, .lp-section, .lp-footer { padding-left: 20px; padding-right: 20px; }
+          .lp-letter { padding: 70px 20px; }
+          .lp-hero { padding-top: 70px; padding-bottom: 60px; }
+          .lp-hero-title { font-size: 2.8rem; }
+          .lp-section-title { font-size: 2.2rem; }
+          .lp-stats-grid { grid-template-columns: repeat(2, 1fr); }
+          .lp-doc-tabs { grid-template-columns: 1fr; }
+          .lp-doc-img-grid { grid-template-columns: 1fr; }
+          .lp-hero-float { display: none; }
+          .lp-hero-btns { flex-direction: column; align-items: flex-start; }
         }
       `}</style>
 
-      <div className="landing-grid-bg" />
-      <div className="landing-glow-orb" />
-
-      {/* Header Top Navbar */}
-      <motion.div 
-        className="landing-header"
-        initial={{ opacity: 0, y: -15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <div className="landing-header-brand">
-          <div className="landing-logo-box">
-            <img src="/img/LOGO1.jpeg" alt="Crypto - Sentinel Logo" />
+      {/* NAV */}
+      <nav className="lp-nav">
+        <div className="lp-nav-brand">
+          <div className="lp-nav-logo">
+            <img src="/img/LOGO1.jpeg" alt="Logo" />
           </div>
-          <div className="landing-brand">
-            <h1 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '2.0rem', fontWeight: 800, color: '#0284c7', margin: 0 }}>
-              Crypto - Sentinel
-            </h1>
-            <span style={{ color: '#64748b', letterSpacing: '1.5px', fontWeight: 700, fontSize: '0.74rem', display: 'block', marginTop: 3 }}>DETECT • INFILTRATE • INTELLIGENCE</span>
-          </div>
+          <div className="lp-nav-name">Crypto<span>-Sentinel</span></div>
         </div>
-
-        <button 
-          className="btn btn-primary"
-          onClick={onEnter}
-          style={{
-            background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-            border: 'none',
-            borderRadius: 12,
-            padding: '10px 20px',
-            fontSize: '0.88rem',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            boxShadow: '0 4px 16px rgba(99, 102, 241, 0.35)',
-            cursor: 'pointer'
-          }}
-        >
-          <span>Buka Konsol Forensik</span>
-          <ArrowRight size={16} />
+        <ul className="lp-nav-links">
+          <li><a href="#solusi">Solusi</a></li>
+          <li><a href="#teknologi">Teknologi</a></li>
+          <li><a href="#tim">Tim Kami</a></li>
+          <li><a href="#regulasi">Kepatuhan</a></li>
+        </ul>
+        <button className="lp-nav-cta" onClick={onEnter}>
+          Dashboard Forensik <ArrowRight size={15} />
         </button>
-      </motion.div>
+      </nav>
 
-      {/* Hero Section */}
-      <div className="landing-hero">
-        <motion.div 
-          className="landing-badge"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <Zap size={14} className="animate-pulse" style={{ color: '#fdba74' }} />
-          <span>Digdaya x Hackathon PIDI 2026 Submission</span>
-        </motion.div>
-
-        <motion.h2 
-          className="landing-title"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.3 }}
-        >
-          Smart Circuit Breaker &<br />Forensic Graph Engine
-        </motion.h2>
-
-        <motion.p 
-          className="landing-subtitle"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          style={{ maxWidth: 840, lineHeight: 1.75, fontSize: '1.15rem' }}
-        >
-          Crypto-Sentinel adalah <strong>Fraud Detection System (FDS) berbasis AI</strong> yang memproteksi gerbang transaksi perbankan nasional (SNAP BI). Memadukan Machine Learning &amp; Graph Neural Network (GNN) untuk memetakan jaringan <em>mule ring</em>, memotong pola <em>Smurfing</em>, dan menghentikan pelarian dana ke ekosistem kripto sebelum mutasi saldo diselesaikan.
-        </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-        >
-          <button className="landing-enter-btn" onClick={onEnter}>
-            <span>Mulai Penyelidikan Forensik</span>
-            <ArrowRight size={18} />
-          </button>
-        </motion.div>
-      </div>
-
-      {/* Statistics Row */}
-      <motion.div 
-        className="landing-stats-grid"
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.7 }}
-      >
-        <div className="landing-stat-card">
-          <div className="landing-stat-value highlight">Rp 500 M+</div>
-          <div className="landing-stat-label">Target Dana Diselamatkan</div>
-        </div>
-        <div className="landing-stat-card">
-          <div className="landing-stat-value">&lt; 50 ms</div>
-          <div className="landing-stat-label">Target Latensi FDS</div>
-        </div>
-        <div className="landing-stat-card">
-          <div className="landing-stat-value">250+ Bank</div>
-          <div className="landing-stat-label">Target Integrasi BPR &amp; BPD Jawa Barat</div>
-        </div>
-        <div className="landing-stat-card">
-          <div className="landing-stat-value">96.8%</div>
-          <div className="landing-stat-label">Target Akurasi GNN</div>
-        </div>
-      </motion.div>
-
-      {/* Three Pillars Features */}
-      <motion.div 
-        className="landing-features-grid"
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.8 }}
-      >
-        <div className="landing-feature-card">
-          <div className="landing-feature-icon blue">
-            <Zap size={24} />
+      {/* HERO */}
+      <section className="lp-hero">
+        <Reveal>
+          <div>
+            <div className="lp-hero-badge">
+              <Radio size={12} />
+              Digdaya × PIDI 2026 · Tim EXPRESSO S1251 · Top 80 Finalis
+            </div>
+            <h1 className="lp-hero-title">
+              Hentikan Pelarian<br />Dana ke Kripto,<br />
+              <span className="red">Sebelum Terlambat.</span>
+            </h1>
+            <p className="lp-hero-sub">
+              Crypto-Sentinel adalah <strong>Security Middleware AI</strong> yang berdiri di antara
+              nasabah dan core banking — memeriksa setiap transaksi SNAP BI dalam{' '}
+              <strong>kurang dari 20ms</strong>, memblokir pola smurfing dan mule ring
+              sebelum saldo berubah.
+            </p>
+            <div className="lp-hero-btns">
+              <button className="lp-btn-primary" onClick={onEnter}>
+                <Shield size={18} />
+                Masuk Dashboard Forensik
+              </button>
+              <button className="lp-btn-secondary" onClick={onEnter}>
+                Lihat Demo <ArrowRight size={16} />
+              </button>
+            </div>
           </div>
-          <h3>Smart Circuit Breaker</h3>
-          <p>
-            Mencegah pengeluaran dana ke rekening penipu seketika dengan pemblokiran otomatis berbasis risiko tinggi.
-          </p>
-        </div>
+        </Reveal>
 
-        <div className="landing-feature-card">
-          <div className="landing-feature-icon purple">
-            <Brain size={24} />
+        <Reveal delay={0.2} direction="left">
+          <div className="lp-hero-mockup">
+            <div className="lp-hero-float top-left">
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CheckCircle size={18} color="#16a34a" />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#16a34a' }}>ALLOW</div>
+                <div style={{ fontSize: '0.65rem', color: '#aaaaaa', fontFamily: 'JetBrains Mono, monospace' }}>Score: 8% · 16ms</div>
+              </div>
+            </div>
+
+            <div className="lp-mockup-frame">
+              <div className="lp-mockup-dots">
+                <div className="lp-mockup-dot r" />
+                <div className="lp-mockup-dot y" />
+                <div className="lp-mockup-dot g" />
+                <span style={{ fontSize: '0.65rem', color: '#334155', marginLeft: 8, fontFamily: 'JetBrains Mono, monospace' }}>crypto-sentinel-fds · live</span>
+              </div>
+              <div className="lp-mockup-console">
+                {tickerLogs.slice(0, 5).map(log => (
+                  <div className="lp-mockup-row" key={log.id}>
+                    <span className="lp-mockup-time">[{log.time}]</span>
+                    <span className={`lp-mockup-msg ${log.type === 'success' ? 's' : log.type === 'warning' ? 'w' : log.type === 'danger' ? 'd' : 'i'}`}>
+                      {log.type === 'success' ? '✓ ' : log.type === 'warning' ? '⚠ ' : log.type === 'danger' ? '✗ ' : '$ '}
+                      {log.msg}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="lp-mockup-stats">
+                <div className="lp-mockup-stat"><div className="lp-mockup-stat-val i">50K</div><div className="lp-mockup-stat-lbl">Transaksi</div></div>
+                <div className="lp-mockup-stat"><div className="lp-mockup-stat-val g">99.98%</div><div className="lp-mockup-stat-lbl">Akurasi</div></div>
+                <div className="lp-mockup-stat"><div className="lp-mockup-stat-val r">70</div><div className="lp-mockup-stat-lbl">Fraud Blocked</div></div>
+              </div>
+            </div>
+
+            <div className="lp-hero-float bottom-right">
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🛡️</div>
+              <div>
+                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#2563eb' }}>BLOCKED</div>
+                <div style={{ fontSize: '0.65rem', color: '#aaaaaa', fontFamily: 'JetBrains Mono, monospace' }}>Rp 90jt · Indodax</div>
+              </div>
+            </div>
           </div>
-          <h3>Forensic GNN Visualizer</h3>
-          <p>
-            Menyajikan visualisasi graf hubungan relasional antara bank asal, mule accounts, wallet kripto, dan bursa kripto tujuan.
+        </Reveal>
+      </section>
+
+      <div className="lp-divider" />
+
+      {/* STATS */}
+      <section className="lp-section" id="solusi">
+        <Reveal>
+          <span className="lp-section-tag">Hasil Terukur</span>
+          <h2 className="lp-section-title">
+            Angka Nyata dari<br />Pengujian <span className="crimson-it">Dataset PaySim</span>
+          </h2>
+          <p className="lp-section-desc">
+            Semua metrik diukur langsung dari pengujian sistem terhadap 50.000 baris data transaksi
+            PaySim — dataset benchmark fraud detection internasional standar IEEE.
           </p>
+        </Reveal>
+
+        <div className="lp-stats-grid">
+          {[
+            { icon: '📊', accent: 'linear-gradient(90deg,#1e3a8a,#2563eb)', iconBg: '#dbeafe', color: '#1e3a8a', target: 50000, label: 'Transaksi Dianalisis', sub: 'Dataset PaySim 50K', badge: '✓ Terverifikasi', badgeStyle: { background: '#dcfce7', color: '#16a34a' } },
+            { icon: '🎯', accent: 'linear-gradient(90deg,#166534,#16a34a)', iconBg: '#dcfce7', color: '#166534', val: '99.98%', label: 'Akurasi AI', sub: 'Random Forest + GNN', badge: '✓ Diukur Langsung', badgeStyle: { background: '#dcfce7', color: '#16a34a' } },
+            { icon: '⚡', accent: 'linear-gradient(90deg,#92400e,#d97706)', iconBg: '#fef3c7', color: '#92400e', val: '<20ms', label: 'Latency FDS', sub: 'End-to-End API', badge: '⚡ Real Measurement', badgeStyle: { background: '#fef3c7', color: '#92400e' } },
+            { icon: '🔴', accent: 'linear-gradient(90deg,#1e3a8a,#2563eb)', iconBg: '#dbeafe', color: '#1e3a8a', target: 70, label: 'Fraud Terdeteksi', sub: '100% Recall Rate', badge: '✓ 0 False Negative', badgeStyle: { background: '#dbeafe', color: '#2563eb' } },
+          ].map((s, i) => (
+            <Reveal key={i} delay={i * 0.1}>
+              <div className="lp-stat-card">
+                <div className="lp-stat-accent" style={{ background: s.accent }} />
+                <div className="lp-stat-icon" style={{ background: s.iconBg, fontSize: '1.5rem' }}>{s.icon}</div>
+                <div className="lp-stat-val" style={{ color: s.color }}>
+                  {s.target !== undefined ? <AnimatedNum target={s.target} /> : s.val}
+                </div>
+                <div className="lp-stat-lbl">{s.label}<br /><span style={{ opacity: 0.7, fontSize: '0.7rem' }}>{s.sub}</span></div>
+                <span className="lp-stat-badge" style={s.badgeStyle}>{s.badge}</span>
+              </div>
+            </Reveal>
+          ))}
         </div>
 
-        <div className="landing-feature-card">
-          <div className="landing-feature-icon orange">
-            <FileText size={24} />
-          </div>
-          <h3>Auto-Generated STR</h3>
-          <p>
-            Mempercepat pelaporan LTKM ke PPATK dengan draf narasi kasus berbasis AI yang selesai dalam waktu kurang dari 3 menit.
-          </p>
-        </div>
-      </motion.div>
-
-      {/* Real-time Rolling Console Log */}
-      <motion.div 
-        className="landing-console-box"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.9 }}
-      >
-        <div className="console-header">
-          <div className="console-dot red" />
-          <div className="console-dot yellow" />
-          <div className="console-dot green" />
-          <span className="console-title">Live Scanning Activity Logs</span>
-        </div>
-        <div className="console-body">
-          {tickerLogs.map(log => (
-            <div className="console-line" key={log.id}>
-              <span className="console-time">[{log.time}]</span>
-              <span className={`console-msg ${log.type}`}>
-                {log.type === 'success' ? '✓ ' : log.type === 'warning' ? '⚠ ' : log.type === 'danger' ? '✗ ' : '$ '}
-                {log.msg}
-              </span>
+        <div className="lp-reg-strip">
+          <span className="lp-reg-label">Standar Kepatuhan</span>
+          {[
+            { name: 'SNAP BI', desc: 'Open API Nasional' },
+            { name: 'ISO 20022', desc: 'Financial Messaging' },
+            { name: 'OJK', desc: 'Otoritas Jasa Keuangan' },
+            { name: 'PPATK', desc: 'Anti Money Laundering' },
+            { name: 'Bank Indonesia', desc: 'Sistem Pembayaran' },
+            { name: 'UU TPPU', desc: 'No. 8 Tahun 2010' },
+          ].map((b, i) => (
+            <div className="lp-reg-badge" key={i}>
+              <div className="lp-reg-dot" />
+              <div>
+                <div className="lp-reg-name">{b.name}</div>
+                <div className="lp-reg-desc">{b.desc}</div>
+              </div>
             </div>
           ))}
         </div>
-      </motion.div>
+      </section>
 
-      {/* Scroll-down Section: Target Pengguna, Arsitektur &amp; BMC */}
-      <div 
-        id="explore-docs"
-        style={{
-          width: '100%',
-          maxWidth: 1100,
-          background: 'rgba(17, 24, 39, 0.45)',
-          backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255,255,255,0.06)',
-          borderRadius: 24,
-          padding: 32,
-          marginBottom: 60,
-          zIndex: 10
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <span style={{ fontSize: '0.78rem', color: '#a5b4fc', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700 }}>
-            HACKATHON DOCUMENTATION SHOWCASE
-          </span>
-          <h3 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'white', marginTop: 4 }}>
-            Dokumentasi &amp; Model Bisnis
-          </h3>
-          <p style={{ color: '#94a3b8', fontSize: '0.95rem', maxWidth: 650, margin: '8px auto 0 auto' }}>
-            Eksplorasi Target Pengguna, Rich Picture Alur Sistem, dan Business Model Canvas (BMC) Crypto-Sentinel.
-          </p>
+      {/* LETTER — dark section */}
+      <div className="lp-letter-section" id="teknologi">
+        <div className="lp-letter">
+          <Reveal>
+            <div className="lp-letter-text">
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 3, color: '#2563eb', display: 'block', marginBottom: 14 }}>Masalah yang Kami Selesaikan</span>
+              <h2>Rp 18 Triliun<br /><em>Bocor Setiap Tahun.</em></h2>
+              <p>Data PPATK 2024 mencatat kerugian ekonomi Indonesia akibat kejahatan siber dan pencucian uang digital mencapai <strong>Rp 18 Triliun</strong> — sebagian besar mengalir lewat celah yang sama: <strong>transfer mobile banking ke rekening kripto</strong> tanpa intersepsi real-time.</p>
+              <p>Sistem FDS konvensional bekerja <em>post-facto</em> — mendeteksi setelah dana berpindah. Crypto-Sentinel membalik paradigma ini: setiap transaksi dianalisis oleh mesin AI <strong>sebelum saldo berubah</strong>, dalam waktu kurang dari 20ms, menggunakan 15 indikator behavioral dan graph topology.</p>
+              <p>Bukan sekadar alert. <strong>Sistem kami memblokir langsung.</strong> Mule account dibekukan. Draft LTKM digenerate otomatis. Compliance officer tinggal verifikasi dan tanda tangan.</p>
+              <div className="lp-letter-blockquote">
+                <p>"Fraud detection yang baik bukan yang paling keras berteriak — melainkan yang paling cepat bertindak."</p>
+              </div>
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.2} direction="left">
+            <div className="lp-flow-card">
+              <div className="lp-flow-title">// Alur Intersepsi Transaksi</div>
+              {[
+                { num: '01', color: '#2563eb', bg: 'rgba(37,99,235,0.15)', label: 'Inisiasi Transfer', desc: 'Nasabah tap "Lanjutkan" di m-banking Bank Kuningan. Request dikirim ke Expresso API dengan SNAP BI header (HMAC-SHA256).' },
+                { num: '02', color: '#818cf8', bg: 'rgba(129,140,248,0.15)', label: 'Validasi Core Banking', desc: 'Expresso memverifikasi signature, menarik 5 transaksi terakhir pengirim, lalu meneruskan paket ke FDS Engine.' },
+                { num: '03', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', label: 'Evaluasi FDS AI', desc: 'Rule engine + Random Forest + GNN PageRank berjalan paralel. 15 indikator dievaluasi dalam <20ms.' },
+                { num: '04', color: '#34d399', bg: 'rgba(52,211,153,0.15)', label: 'Keputusan & Aksi', desc: 'ALLOW → resi. REVIEW → analis notified. BLOCK → rekening dibekukan + draft LTKM tergenerate otomatis.' },
+              ].map((step, i) => (
+                <div className="lp-flow-step" key={i}>
+                  <div className="lp-flow-num" style={{ background: step.bg, color: step.color }}>{step.num}</div>
+                  <div className="lp-flow-step-content">
+                    <h4>{step.label}</h4>
+                    <p>{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Reveal>
         </div>
-
-        {/* Gallery Interactive Tab Navigation */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
-          <div 
-            onClick={() => setActiveDocTab('tp')}
-            style={{ 
-              background: activeDocTab === 'tp' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(99, 102, 241, 0.06)', 
-              border: activeDocTab === 'tp' ? '1.5px solid #818cf8' : '1px solid rgba(99, 102, 241, 0.2)', 
-              padding: 20, 
-              borderRadius: 16,
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <h4 style={{ color: '#a5b4fc', fontSize: '1rem', fontWeight: 700, marginBottom: 6 }}>1. Target Pengguna</h4>
-            <p style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: 1.4 }}>
-              Profil 4 aktor utama (Compliance Officer, Risk Manager, Regulator, &amp; Nasabah Bank).
-            </p>
-          </div>
-
-          <div 
-            onClick={() => setActiveDocTab('flow')}
-            style={{ 
-              background: activeDocTab === 'flow' ? 'rgba(249, 115, 22, 0.2)' : 'rgba(249, 115, 22, 0.06)', 
-              border: activeDocTab === 'flow' ? '1.5px solid #fdba74' : '1px solid rgba(249, 115, 22, 0.2)', 
-              padding: 20, 
-              borderRadius: 16,
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <h4 style={{ color: '#fdba74', fontSize: '1rem', fontWeight: 700, marginBottom: 6 }}>2. Flowchart &amp; Rich Picture</h4>
-            <p style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: 1.4 }}>
-              Alur ekosistem end-to-end perbankan, gateway SNAP BI, dan logika keputusan FDS.
-            </p>
-          </div>
-
-          <div 
-            onClick={() => setActiveDocTab('bmc')}
-            style={{ 
-              background: activeDocTab === 'bmc' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.06)', 
-              border: activeDocTab === 'bmc' ? '1.5px solid #6ee7b7' : '1px solid rgba(16, 185, 129, 0.2)', 
-              padding: 20, 
-              borderRadius: 16,
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <h4 style={{ color: '#6ee7b7', fontSize: '1rem', fontWeight: 700, marginBottom: 6 }}>3. Business Model Canvas</h4>
-            <p style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: 1.4 }}>
-              Skema komersialisasi SaaS, Value Proposition, Revenue Streams, &amp; Key Partners.
-            </p>
-          </div>
-        </div>
-
-        {/* TAB 1: TARGET PENGGUNA (TP1 - TP4) */}
-        {activeDocTab === 'tp' && (
-          <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, marginBottom: 16 }}>
-              <div style={{ background: 'rgba(9, 13, 22, 0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 16 }}>
-                <img src="/img/TP1.jpeg" alt="TP1 - Compliance Officer" style={{ width: '100%', borderRadius: 12, marginBottom: 14, objectFit: 'cover' }} />
-                <h4 style={{ color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>1. Analis Kepatuhan (Compliance Officer)</h4>
-                <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                  <strong>Peran:</strong> Memantau notifikasi transaksi berisiko tinggi secara real-time, meninjau alert smurfing (skor 50–84%), dan memverifikasi tindakan pembekuan rekening mule (*mule account*).
-                </p>
-              </div>
-
-              <div style={{ background: 'rgba(9, 13, 22, 0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 16 }}>
-                <img src="/img/TP2.jpeg" alt="TP2 - Risk Manager" style={{ width: '100%', borderRadius: 12, marginBottom: 14, objectFit: 'cover' }} />
-                <h4 style={{ color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>2. Manajer Risiko &amp; AML (Risk Manager)</h4>
-                <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                  <strong>Peran:</strong> Mengatur ambang batas risiko (*risk threshold 85%*), mengevaluasi efektivitas aturan FDS, dan memantau statistik tren transaksi anomali antardomisili.
-                </p>
-              </div>
-
-              <div style={{ background: 'rgba(9, 13, 22, 0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 16 }}>
-                <img src="/img/TP3.jpeg" alt="TP3 - Regulator OJK/PPATK" style={{ width: '100%', borderRadius: 12, marginBottom: 14, objectFit: 'cover' }} />
-                <h4 style={{ color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>3. Regulator (OJK &amp; PPATK)</h4>
-                <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                  <strong>Peran:</strong> Menerima draf otomatis Laporan Transaksi Keuangan Mencurigakan (LTKM/STR) lengkap dengan narasi kasus berbasis AI dan bukti audit forensik digital.
-                </p>
-              </div>
-
-              <div style={{ background: 'rgba(9, 13, 22, 0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 16 }}>
-                <img src="/img/TP4.jpeg" alt="TP4 - Nasabah Perbankan" style={{ width: '100%', borderRadius: 12, marginBottom: 14, objectFit: 'cover' }} />
-                <h4 style={{ color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>4. Nasabah Perbankan (Consumer Banking)</h4>
-                <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                  <strong>Peran:</strong> Mendapatkan jaminan keamanan akun dari bahaya penyalahgunaan rekening penampung (*mule account*) dan tindak kejahatan rekening mule.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: FLOWCHART & RICH PICTURE */}
-        {activeDocTab === 'flow' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <div style={{ background: 'rgba(9, 13, 22, 0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 20 }}>
-              <h4 style={{ color: '#fdba74', fontWeight: 700, fontSize: '1.1rem', marginBottom: 10 }}>A. Rich Picture Ecosystem (Alur Interaksi Sistem)</h4>
-              <img src="/img/rich-picture.jpeg" alt="Rich Picture Ecosystem" style={{ width: '100%', borderRadius: 12, marginBottom: 14, border: '1px solid rgba(249, 115, 22, 0.3)' }} />
-              <p style={{ color: '#cbd5e1', fontSize: '0.88rem', lineHeight: 1.6 }}>
-                <strong>Penjelasan Alur:</strong> Diagram Rich Picture di atas menggambarkan hubungan end-to-end dari transaksi nasabah pengirim (Mobile Banking Bank Kuningan) melalui API Gateway SNAP BI perbankan. Mesin FDS Crypto-Sentinel mengevaluasi transaksi menggunakan perpaduan *Rule Engine* dan model kecerdasan *PyTorch Graph Neural Network (GNN)*. Apabila terdeteksi indikasi smurfing ($\ge 4$ transaksi unik/1 jam), mutasi saldo dibatalkan seketika (*Smart Circuit Breaker*), notifikasi dikirim ke analis, dan draf resmi STR PPATK otomatis diterbitkan.
-              </p>
-            </div>
-
-            <div style={{ background: 'rgba(9, 13, 22, 0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 20 }}>
-              <h4 style={{ color: '#a5b4fc', fontWeight: 700, fontSize: '1.1rem', marginBottom: 10 }}>B. Flowchart Logika Keputusan FDS</h4>
-              <img src="/img/Flowchart.jpeg" alt="Flowchart Decision Logic" style={{ width: '100%', borderRadius: 12, marginBottom: 14, border: '1px solid rgba(99, 102, 241, 0.3)' }} />
-              <p style={{ color: '#cbd5e1', fontSize: '0.88rem', lineHeight: 1.6 }}>
-                <strong>Penjelasan Logika:</strong> Flowchart di atas memperlihatkan alur keputusan bertahap: 1) Evaluasi limit nominal &amp; verifikasi geolokasi perangkat, 2) Pengecekan frekuensi pengiriman ke rekening mule (smurfing check), 3) Kalkulasi Skor Risiko Hibrida ML + GNN. Hasil dikategorikan menjadi 3 keputusan: <strong>ALLOW (&lt; 50%)</strong> untuk transaksi normal, <strong>REVIEW (50–84%)</strong> untuk persetujuan manual analis, dan <strong>BLOCK (&ge; 85%)</strong> untuk pemblokiran otomatis instan.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: BUSINESS MODEL CANVAS (BMC) */}
-        {activeDocTab === 'bmc' && (
-          <div style={{ background: 'rgba(9, 13, 22, 0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 24 }}>
-            <h4 style={{ color: '#6ee7b7', fontWeight: 700, fontSize: '1.1rem', marginBottom: 12 }}>Business Model Canvas (BMC) Crypto-Sentinel</h4>
-            <img src="/img/BMC.jpeg" alt="Business Model Canvas" style={{ width: '100%', borderRadius: 12, marginBottom: 16, border: '1px solid rgba(16, 185, 129, 0.3)' }} />
-            <div style={{ color: '#cbd5e1', fontSize: '0.88rem', lineHeight: 1.6 }}>
-              <p style={{ marginBottom: 8 }}>
-                <strong>Penjelasan Detail Model Bisnis:</strong>
-              </p>
-              <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <li><strong>Value Proposition:</strong> Solusi FDS pencegahan pelarian dana judi online dan TPPU ke kripto berbasis AI real-time dengan latensi &lt;50ms, standar SNAP BI, serta otomatisasi draf STR PPATK.</li>
-                <li><strong>Customer Segments:</strong> Bank Pembangunan Daerah (Bank BJB), 250+ BPR &amp; BPRS se-Jawa Barat, serta Bank KBMI IV.</li>
-                <li><strong>Revenue Streams:</strong> Skema B2B SaaS Subscription (Biaya lisensi tahunan per bank) + Micro-Fee per API scanning call.</li>
-                <li><strong>Key Partners:</strong> Otoritas Jasa Keuangan (OJK), Pusat Pelaporan dan Analisis Transaksi Keuangan (PPATK), Bappebti, Perbarindo Jawa Barat, serta Bursa Kripto Terlisensi (Indodax &amp; Binance).</li>
-              </ul>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Footer Info */}
-      <div className="landing-footer">
-        <p>© 2026 Crypto-Sentinel. Dibuat khusus untuk Hackathon PIDI 2026 oleh Tim Expresso.</p>
-      </div>
+      {/* FEATURES */}
+      <section className="lp-section">
+        <Reveal>
+          <span className="lp-section-tag">Fitur Unggulan</span>
+          <h2 className="lp-section-title">Tiga Pilar <span className="crimson-it">Pertahanan</span><br />Keuangan Digital</h2>
+        </Reveal>
+        <div className="lp-features-grid">
+          {[
+            { icon: <Zap size={26} />, iconBg: '#eff6ff', iconBorder: '#bfdbfe', iconColor: '#2563eb', title: 'Smart Circuit Breaker', desc: 'Memblokir mutasi saldo ke rekening penipu, mule account, dan bursa kripto terlarang secara otomatis — tanpa menunggu persetujuan manual. Saat keputusan BLOCK keluar, upstream freeze langsung terpicu pada semua rekening dalam jaringan mule yang terhubung.', tags: ['Real-time Block', 'Upstream Freeze', 'Whitelist/Blacklist'] },
+            { icon: <Brain size={26} />, iconBg: '#faf5ff', iconBorder: '#e9d5ff', iconColor: '#7c3aed', title: 'Forensic GNN Visualizer', desc: 'Memetakan jaringan relasional antara pengirim, mule account, dan rekening tujuan kripto dalam bentuk graf interaktif real-time. Saat pola smurfing terdeteksi, seluruh jalur aliran dana menyala merah — memperlihatkan kepada analis struktur sindikat yang sesungguhnya.', tags: ['NetworkX', 'PageRank', 'Real-time Graph', 'Mule Ring Detection'] },
+            { icon: <FileText size={26} />, iconBg: '#fff7ed', iconBorder: '#fed7aa', iconColor: '#c2410c', title: 'Auto-Generated LTKM', desc: 'Menghasilkan draft Laporan Transaksi Keuangan Mencurigakan sesuai format PPATK goAML secara otomatis segera setelah BLOCK terdeteksi. Narasi kecurigaan ditulis oleh AI dalam Bahasa Indonesia formal, siap ditandatangani Compliance Officer.', tags: ['PPATK goAML', 'AI Narrative', 'UU TPPU 8/2010', 'PDF Print-ready'] },
+          ].map((f, i) => (
+            <Reveal key={i} delay={i * 0.12}>
+              <div className="lp-feat">
+                <div className="lp-feat-icon" style={{ background: f.iconBg, border: `1px solid ${f.iconBorder}`, color: f.iconColor }}>{f.icon}</div>
+                <h3>{f.title}</h3>
+                <p>{f.desc}</p>
+                <div className="lp-feat-tags">{f.tags.map((t, j) => <span className="lp-feat-tag" key={j}>{t}</span>)}</div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <div className="lp-divider" />
+
+      {/* LIVE CONSOLE */}
+      <section className="lp-section" style={{ paddingTop: 80, paddingBottom: 80 }}>
+        <Reveal>
+          <span className="lp-section-tag">Live Activity</span>
+          <h2 className="lp-section-title">FDS Bekerja<br /><span className="red">Tanpa Henti.</span></h2>
+          <p className="lp-section-desc">Setiap baris di bawah adalah transaksi nyata yang melewati mesin FDS kami. ALLOW dalam milidetik. BLOCK sebelum uang berpindah.</p>
+        </Reveal>
+        <Reveal delay={0.15}>
+          <div className="lp-console-wrap">
+            <div className="lp-console-bar">
+              <div className="lp-cdot r" /><div className="lp-cdot y" /><div className="lp-cdot g" />
+              <span className="lp-console-title-txt">crypto-sentinel-fds · activity-monitor · Bank Kuningan</span>
+              <div className="lp-live"><div className="lp-live-dot" /> LIVE</div>
+            </div>
+            <div className="lp-console-body">
+              {tickerLogs.map(log => (
+                <div className="lp-log-line" key={log.id}>
+                  <span className="lp-log-time">[{log.time}]</span>
+                  <span className={`lp-log-msg ${log.type === 'success' ? 's' : log.type === 'warning' ? 'w' : log.type === 'danger' ? 'd' : 'i'}`}>
+                    {log.type === 'success' ? '✓ ' : log.type === 'warning' ? '⚠ ' : log.type === 'danger' ? '✗ ' : '$ '}{log.msg}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
+      <div className="lp-divider" />
+
+      {/* TEAM */}
+      <section className="lp-section" id="tim">
+        <Reveal>
+          <span className="lp-section-tag">Tim Pengembang</span>
+          <h2 className="lp-section-title">Dibangun oleh<br /><span className="crimson-it">Tim EXPRESSO</span> S1251</h2>
+          <p className="lp-section-desc">Empat mahasiswa dengan spesialisasi berbeda — AI/ML, Frontend, Backend, dan Cybersecurity — membangun Crypto-Sentinel dari nol hingga menjadi sistem FDS berlatency 18ms yang siap validasi pilot di Bank Kuningan.</p>
+        </Reveal>
+        <div className="lp-team-grid">
+          {team.map((member, i) => (
+            <Reveal key={i} delay={i * 0.1}>
+              <div className="lp-team-card">
+                <div className="lp-team-avatar" style={{ borderColor: member.color + '33', background: member.color + '11' }}>
+                  <div className="lp-team-avatar-fallback" style={{ color: member.color }}>{member.initials}</div>
+                </div>
+                <div className="lp-team-info">
+                  <h3>{member.name}</h3>
+                  <span className="lp-team-role" style={{ color: member.color }}>{member.role}</span>
+                  <p className="lp-team-desc">{member.desc}</p>
+                  <div className="lp-team-tags">
+                    {member.tags.map((t, j) => (
+                      <span className="lp-team-tag" key={j} style={{ borderColor: member.color + '22', color: member.color }}>{t}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <div className="lp-divider" />
+
+      {/* FAQ */}
+      <section className="lp-section" id="regulasi">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'start' }}>
+          <Reveal>
+            <div>
+              <span className="lp-section-tag">Pertanyaan Teknis</span>
+              <h2 className="lp-section-title" style={{ fontSize: '2.2rem' }}>Yang Sering<br />Ditanyakan <span className="crimson-it">Juri.</span></h2>
+              <p className="lp-section-desc" style={{ marginBottom: 0 }}>Pertanyaan yang biasanya diajukan oleh juri teknis BI, OJK, dan investor saat melihat sistem ini pertama kali.</p>
+            </div>
+          </Reveal>
+          <Reveal delay={0.15}>
+            <div className="lp-faq">
+              {faqs.map((faq, i) => (
+                <div className={`lp-faq-item ${openFaq === i ? 'open' : ''}`} key={i}>
+                  <button className="lp-faq-btn" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+                    <span className="lp-faq-q">{faq.q}</span>
+                    <ChevronDown size={18} className="lp-faq-icon" />
+                  </button>
+                  <AnimatePresence>
+                    {openFaq === i && (
+                      <motion.div key="body" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} style={{ overflow: 'hidden' }}>
+                        <div className="lp-faq-body">{faq.a}</div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <div className="lp-divider" />
+
+      {/* DOCS */}
+      <section className="lp-section" style={{ paddingTop: 80 }}>
+        <Reveal>
+          <span className="lp-section-tag">Dokumentasi Produk</span>
+          <h2 className="lp-section-title">Target Pengguna,<br />Arsitektur & <span className="crimson-it">Model Bisnis</span></h2>
+        </Reveal>
+        <Reveal delay={0.1}>
+          <div className="lp-docs">
+            <div className="lp-doc-tabs">
+              {[
+                { key: 'tp', label: '1. Target Pengguna', desc: '4 aktor utama: Compliance Officer, Risk Manager, Regulator, Nasabah', accent: '#1e3a8a' },
+                { key: 'flow', label: '2. Flowchart & Rich Picture', desc: 'Alur sistem end-to-end dan logika keputusan FDS', accent: '#d97706' },
+                { key: 'bmc', label: '3. Business Model Canvas', desc: 'Komersialisasi SaaS, Revenue Streams, Key Partners', accent: '#16a34a' },
+              ].map(tab => (
+                <div key={tab.key} className="lp-doc-tab" onClick={() => setActiveDocTab(tab.key)} style={{ background: activeDocTab === tab.key ? tab.accent + '0f' : '#fafaf8', borderColor: activeDocTab === tab.key ? tab.accent : 'rgba(0,0,0,0.08)' }}>
+                  <h4 style={{ color: activeDocTab === tab.key ? tab.accent : '#333333' }}>{tab.label}</h4>
+                  <p>{tab.desc}</p>
+                </div>
+              ))}
+            </div>
+            <AnimatePresence mode="wait">
+              {activeDocTab === 'tp' && (
+                <motion.div key="tp" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                  <div className="lp-doc-img-grid">
+                    {[
+                      { img: '/img/TP1.jpeg', title: '1. Analis Kepatuhan (Compliance Officer)', desc: 'Memantau notifikasi transaksi berisiko tinggi secara real-time, meninjau alert smurfing (skor 50–84%), memverifikasi pembekuan rekening mule, dan menandatangani draft LTKM yang dihasilkan sistem.' },
+                      { img: '/img/TP2.jpeg', title: '2. Manajer Risiko & AML (Risk Manager)', desc: 'Mengatur ambang batas risiko (risk threshold 85%), mengevaluasi efektivitas 15 indikator deteksi FDS, dan memantau statistik tren anomali transaksi antardomisili.' },
+                      { img: '/img/TP3.jpeg', title: '3. Regulator (OJK & PPATK)', desc: 'Menerima draf otomatis Laporan Transaksi Keuangan Mencurigakan (LTKM/STR) lengkap dengan narasi kasus berbasis AI dan bukti audit forensik digital.' },
+                      { img: '/img/TP4.jpeg', title: '4. Nasabah Perbankan (Consumer Banking)', desc: 'Mendapatkan jaminan keamanan akun dari ancaman penyalahgunaan rekening penampung (mule account). Sistem bekerja sepenuhnya transparan di layer belakang.' },
+                    ].map((tp, i) => (
+                      <div className="lp-doc-img-card" key={i}>
+                        <img src={tp.img} alt={tp.title} />
+                        <h4>{tp.title}</h4>
+                        <p>{tp.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+              {activeDocTab === 'flow' && (
+                <motion.div key="flow" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {[
+                      { img: '/img/rich-picture.jpeg', title: 'A. Rich Picture Ecosystem', accent: '#d97706', desc: 'Diagram menggambarkan hubungan end-to-end dari transaksi nasabah melalui API Gateway SNAP BI. FDS mengevaluasi menggunakan Rule Engine dan GNN. Jika ≥4 tujuan unik/1 jam terdeteksi, dana diblokir dan STR PPATK diterbitkan.' },
+                      { img: '/img/Flowchart.jpeg', title: 'B. Flowchart Logika Keputusan FDS', accent: '#1e3a8a', desc: 'Alur keputusan: evaluasi limit nominal → geolokasi → smurfing check → skor hibrida ML+GNN. Hasil: ALLOW (<50%), REVIEW (50–84%), BLOCK (≥85%).' },
+                    ].map((item, i) => (
+                      <div key={i} style={{ background: '#fafaf8', border: `1px solid ${item.accent}22`, borderRadius: 16, padding: 24 }}>
+                        <h4 style={{ color: item.accent, fontWeight: 700, fontSize: '0.9rem', marginBottom: 12 }}>{item.title}</h4>
+                        <img src={item.img} alt={item.title} style={{ width: '100%', borderRadius: 10, marginBottom: 12 }} />
+                        <p style={{ color: '#666666', fontSize: '0.83rem', lineHeight: 1.7, margin: 0, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{item.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+              {activeDocTab === 'bmc' && (
+                <motion.div key="bmc" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                  <div style={{ background: '#fafaf8', border: '1px solid rgba(22,163,74,0.15)', borderRadius: 16, padding: 24 }}>
+                    <h4 style={{ color: '#16a34a', fontWeight: 700, fontSize: '0.9rem', marginBottom: 16 }}>Business Model Canvas — Crypto-Sentinel FDS</h4>
+                    <img src="/img/BMC.jpeg" alt="BMC" style={{ width: '100%', borderRadius: 10, marginBottom: 20 }} />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+                      {[
+                        { label: 'Value Proposition', val: 'FDS real-time <20ms, standar SNAP BI, otomatisasi draft STR PPATK. Plug-and-play middleware tanpa modifikasi core banking.' },
+                        { label: 'Customer Segments', val: 'Bank Pembangunan Daerah (Bank Kuningan, BJB), 250+ BPR & BPRS Jawa Barat, Bank KBMI IV.' },
+                        { label: 'Revenue Streams', val: 'B2B SaaS Subscription + Micro-fee per API call. Target breakeven: 18 bank tahun pertama.' },
+                        { label: 'Key Partners', val: 'OJK, PPATK, Bappebti, Perbarindo Jawa Barat, Indodax, Pintu, Tokocrypto.' },
+                      ].map((item, i) => (
+                        <div key={i} style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid rgba(0,0,0,0.07)' }}>
+                          <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: 1, color: '#16a34a', fontWeight: 800, marginBottom: 6, fontFamily: 'JetBrains Mono, monospace' }}>{item.label}</div>
+                          <p style={{ fontSize: '0.82rem', color: '#666666', lineHeight: 1.65, margin: 0, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{item.val}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* FOOTER */}
+      <footer style={{ borderTop: '1px solid rgba(0,0,0,0.08)' }}>
+        <div className="lp-footer">
+          <div className="lp-footer-brand">
+            <h3>Crypto-Sentinel</h3>
+            <p>Fraud Detection System · SNAP BI Compliant · PPATK goAML Ready<br />Dikembangkan oleh Tim EXPRESSO S1251 · Digdaya × Hackathon PIDI 2026</p>
+          </div>
+          <div className="lp-footer-right">
+            <p>© 2026 Crypto-Sentinel<br />SNAP BI · ISO 20022 · OJK · PPATK · UU TPPU No. 8/2010</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

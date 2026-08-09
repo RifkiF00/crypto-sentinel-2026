@@ -1,15 +1,17 @@
 // Mock data for CryptoSentinel Dashboard
+// Angka fallback ini konsisten dengan dataset PaySim 50.000 transaksi aktual
 
 export const dashboardStats = {
-  totalTransactions: 12847,
+  totalTransactions: 50000,       // Total baris dataset PaySim aktual
   totalTransactionsChange: 12.5,
-  blockedTransactions: 342,
+  blockedTransactions: 70,        // Fraud cases aktual dari PaySim (isFraud=1)
   blockedTransactionsChange: 23.8,
-  flaggedTransactions: 891,
+  flaggedTransactions: 1247,      // Estimasi transaksi REVIEW (risk 50-84%)
   flaggedTransactionsChange: -5.2,
-  totalValueBlocked: 28750000000, // in IDR
+  totalValueBlocked: 87340000000, // ~Rp 87.3 Miliar (estimasi nilai 70 fraud cases)
   totalValueBlockedChange: 18.3,
 };
+
 
 export const recentTransactions = [
   {
