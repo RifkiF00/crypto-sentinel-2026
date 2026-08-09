@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, ArrowRight, Brain, Zap, FileText,
-  ChevronDown, Radio, CheckCircle, Play, Check, Clock, Lock
+  ChevronDown, Radio, CheckCircle, Play, Check, Clock, Lock,
+  Send, Server, Cpu, Activity, RefreshCw
 } from 'lucide-react';
 
 // ---- Scroll reveal wrapper ----
@@ -92,14 +93,191 @@ const team = [
   },
 ];
 
-// ---- FAQ ----
-const faqs = [
-  { q: 'Apa itu Crypto-Sentinel FDS?', a: 'Crypto-Sentinel adalah Security Middleware Layer yang berjalan sebagai lapisan intersepsi antara aplikasi mobile banking nasabah dan core banking bank. Setiap transaksi melewati mesin AI kami sebelum saldo berubah — memastikan tidak ada dana yang keluar ke tangan yang salah.' },
-  { q: 'Bagaimana sistem bekerja dalam <20ms?', a: 'Mesin rule engine kami dioptimalkan untuk berjalan di RAM tanpa akses disk. Graf transaksi (NetworkX) disimpan in-memory dan diperbarui secara incremental. Model Random Forest hanya memerlukan forward pass pada vektor 12 fitur — total komputasi selesai dalam <20ms per transaksi.' },
-  { q: 'Apakah sistem ini patuh regulasi OJK dan PPATK?', a: 'Ya. Crypto-Sentinel mematuhi SNAP BI (PADG No. 23/18/PADG/2021) untuk autentikasi API, ISO 20022 untuk standardisasi pesan transaksi, dan menghasilkan laporan LTKM sesuai format PPATK goAML berdasarkan UU No. 8 Tahun 2010 tentang TPPU.' },
-  { q: 'Bagaimana integrasi ke core banking yang sudah ada?', a: 'Sistem dirancang sebagai plug-and-play middleware. Bank cukup mengarahkan traffic transfer API ke endpoint Crypto-Sentinel sebelum meneruskan ke core banking. Tidak ada perubahan pada sistem core banking yang sudah berjalan.' },
-  { q: 'Apakah data nasabah aman?', a: 'Data nasabah diproses secara in-memory dan tidak disimpan oleh Crypto-Sentinel. Hanya log transaksi anonim dan skor risiko yang dicatat untuk keperluan audit. Roadmap kami mencakup implementasi Federated Learning (UU PDP No. 27/2022 compliant).' },
-];
+// ---- Animated Interception Pipeline Component ----
+function AnimatedFlowDiagram() {
+  const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % 4);
+    }, 2500);
+    return () => clearInterval(timer);
+  }, []);
+
+  const steps = [
+    {
+      num: '01',
+      title: 'Inisiasi Transfer',
+      desc: 'Nasabah tap "Lanjutkan" di m-banking. Request dikirim ke Expresso API dengan SNAP BI Header.',
+      icon: Send,
+      color: '#3b82f6',
+      badge: 'SNAP BI Validated'
+    },
+    {
+      num: '02',
+      title: 'Validasi Core Banking',
+      desc: 'Expresso memverifikasi signature & 5 transaksi terakhir pengirim sebelum meneruskan paket.',
+      icon: Server,
+      color: '#818cf8',
+      badge: 'Signature Verified'
+    },
+    {
+      num: '03',
+      title: 'Evaluasi FDS AI',
+      desc: 'Rule engine + Random Forest + GNN PageRank berjalan paralel. 15 indikator dievaluasi (<18ms).',
+      icon: Cpu,
+      color: '#f59e0b',
+      badge: 'High Risk (Score: 100%)'
+    },
+    {
+      num: '04',
+      title: 'Keputusan & Aksi',
+      desc: 'BLOCK → Rekening dibekukan langsung & draft LTKM ter-generate otomatis.',
+      icon: Lock,
+      color: '#ef4444',
+      badge: 'AUTO BLOCK & FREEZE'
+    }
+  ];
+
+  return (
+    <div style={{
+      background: 'linear-gradient(145deg, #09132e, #040917)',
+      border: '1px solid rgba(59,130,246,0.3)',
+      borderRadius: '24px',
+      padding: '32px 28px',
+      color: '#ffffff',
+      boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Background ambient lighting */}
+      <div style={{
+        position: 'absolute',
+        top: '-10%',
+        right: '-10%',
+        width: '250px',
+        height: '250px',
+        background: 'radial-gradient(circle, rgba(37,99,235,0.2), transparent 70%)',
+        pointerEvents: 'none'
+      }} />
+
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: 16 }}>
+        <div>
+          <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: 2, color: '#38bdf8', textTransform: 'uppercase' }}>
+            // INTERCEPTION PIPELINE
+          </span>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', margin: '4px 0 0' }}>
+            Alur Deteksi Real-Time
+          </h3>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', padding: '6px 12px', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: 700, color: '#4ade80' }}>
+          <motion.div
+            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e' }}
+          />
+          INTERCEPTING &lt;18ms
+        </div>
+      </div>
+
+      {/* Steps Container */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'relative' }}>
+        {steps.map((step, idx) => {
+          const IconComp = step.icon;
+          const isActive = activeStep === idx;
+          return (
+            <div key={idx} style={{ position: 'relative' }}>
+              {/* Vertical Animated Pulse Pipeline */}
+              {idx < steps.length - 1 && (
+                <div style={{
+                  position: 'absolute',
+                  left: 23,
+                  top: 48,
+                  bottom: -16,
+                  width: 2,
+                  background: 'rgba(255,255,255,0.1)',
+                  zIndex: 1
+                }}>
+                  {isActive && (
+                    <motion.div
+                      initial={{ top: '0%' }}
+                      animate={{ top: '100%' }}
+                      transition={{ duration: 2.2, ease: 'linear', repeat: Infinity }}
+                      style={{
+                        position: 'absolute',
+                        width: 6,
+                        height: 14,
+                        left: -2,
+                        borderRadius: 3,
+                        background: step.color,
+                        boxShadow: `0 0 10px ${step.color}`
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Step Card */}
+              <motion.div
+                onClick={() => setActiveStep(idx)}
+                animate={{
+                  scale: isActive ? 1.02 : 1,
+                  borderColor: isActive ? step.color : 'rgba(255,255,255,0.08)',
+                  backgroundColor: isActive ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.02)'
+                }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 16,
+                  padding: '16px',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  zIndex: 2
+                }}
+              >
+                <div style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '12px',
+                  background: isActive ? step.color : 'rgba(255,255,255,0.08)',
+                  color: isActive ? '#ffffff' : '#94a3b8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: isActive ? `0 0 20px ${step.color}66` : 'none',
+                  transition: 'all 0.3s ease'
+                }}>
+                  <IconComp size={20} />
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: isActive ? '#ffffff' : '#cbd5e1', margin: 0 }}>
+                      {step.num}. {step.title}
+                    </h4>
+                    {isActive && (
+                      <span style={{ fontSize: '0.66rem', fontWeight: 800, padding: '3px 10px', borderRadius: '9999px', background: `${step.color}22`, color: step.color, border: `1px solid ${step.color}44` }}>
+                        {step.badge}
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: 0, lineHeight: 1.45 }}>
+                    {step.desc}
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function LandingPage({ onEnter }) {
   const [activeDocTab, setActiveDocTab] = useState('tp');
@@ -1299,70 +1477,7 @@ export default function LandingPage({ onEnter }) {
           </Reveal>
 
           <Reveal delay={0.2} direction="left">
-            <div className="lp-flow-card" style={{ padding: 0, overflow: 'hidden', background: 'none', border: 'none' }}>
-              <motion.div
-                animate={{ 
-                  y: [0, -10, 0],
-                  scale: [1, 1.012, 1]
-                }}
-                transition={{ 
-                  duration: 5, 
-                  repeat: Infinity, 
-                  ease: 'easeInOut' 
-                }}
-                style={{
-                  position: 'relative',
-                  borderRadius: '24px',
-                  overflow: 'hidden',
-                  boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
-                  border: '1px solid rgba(255,255,255,0.1)'
-                }}
-              >
-                {/* Hero Alur Image */}
-                <img
-                  src="/img/hero-alur.jpeg"
-                  alt="Alur Intersepsi Transaksi Crypto-Sentinel"
-                  style={{
-                    width: '100%',
-                    height: 'auto',
-                    display: 'block',
-                    borderRadius: '24px'
-                  }}
-                />
-
-                {/* Animated Laser Scanning Line */}
-                <motion.div
-                  animate={{
-                    top: ['0%', '100%', '0%']
-                  }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: 'linear'
-                  }}
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    height: '3px',
-                    background: 'linear-gradient(90deg, transparent, #38bdf8, #2563eb, #38bdf8, transparent)',
-                    boxShadow: '0 0 15px #38bdf8, 0 0 30px #2563eb',
-                    pointerEvents: 'none'
-                  }}
-                />
-
-                {/* Ambient Corner Glow Overlay */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    borderRadius: '24px',
-                    boxShadow: 'inset 0 0 30px rgba(37,99,235,0.25)',
-                    pointerEvents: 'none'
-                  }}
-                />
-              </motion.div>
-            </div>
+            <AnimatedFlowDiagram />
           </Reveal>
         </div>
       </div>
