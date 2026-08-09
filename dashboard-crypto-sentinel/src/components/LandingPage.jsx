@@ -1299,22 +1299,69 @@ export default function LandingPage({ onEnter }) {
           </Reveal>
 
           <Reveal delay={0.2} direction="left">
-            <div className="lp-flow-card">
-              <div className="lp-flow-title">// Alur Intersepsi Transaksi</div>
-              {[
-                { num: '01', color: '#2563eb', bg: 'rgba(37,99,235,0.15)', label: 'Inisiasi Transfer', desc: 'Nasabah tap "Lanjutkan" di m-banking Bank Kuningan. Request dikirim ke Expresso API dengan SNAP BI header (HMAC-SHA256).' },
-                { num: '02', color: '#818cf8', bg: 'rgba(129,140,248,0.15)', label: 'Validasi Core Banking', desc: 'Expresso memverifikasi signature, menarik 5 transaksi terakhir pengirim, lalu meneruskan paket ke FDS Engine.' },
-                { num: '03', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', label: 'Evaluasi FDS AI', desc: 'Rule engine + Random Forest + GNN PageRank berjalan paralel. 15 indikator dievaluasi dalam <20ms.' },
-                { num: '04', color: '#34d399', bg: 'rgba(52,211,153,0.15)', label: 'Keputusan & Aksi', desc: 'ALLOW → resi. REVIEW → analis notified. BLOCK → rekening dibekukan + draft LTKM tergenerate otomatis.' },
-              ].map((step, i) => (
-                <div className="lp-flow-step" key={i}>
-                  <div className="lp-flow-num" style={{ background: step.bg, color: step.color }}>{step.num}</div>
-                  <div className="lp-flow-step-content">
-                    <h4>{step.label}</h4>
-                    <p>{step.desc}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="lp-flow-card" style={{ padding: 0, overflow: 'hidden', background: 'none', border: 'none' }}>
+              <motion.div
+                animate={{ 
+                  y: [0, -10, 0],
+                  scale: [1, 1.012, 1]
+                }}
+                transition={{ 
+                  duration: 5, 
+                  repeat: Infinity, 
+                  ease: 'easeInOut' 
+                }}
+                style={{
+                  position: 'relative',
+                  borderRadius: '24px',
+                  overflow: 'hidden',
+                  boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}
+              >
+                {/* Hero Alur Image */}
+                <img
+                  src="/img/hero-alur.jpeg"
+                  alt="Alur Intersepsi Transaksi Crypto-Sentinel"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    display: 'block',
+                    borderRadius: '24px'
+                  }}
+                />
+
+                {/* Animated Laser Scanning Line */}
+                <motion.div
+                  animate={{
+                    top: ['0%', '100%', '0%']
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: 'linear'
+                  }}
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    height: '3px',
+                    background: 'linear-gradient(90deg, transparent, #38bdf8, #2563eb, #38bdf8, transparent)',
+                    boxShadow: '0 0 15px #38bdf8, 0 0 30px #2563eb',
+                    pointerEvents: 'none'
+                  }}
+                />
+
+                {/* Ambient Corner Glow Overlay */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: '24px',
+                    boxShadow: 'inset 0 0 30px rgba(37,99,235,0.25)',
+                    pointerEvents: 'none'
+                  }}
+                />
+              </motion.div>
             </div>
           </Reveal>
         </div>
