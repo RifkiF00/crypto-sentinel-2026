@@ -1170,12 +1170,12 @@ export default function LandingPage({ onEnter }) {
             </div>
           </Reveal>
 
-          {/* Right Column: Animated heroo.jpeg + Floating Translucent Risk Score Panel */}
+          {/* Right Column: Animated heroo.jpeg */}
           <Reveal delay={0.2} direction="left">
             <div className="lp-hero-visual-box">
               <motion.div
                 animate={{ 
-                  y: [0, -10, 0],
+                  y: [0, -12, 0],
                 }}
                 transition={{ 
                   duration: 5, 
@@ -1185,69 +1185,13 @@ export default function LandingPage({ onEnter }) {
                 style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}
               >
                 {/* Main 3D Shield Image */}
-                <div style={{ borderRadius: '24px', overflow: 'hidden', filter: 'drop-shadow(0 20px 40px rgba(37,99,235,0.25))' }}>
+                <div style={{ borderRadius: '24px', overflow: 'hidden', filter: 'drop-shadow(0 25px 50px rgba(37,99,235,0.28))' }}>
                   <img
                     src="/img/heroo.jpeg"
                     alt="Crypto-Sentinel 3D Shield"
                     className="lp-hero-shield-img"
                   />
                 </div>
-
-                {/* Floating Translucent Glassmorphism Risk Panel */}
-                <motion.div
-                  animate={{ y: [0, 8, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  className="lp-risk-glass-panel"
-                >
-                  <div className="lp-risk-glass-header">
-                    <div>
-                      <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>Risk Score</div>
-                      <div className="lp-risk-score-num">
-                        92 <span>/ 100</span>
-                      </div>
-                      <div className="lp-risk-label">Risiko Tinggi</div>
-                    </div>
-                    {/* Sparkline curve graph */}
-                    <svg width="60" height="32" viewBox="0 0 60 32" fill="none">
-                      <path d="M2 28L15 22L28 25L42 12L58 4" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-
-                  <div className="lp-risk-decision-title">Keputusan (18ms)</div>
-
-                  {/* Decision 1: ALLOW */}
-                  <div className="lp-decision-box allow">
-                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Check size={12} color="white" strokeWidth={3} />
-                    </div>
-                    <div>
-                      <div style={{ color: '#15803d', fontWeight: 800 }}>ALLOW</div>
-                      <div style={{ fontSize: '0.64rem', color: '#16a34a', fontWeight: 500 }}>Skor &lt; 50</div>
-                    </div>
-                  </div>
-
-                  {/* Decision 2: PENDING & REVIEW */}
-                  <div className="lp-decision-box review">
-                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#eab308', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Clock size={12} color="white" strokeWidth={3} />
-                    </div>
-                    <div>
-                      <div style={{ color: '#b45309', fontWeight: 800 }}>PENDING &amp; REVIEW</div>
-                      <div style={{ fontSize: '0.64rem', color: '#d97706', fontWeight: 500 }}>Skor 50 - 85</div>
-                    </div>
-                  </div>
-
-                  {/* Decision 3: BLOCK / ROLLBACK */}
-                  <div className="lp-decision-box block">
-                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Lock size={12} color="white" strokeWidth={3} />
-                    </div>
-                    <div>
-                      <div style={{ color: '#b91c1c', fontWeight: 800 }}>BLOCK / ROLLBACK</div>
-                      <div style={{ fontSize: '0.64rem', color: '#dc2626', fontWeight: 500 }}>Skor ≥ 85</div>
-                    </div>
-                  </div>
-                </motion.div>
               </motion.div>
             </div>
           </Reveal>
