@@ -1395,9 +1395,9 @@ export default function LandingPage({ onEnter }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'start' }}>
           <Reveal>
             <div>
-              <span className="lp-section-tag">Pertanyaan Teknis</span>
-              <h2 className="lp-section-title" style={{ fontSize: '2.2rem' }}>Yang Sering<br />Ditanyakan <span className="crimson-it">Juri.</span></h2>
-              <p className="lp-section-desc" style={{ marginBottom: 0 }}>Pertanyaan yang biasanya diajukan oleh juri teknis BI, OJK, dan investor saat melihat sistem ini pertama kali.</p>
+              <span className="lp-section-tag">PERTANYAAN UMUM</span>
+              <h2 className="lp-section-title" style={{ fontSize: '2.2rem' }}>Pertanyaan yang<br />Sering <span className="highlight-blue">Diajukan.</span></h2>
+              <p className="lp-section-desc" style={{ marginBottom: 0 }}>Informasi lengkap mengenai cara kerja sistem, integrasi core banking, kepatuhan regulasi OJK &amp; PPATK, serta perlindungan data nasabah.</p>
             </div>
           </Reveal>
           <Reveal delay={0.15}>
