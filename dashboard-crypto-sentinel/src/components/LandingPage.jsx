@@ -1073,30 +1073,43 @@ export default function LandingPage({ onEnter }) {
           font-family: 'Plus Jakarta Sans', sans-serif; line-height: 1.6;
         }
 
-        /* ---- RESPONSIVE ---- */
+        /* ---- RESPONSIVE MEDIA QUERIES ---- */
         @media (max-width: 1024px) {
-          .lp-hero { grid-template-columns: 1fr; gap: 60px; }
-          .lp-letter { grid-template-columns: 1fr; gap: 40px; }
-          .lp-stats-grid { grid-template-columns: repeat(2, 1fr); }
+          .lp-nav-container { padding: 0 24px; }
+          .lp-hero-wrapper { padding: 95px 24px 30px; }
+          .lp-hero-grid { grid-template-columns: 1fr; gap: 40px; }
+          .lp-hero-title { font-size: 2.8rem; }
+          .lp-hero-shield-img { max-width: 100%; transform: none; }
+          .lp-hero-strip { grid-template-columns: 1fr; gap: 16px; }
+          .lp-letter { grid-template-columns: 1fr; gap: 40px; padding: 60px 24px; }
+          .lp-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
           .lp-features-grid { grid-template-columns: 1fr; }
           .lp-team-grid { grid-template-columns: 1fr; }
-          .lp-footer { grid-template-columns: 1fr; text-align: left; }
+          .lp-footer { grid-template-columns: 1fr; text-align: left; padding: 40px 24px; }
           .lp-footer-right { text-align: left; }
         }
 
         @media (max-width: 640px) {
-          .lp-nav { padding: 0 20px; }
+          .lp-nav-container { padding: 0 16px; height: 60px; }
           .lp-nav-links { display: none; }
-          .lp-hero, .lp-section, .lp-footer { padding-left: 20px; padding-right: 20px; }
-          .lp-letter { padding: 70px 20px; }
-          .lp-hero { padding-top: 70px; padding-bottom: 60px; }
-          .lp-hero-title { font-size: 2.8rem; }
-          .lp-section-title { font-size: 2.2rem; }
-          .lp-stats-grid { grid-template-columns: repeat(2, 1fr); }
+          .lp-nav-name { font-size: 1.05rem; }
+          .lp-nav-cta { padding: 8px 16px !important; font-size: 0.78rem !important; }
+          .lp-hero-wrapper { padding: 80px 16px 30px; }
+          .lp-hero-title { font-size: 2.1rem; line-height: 1.2; }
+          .lp-hero-sub { font-size: 0.9rem; }
+          .lp-hero-btns { flex-direction: column; width: 100%; gap: 10px; }
+          .lp-btn-primary, .lp-btn-secondary { width: 100%; justify-content: center; }
+          .lp-hero-strip { grid-template-columns: 1fr; padding: 16px; }
+          .lp-section { padding: 50px 16px; }
+          .lp-section-title { font-size: 2.0rem; }
+          .lp-stats-grid { grid-template-columns: 1fr; gap: 14px; }
+          .lp-stat-card { padding: 24px 16px; }
+          .lp-stat-val { font-size: 2.2rem; }
+          .lp-reg-strip { justify-content: flex-start; overflow-x: auto; padding: 16px 0; }
           .lp-doc-tabs { grid-template-columns: 1fr; }
           .lp-doc-img-grid { grid-template-columns: 1fr; }
-          .lp-hero-float { display: none; }
-          .lp-hero-btns { flex-direction: column; align-items: flex-start; }
+          .lp-doc-img-card { padding: 14px; }
+          .lp-team-card { flex-direction: column; gap: 14px; padding: 20px; }
         }
       `}</style>
 
