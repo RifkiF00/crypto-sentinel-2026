@@ -154,11 +154,16 @@ export default function LandingPage({ onEnter }) {
           background: rgba(240,245,255,0.92);
           backdrop-filter: blur(20px);
           border-bottom: 1px solid rgba(0,0,0,0.07);
+        }
+
+        .lp-nav-container {
+          max-width: 1340px;
+          margin: 0 auto;
+          padding: 0 48px;
+          height: 68px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 48px;
-          height: 68px;
         }
 
         .lp-nav-brand {
@@ -169,14 +174,13 @@ export default function LandingPage({ onEnter }) {
         }
 
         .lp-nav-logo {
-          width: 40px; height: 40px;
-          border-radius: 10px;
-          background: white;
-          border: 1px solid rgba(0,0,0,0.1);
-          padding: 4px;
-          overflow: hidden;
+          width: 44px; height: 44px;
+          background: transparent;
+          border: none;
+          padding: 0;
+          overflow: visible;
           display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+          box-shadow: none;
         }
 
         .lp-nav-logo img { width: 100%; height: 100%; object-fit: contain; }
@@ -1095,22 +1099,24 @@ export default function LandingPage({ onEnter }) {
 
       {/* NAV */}
       <nav className="lp-nav">
-        <div className="lp-nav-brand">
-          <div className="lp-nav-logo">
-            <img src="/img/LOGO1.jpeg" alt="Logo" />
+        <div className="lp-nav-container">
+          <div className="lp-nav-brand">
+            <div className="lp-nav-logo">
+              <img src="/img/logoo2.jpeg" alt="Logo" />
+            </div>
+            <div className="lp-nav-name">Crypto<span>-Sentinel 2026</span></div>
           </div>
-          <div className="lp-nav-name">Crypto<span>-Sentinel 2026</span></div>
+          <ul className="lp-nav-links">
+            <li><a href="#beranda" style={{ color: '#2563eb', borderBottom: '2px solid #2563eb', paddingBottom: 4 }}>Beranda</a></li>
+            <li><a href="#solusi">Solusi</a></li>
+            <li><a href="#teknologi">Teknologi</a></li>
+            <li><a href="#dampak">Dampak</a></li>
+            <li><a href="#tim">Tentang Kami</a></li>
+          </ul>
+          <button className="lp-nav-cta" onClick={onEnter} style={{ background: '#09132e', borderRadius: '9999px', padding: '10px 24px' }}>
+            Hubungi Kami <ArrowRight size={15} />
+          </button>
         </div>
-        <ul className="lp-nav-links">
-          <li><a href="#beranda" style={{ color: '#2563eb', borderBottom: '2px solid #2563eb', paddingBottom: 4 }}>Beranda</a></li>
-          <li><a href="#solusi">Solusi</a></li>
-          <li><a href="#teknologi">Teknologi</a></li>
-          <li><a href="#dampak">Dampak</a></li>
-          <li><a href="#tim">Tentang Kami</a></li>
-        </ul>
-        <button className="lp-nav-cta" onClick={onEnter} style={{ background: '#09132e', borderRadius: '9999px', padding: '10px 24px' }}>
-          Hubungi Kami <ArrowRight size={15} />
-        </button>
       </nav>
 
       {/* HERO SECTION MATCHING MOCKUP IMAGE */}
