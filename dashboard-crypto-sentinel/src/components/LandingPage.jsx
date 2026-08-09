@@ -1163,7 +1163,7 @@ export default function LandingPage({ onEnter }) {
                   </div>
                   <div>
                     <div className="lp-strip-title">Kepatuhan Terjamin</div>
-                    <div className="lp-strip-desc">Ototomatisasi STR/LTKM sesuai regulasi OJK &amp; UU TPPU.</div>
+                    <div className="lp-strip-desc">Otomatisasi STR/LTKM sesuai regulasi OJK &amp; UU TPPU.</div>
                   </div>
                 </div>
               </div>
