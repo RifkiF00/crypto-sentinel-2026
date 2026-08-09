@@ -998,48 +998,74 @@ export default function LandingPage({ onEnter }) {
 
         <Reveal delay={0.2} direction="left">
           <div className="lp-hero-mockup">
-            <div className="lp-hero-float top-left">
-              <div style={{ width: 34, height: 34, borderRadius: 9, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CheckCircle size={18} color="#16a34a" />
+            <motion.div
+              animate={{ 
+                y: [0, -12, 0],
+                rotate: [0, 0.5, 0, -0.5, 0]
+              }}
+              transition={{ 
+                duration: 5, 
+                repeat: Infinity, 
+                ease: 'easeInOut' 
+              }}
+              style={{ position: 'relative' }}
+            >
+              <div className="lp-hero-float top-left" style={{ zIndex: 10 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CheckCircle size={18} color="#16a34a" />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#16a34a' }}>ALLOW</div>
+                  <div style={{ fontSize: '0.65rem', color: '#888888', fontFamily: 'JetBrains Mono, monospace' }}>Score: 8% · 16ms</div>
+                </div>
               </div>
-              <div>
-                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#16a34a' }}>ALLOW</div>
-                <div style={{ fontSize: '0.65rem', color: '#aaaaaa', fontFamily: 'JetBrains Mono, monospace' }}>Score: 8% · 16ms</div>
-              </div>
-            </div>
 
-            <div className="lp-mockup-frame">
-              <div className="lp-mockup-dots">
-                <div className="lp-mockup-dot r" />
-                <div className="lp-mockup-dot y" />
-                <div className="lp-mockup-dot g" />
-                <span style={{ fontSize: '0.65rem', color: '#334155', marginLeft: 8, fontFamily: 'JetBrains Mono, monospace' }}>crypto-sentinel-fds · live</span>
-              </div>
-              <div className="lp-mockup-console">
-                {tickerLogs.slice(0, 5).map(log => (
-                  <div className="lp-mockup-row" key={log.id}>
-                    <span className="lp-mockup-time">[{log.time}]</span>
-                    <span className={`lp-mockup-msg ${log.type === 'success' ? 's' : log.type === 'warning' ? 'w' : log.type === 'danger' ? 'd' : 'i'}`}>
-                      {log.type === 'success' ? '✓ ' : log.type === 'warning' ? '⚠ ' : log.type === 'danger' ? '✗ ' : '$ '}
-                      {log.msg}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="lp-mockup-stats">
-                <div className="lp-mockup-stat"><div className="lp-mockup-stat-val i">50K</div><div className="lp-mockup-stat-lbl">Transaksi</div></div>
-                <div className="lp-mockup-stat"><div className="lp-mockup-stat-val g">99.98%</div><div className="lp-mockup-stat-lbl">Akurasi</div></div>
-                <div className="lp-mockup-stat"><div className="lp-mockup-stat-val r">70</div><div className="lp-mockup-stat-lbl">Fraud Blocked</div></div>
-              </div>
-            </div>
+              <div className="lp-mockup-frame">
+                <motion.div
+                  animate={{ scale: [1, 1.015, 1] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{ borderRadius: '14px', overflow: 'hidden', position: 'relative' }}
+                >
+                  <img
+                    src="/img/heroo.jpeg"
+                    alt="Crypto-Sentinel AI Shield"
+                    style={{
+                      width: '100%',
+                      height: 'auto',
+                      borderRadius: '14px',
+                      display: 'block',
+                      objectFit: 'cover'
+                    }}
+                  />
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: '14px',
+                      boxShadow: 'inset 0 0 25px rgba(30,58,138,0.2)',
+                      pointerEvents: 'none'
+                    }}
+                  />
+                </motion.div>
 
-            <div className="lp-hero-float bottom-right">
-              <div style={{ width: 34, height: 34, borderRadius: 9, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🛡️</div>
-              <div>
-                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#2563eb' }}>BLOCKED</div>
-                <div style={{ fontSize: '0.65rem', color: '#aaaaaa', fontFamily: 'JetBrains Mono, monospace' }}>Rp 90jt · Indodax</div>
+                <div className="lp-mockup-dots" style={{ marginTop: 14 }}>
+                  <div className="lp-mockup-dot r" />
+                  <div className="lp-mockup-dot y" />
+                  <div className="lp-mockup-dot g" />
+                  <span style={{ fontSize: '0.65rem', color: '#64748b', marginLeft: 8, fontFamily: 'JetBrains Mono, monospace' }}>
+                    crypto-sentinel-fds · 3D AI Circuit Breaker Active
+                  </span>
+                </div>
               </div>
-            </div>
+
+              <div className="lp-hero-float bottom-right" style={{ zIndex: 10 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🛡️</div>
+                <div>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#2563eb' }}>BLOCKED</div>
+                  <div style={{ fontSize: '0.65rem', color: '#888888', fontFamily: 'JetBrains Mono, monospace' }}>Rp 90jt · Indodax</div>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </Reveal>
       </section>
