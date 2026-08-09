@@ -110,33 +110,6 @@ export default function LandingPage({ onEnter }) {
   ]);
   const [openFaq, setOpenFaq] = useState(null);
 
-  // 3D Parallax Tilt & Cursor Tracking
-  const [heroTilt, setHeroTilt] = useState({ rx: 0, ry: 0, s: 1 });
-  const [cursorPos, setCursorPos] = useState({ x: -300, y: -300 });
-
-  useEffect(() => {
-    const handleGlobalMouseMove = (e) => {
-      setCursorPos({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener('mousemove', handleGlobalMouseMove);
-    return () => window.removeEventListener('mousemove', handleGlobalMouseMove);
-  }, []);
-
-  const handleHeroMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5; // -0.5 to 0.5
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setHeroTilt({
-      rx: y * -26, // tilt X (up/down)
-      ry: x * 26,  // tilt Y (left/right)
-      s: 1.05
-    });
-  };
-
-  const handleHeroMouseLeave = () => {
-    setHeroTilt({ rx: 0, ry: 0, s: 1 });
-  };
-
   useEffect(() => {
     const logs = [
       { msg: '[ALLOW] TXN-20260810-0112 | Rp 200.000 → Siti Rahma | Score: 8% | 16ms', type: 'success' },
@@ -1140,18 +1113,6 @@ export default function LandingPage({ onEnter }) {
         }
       `}</style>
 
-      {/* CURSOR FOLLOW SPOTLIGHT GLOW */}
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          pointerEvents: 'none',
-          zIndex: 2,
-          background: `radial-gradient(600px circle at ${cursorPos.x}px ${cursorPos.y}px, rgba(37,99,235,0.08), transparent 80%)`,
-          transition: 'background 0.05s ease'
-        }}
-      />
-
       {/* NAV */}
       <nav className="lp-nav">
         <div className="lp-nav-container">
@@ -1231,31 +1192,26 @@ export default function LandingPage({ onEnter }) {
             </div>
           </Reveal>
 
-          {/* Right Column: Animated heroo.jpeg with Cursor-driven 3D Tilt */}
+          {/* Right Column: Animated heroo.jpeg with Smooth Floating Motion */}
           <Reveal delay={0.2} direction="left">
-            <div
-              className="lp-hero-visual-box"
-              onMouseMove={handleHeroMouseMove}
-              onMouseLeave={handleHeroMouseLeave}
-              style={{ perspective: '1000px', cursor: 'pointer' }}
-            >
-              <div
-                style={{
-                  transform: `rotateX(${heroTilt.rx}deg) rotateY(${heroTilt.ry}deg) scale(${heroTilt.s})`,
-                  transition: 'transform 0.12s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                  transformStyle: 'preserve-3d',
-                  width: '100%',
-                  display: 'flex',
-                  justifyContent: 'center'
+            <div className="lp-hero-visual-box">
+              <motion.div
+                animate={{ 
+                  y: [0, -14, 0],
                 }}
+                transition={{ 
+                  duration: 4.5, 
+                  repeat: Infinity, 
+                  ease: 'easeInOut' 
+                }}
+                style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}
               >
                 {/* Main 3D Shield Image */}
                 <div
                   style={{
                     borderRadius: '24px',
                     overflow: 'hidden',
-                    filter: `drop-shadow(${heroTilt.ry * -1.2}px ${heroTilt.rx * 1.2 + 20}px 40px rgba(37,99,235,0.32))`,
-                    transition: 'filter 0.15s ease'
+                    filter: 'drop-shadow(0 25px 50px rgba(37,99,235,0.28))'
                   }}
                 >
                   <img
@@ -1264,7 +1220,7 @@ export default function LandingPage({ onEnter }) {
                     className="lp-hero-shield-img"
                   />
                 </div>
-              </div>
+              </motion.div>
             </div>
           </Reveal>
         </div>
