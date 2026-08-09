@@ -1251,7 +1251,6 @@ export default function LandingPage({ onEnter }) {
             <Reveal key={i} delay={i * 0.1}>
               <div className="lp-stat-card">
                 <div className="lp-stat-accent" style={{ background: s.accent }} />
-                <div className="lp-stat-icon" style={{ background: s.iconBg, fontSize: '1.5rem' }}>{s.icon}</div>
                 <div className="lp-stat-val" style={{ color: s.color }}>
                   {s.target !== undefined ? <AnimatedNum target={s.target} /> : s.val}
                 </div>
@@ -1335,7 +1334,6 @@ export default function LandingPage({ onEnter }) {
           ].map((f, i) => (
             <Reveal key={i} delay={i * 0.12}>
               <div className="lp-feat">
-                <div className="lp-feat-icon" style={{ background: f.iconBg, border: `1px solid ${f.iconBorder}`, color: f.iconColor }}>{f.icon}</div>
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
                 <div className="lp-feat-tags">{f.tags.map((t, j) => <span className="lp-feat-tag" key={j}>{t}</span>)}</div>
