@@ -142,18 +142,21 @@ export default function LandingPage({ onEnter }) {
           min-height: 100vh;
           color: #111111;
           font-family: 'Outfit', sans-serif;
-          overflow-x: hidden;
         }
 
-        /* ---- NAV ---- */
+        /* ---- NAV (FIXED STICKY HEADER) ---- */
         .lp-nav {
-          position: sticky;
+          position: fixed;
           top: 0;
-          z-index: 100;
+          left: 0;
+          right: 0;
+          z-index: 1000;
           width: 100%;
           background: rgba(240,245,255,0.92);
           backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
           border-bottom: 1px solid rgba(0,0,0,0.07);
+          box-shadow: 0 4px 20px rgba(0,0,0,0.03);
         }
 
         .lp-nav-container {
@@ -232,7 +235,7 @@ export default function LandingPage({ onEnter }) {
         .lp-hero-wrapper {
           max-width: 1340px;
           margin: 0 auto;
-          padding: 50px 48px 40px;
+          padding: 118px 48px 40px;
           position: relative;
         }
 
