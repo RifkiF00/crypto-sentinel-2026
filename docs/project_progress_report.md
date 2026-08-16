@@ -1,5 +1,5 @@
 # Crypto-Sentinel 2026 — Rencana Implementasi Final Pitch & Capstone Report
-*Updated: 17 Agustus 2026 — 🔥 MILESTONE: GraphSAGE GNN Training Selesai! AUC=1.0000, t-SNE Perfect Cluster Separation, Hybrid Scoring Aktif*
+*Updated: 17 Agustus 2026 04:19 WIB — 🔥 GNN Hybrid FULLY ACTIVATED! scoring_mode=hybrid_gnn, BLOCK/ALLOW verified, pushed to GitHub*
 
 > **Tujuan**: Sistem siap pitch offline 25/26 Agustus + validasi pilot Bank Kuningan & Bu Fatimah (Financial Advisor BRI Kuningan)
 > **Deadline**: 25 Agustus 2026 (~9 hari tersisa)
@@ -116,11 +116,42 @@ ROC-AUC : 1.0000
 - Membuktikan GNN berhasil mempelajari "sidik jari jaringan" unik akun fraud
 - Ini yang akan ditunjukkan ke juri BI/OJK sebagai bukti visual kemampuan relational pattern detection
 
-### Pending (Setelah Download dari Colab)
-- [ ] Download `gnn_embeddings.pkl` + `gnn_hybrid_model.joblib`
-- [ ] Taruh di `crypto-sentinel-api/app/`
-- [ ] Restart API → `scoring_mode` berubah ke `hybrid_gnn`
-- [ ] Commit ke GitHub
+### Deployment Status — SELESAI ✅
+- [x] Download `gnn_embeddings.pkl` (163.8 MB, 562.239 akun) dari Colab
+- [x] Download `gnn_hybrid_model.joblib` (0.3 MB) dari Colab
+- [x] Taruh di `crypto-sentinel-api/app/`
+- [x] Restart API → `scoring_mode` berubah ke `hybrid_gnn`
+- [x] `gnn_hybrid_model.joblib` di-commit ke GitHub (0.3 MB — di bawah batas)
+- [x] `gnn_embeddings.pkl` dimasukkan ke `.gitignore` (163 MB > batas GitHub 100 MB)
+- [x] Fix formula scoring: `max(hybrid_score, rule_score)` agar Rule Engine tidak dioverride ke bawah oleh GNN
+
+### API Activation Test — 17 Agustus 2026 04:19 WIB
+
+```
+[FDS API] GNN Scorer loaded: 562,239 accounts, dim=32, weights=GNN60%/Rule40%
+[FDS API OK] Graph loaded with 562,239 nodes and 308,213 edges.
+```
+
+| Test Case | Expected | Actual | Status |
+|---|---|---|---|
+| TRANSFER Rp 9 juta, saldo terkuras, dest=Fraud Receiver | BLOCK | **BLOCK (score=100)** | ✅ |
+| PAYMENT Rp 50rb normal | ALLOW | **ALLOW (score=40)** | ✅ |
+| `scoring_mode` | `hybrid_gnn` | **`hybrid_gnn`** | ✅ |
+| `gnn_loaded` | `True` | **`True`** | ✅ |
+
+**Catatan Teknis**: `gnn_score=0` untuk akun demo (Rifki, Billy, dll) karena akun-akun tersebut tidak ada di dataset PaySim 308K (format akun PaySim: `C1000004940`). Di implementasi nyata, semua akun nasabah BPR Kuningan akan masuk ke graph training dan mendapat embedding yang akurat. Formula `max(hybrid_score, rule_score)` memastikan Rule Engine tetap bekerja sebagai floor signal untuk akun yang tidak dikenal GNN.
+
+### Hybrid Scoring Formula Final
+```
+final_score = max(
+    0.6 × gnn_score + 0.4 × rule_score,  # hybrid weighted
+    rule_score                              # rule engine floor
+)
+
+BLOCK  >= 85
+REVIEW  60-84
+ALLOW  < 60
+```
 
 ## 🎯 Jawaban Open Questions (dari Feedback)
 
