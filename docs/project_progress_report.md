@@ -166,19 +166,24 @@ ALLOW  < 60
 
 ## 🏦 Relevansi Kasus BI FAST Rp 800 Miliar — Crypto-Sentinel sebagai Solusi
 
-> **Konteks**: Kasus fraud BI FAST yang menyebabkan kerugian ratusan miliar pada bank menengah dan BPD mendapat perhatian OJK dan BI. Para ahli dari IDNFinancials.com, Penta Security, dan ComplyAdvantage merekomendasikan 3 solusi utama — **ketiganya sudah diimplementasikan di Crypto-Sentinel**.
+> **Konteks**: Kasus fraud BI FAST yang menyebabkan kerugian ratusan miliar pada bank menengah dan BPD mendapat perhatian OJK dan BI. Para ahli dari IDNFinancials.com, Penta Security, dan ComplyAdvantage merekomendasikan 3 solusi utama — berikut status penerapannya di arsitektur Crypto-Sentinel:
 
-### Rekomendasi Ahli vs Implementasi Crypto-Sentinel
+### Rekomendasi Ahli vs Status Implementasi Crypto-Sentinel
 
-| # | Rekomendasi Ahli (IDNFinancials / OJK) | Implementasi Crypto-Sentinel | Status |
-|---|---|---|---|
-| **1** | **Three-Way Matching** — Cocokkan 3 komponen real-time: (A) Perintah transfer dari nasabah, (B) Saldo riil di Core Banking, (C) Validasi di middleware | Rule Engine mendeteksi `balance_drain_ratio` — jika saldo terkuras setelah transfer tapi tidak sinkron, langsung BLOCK | ✅ |
-| **2** | **Audit Vendor Pihak Ketiga** — Pentest berkala + enkripsi end-to-end via HSM agar data middleware tidak bisa dimanipulasi | API menggunakan SNAP BI header (HMAC-SHA256) sebagai signature auth. Semua request tervalidasi kriptografis | ✅ |
-| **3** | **Peningkatan FDS ke Behavioral AI** — FDS konvensional hanya cek limit transfer; harus upgrade ke ML yang deteksi: lonjakan frekuensi massal dalam milidetik, anomali ratusan transfer sukses dari rekening tanpa riwayat/saldo | GraphSAGE GNN **persis** mendeteksi pola ini via graph embedding: akun tanpa riwayat = zero-degree node yang terdeteksi sebagai anomali. Smurfing detection (≥4 tujuan/1 jam) = +45 risk score | ✅ |
+| # | Rekomendasi Ahli (IDNFinancials / OJK) | Implementasi Saat Ini di Crypto-Sentinel | Status | Rencana Penyempurnaan (Next Sprint) |
+|---|---|---|---|---|
+| **1** | **Three-Way Matching (Pencocokan 3 Arah)**<br>Cocokkan real-time: (A) Perintah transfer nasabah, (B) Saldo riil Core Banking, (C) Validasi di gateway middleware. | • Rule Engine mendeteksi anomali `balance_drain_ratio` dan saldo nol pasca transfer (`newbalanceOrig == 0`).<br>• Validasi anomali saldo & transaksi sudah memicu skor risiko tinggi (BLOCK/REVIEW). | 🟡 **Sebagian / Planned**<br>*(Logika anomali saldo aktif; sinkronisasi multi-sumber real-time masuk backlog)* | Implementasi endpoint khusus `POST /validate-three-way` untuk mencocokkan payload app + saldo Core Banking + state middleware secara terpadu. |
+| **2** | **Audit Vendor Pihak Ketiga & Keamanan Middleware**<br>Enkripsi end-to-end via HSM / tanda tangan kriptografis agar data transfer tidak dapat dimanipulasi perantara. | • API mengimplementasikan SNAP BI Header dengan autentikasi tanda tangan kriptografis HMAC-SHA256 pada layer `expresso-api`.<br>• Request transfer divalidasi keabsahannya sebelum diproses. | 🟢 **Arsitektur Siap (SNAP BI)** | Standarisasi verifikasi public key X.509 untuk integrasi core banking production-grade. |
+| **3** | **Peningkatan FDS ke Behavioral AI**<br>FDS konvensional (aturan kaku) harus diupgrade ke Machine Learning untuk mendeteksi: lonjakan frekuensi massal (smurfing) dan anomali akun tanpa riwayat. | • **GraphSAGE GNN** mendeteksi struktur jaringan & akun anomali tanpa riwayat (AUC 1.0000).<br>• **Smurfing Detection Engine** otomatis mendeteksi transfer beruntun (≥4 tujuan/1 jam) dengan penalti +45 risk score. | 🟢 **Penuh (Full AI Hybrid)** ✅ | Penambahan federated node updates saat multi-bank deployment. |
 
 ### Kalimat Pitch ke Juri (BI/OJK)
 
-> *"Kasus fraud BI FAST sebesar ratusan miliar yang menimpa BPD terjadi karena FDS mereka hanya mengecek aturan kaku — tidak ada Behavioral AI. Crypto-Sentinel hadir sebagai solusi: kami mengimplementasikan Three-Way Matching via Rule Engine, SNAP BI HMAC-SHA256 untuk keamanan middleware, dan GraphSAGE GNN untuk mendeteksi pola transaksi anomali yang tidak terlihat oleh rule biasa. Sistem ini dibangun khusus untuk BPR/BPD seperti Bank Kuningan — yang sering jadi sasaran karena FDS-nya lemah."*
+> *"Kasus fraud BI FAST sebesar ratusan miliar yang menimpa BPD terjadi karena FDS konvensional mereka hanya mengecek aturan kaku — tidak memiliki Behavioral AI dan pengecekan integritas middleware. Crypto-Sentinel hadir menjawab 3 poin rekomendasi regulator:*
+> 1. *Kami menerapkan **Behavioral AI berbasis GraphSAGE GNN** dan Smurfing Engine untuk membaca pola jaringan mencurigakan secara instan.*
+> 2. *Kami menggunakan arsitektur **SNAP BI HMAC-SHA256** untuk menjamin integritas middleware anti-tampering.*
+> 3. *Kami menyiapkan modul **Three-Way Matching** untuk memastikan keselarasan data transfer nasabah dan saldo riil Core Banking.*
+> *Solusi ini kami rancang khusus untuk melindungi BPR/BPD seperti Bank Kuningan yang rentan menjadi sasaran empuk kejahatan siber."*
+
 
 
 
