@@ -53,7 +53,11 @@ if os.path.exists(model_path):
     except Exception as e:
         print(f"[FDS API Warning] Failed to load ML Model: {e}")
 
-# 2. Build live in-memory transaction graph for dynamic GNN-like feature extraction
+# 2. Load GNN Hybrid Scorer (loads gnn_embeddings.pkl + gnn_hybrid_model.joblib)
+from app.gnn_scorer import gnn_scorer
+gnn_scorer.load()  # Graceful: warns and falls back to RF-only if files missing
+
+# 3. Build live in-memory transaction graph for dynamic GNN-like feature extraction
 G = nx.DiGraph()
 print("[FDS API] Populating transaction graph with 50,000 baseline nodes & edges...")
 for _, row in df.iterrows():
@@ -241,20 +245,48 @@ def analyze_transaction(transaction: Transaction):
     # 4. Evaluate via Rule Engine
     profile = get_profile_for_account(transaction.sender_account)
     result = evaluate_transaction(transaction, threat_df, profile, transaction.past_transactions)
-    
-    # 5. Hybrid Fusion (Max score between Rule Engine and ML Model)
+
+    # 5. RF ML Score (backup signal)
     ml_score = int(ml_prob * 100)
-    
+
+    # 6. GNN Hybrid Scoring — 60% GNN + 40% Rule Engine
+    tabular_feats_for_gnn = {
+        "amount_ratio": transaction.amount / (transaction.oldbalanceOrg + 1) if transaction.oldbalanceOrg > 0 else 0,
+        "is_balance_drained": 1 if transaction.oldbalanceOrg > 0 and transaction.newbalanceOrig == 0 else 0,
+        "is_transfer_or_cashout": 1 if transaction.type in ["TRANSFER", "CASH_OUT"] else 0,
+        "is_high_amount": 1 if transaction.amount > 1_000_000 else 0,
+        "dest_balance_err": 0.0,
+        "amount": transaction.amount,
+        "oldbalanceOrg": transaction.oldbalanceOrg,
+        "newbalanceOrig": transaction.newbalanceOrig,
+    }
+    gnn_result = gnn_scorer.compute_hybrid_final_score(
+        rule_engine_score=result.risk_score,
+        sender_account=transaction.sender_account,
+        dest_account=transaction.destinationAccount,
+        tabular_features=tabular_feats_for_gnn,
+    )
+    gnn_score    = gnn_result["gnn_score"]
+    hybrid_score = gnn_result["hybrid_score"]
+    gnn_loaded   = gnn_result["gnn_loaded"]
+
+    # 7. Final decision: use hybrid if GNN loaded, else use max(rule, rf_ml)
     if str(transaction.destinationAccount) == "987654":
         final_score = 65
         decision = "REVIEW"
         risk_level = "MEDIUM"
     else:
-        final_score = max(result.risk_score, ml_score)
+        if gnn_loaded:
+            # True Hybrid: 60% GNN + 40% Rule Engine
+            final_score = hybrid_score
+        else:
+            # Fallback: max of Rule Engine and RF model
+            final_score = max(result.risk_score, ml_score)
+
         if final_score >= 85:
             decision = "BLOCK"
             risk_level = "HIGH"
-        elif final_score >= 50:
+        elif final_score >= 60:
             decision = "REVIEW"
             risk_level = "MEDIUM"
         else:
@@ -262,7 +294,9 @@ def analyze_transaction(transaction: Transaction):
             risk_level = "LOW"
 
     reasons = list(result.reasons)
-    if ml_score >= 50 and not any("Model ML" in r for r in reasons) and str(transaction.destinationAccount) != "987654":
+    if gnn_loaded and gnn_score >= 60 and not any("GNN" in r for r in reasons):
+        reasons.append(f"GNN Hybrid: Pola Jaringan Mencurigakan (GNN Risk: {gnn_score}%, Hybrid: {hybrid_score}%)")
+    elif not gnn_loaded and ml_score >= 50 and not any("Model ML" in r for r in reasons) and str(transaction.destinationAccount) != "987654":
         reasons.append(f"Model ML: Pola Grafis Mencurigakan (ML Risk: {ml_score}%)")
 
     payload = {
@@ -276,7 +310,14 @@ def analyze_transaction(transaction: Transaction):
         "risk_level": risk_level,
         "decision": decision,
         "reasons": reasons,
-        "threat_match": result.threat_match
+        "threat_match": result.threat_match,
+        # ── GNN Hybrid scoring breakdown ──
+        "gnn_score": gnn_score,
+        "rule_score": result.risk_score,
+        "ml_score": ml_score,
+        "hybrid_score": hybrid_score,
+        "gnn_loaded": gnn_loaded,
+        "scoring_mode": "hybrid_gnn" if gnn_loaded else "rf_rule_engine",
     }
 
     transaction_logs.append(payload)

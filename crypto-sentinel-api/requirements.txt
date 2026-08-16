@@ -1,11 +1,36 @@
+# =============================================================
+# CRYPTO-SENTINEL API — Production Dependencies
+# API Server: FastAPI + Uvicorn + ML inference (no GPU needed)
+# =============================================================
+
+# ── API Server ────────────────────────────────────────────────
 fastapi==0.136.1
 uvicorn==0.46.0
-pandas==2.2.3
-networkx==3.4.2
 pydantic==2.13.4
+
+# ── Data & Graph ──────────────────────────────────────────────
+pandas==2.2.3
+numpy==1.26.4
+networkx==3.4.2
+
+# ── ML Inference (RF + GNN Hybrid) ───────────────────────────
+# Note: gnn_scorer.py uses sklearn + pickle only (no PyTorch at runtime!)
+# GNN embeddings (gnn_embeddings.pkl) are pre-computed in Colab.
 scikit-learn==1.6.1
 joblib==1.4.2
 imbalanced-learn==0.13.0
-numpy==1.26.4
+
+# ── Visualization (used in train_model.py charts) ─────────────
 seaborn==0.13.2
 matplotlib==3.9.4
+
+# =============================================================
+# TRAINING ONLY — Install these in Google Colab, NOT on server
+# Run: 02_gnn_graphsage_training.ipynb to generate:
+#   - app/gnn_embeddings.pkl
+#   - app/gnn_hybrid_model.joblib
+# =============================================================
+# torch==2.3.0
+# torch-geometric==2.5.3
+# torch-scatter==2.1.2
+# torch-sparse==0.6.18
