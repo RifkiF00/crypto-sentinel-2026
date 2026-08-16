@@ -278,7 +278,11 @@ def analyze_transaction(transaction: Transaction):
     else:
         if gnn_loaded:
             # True Hybrid: 60% GNN + 40% Rule Engine
-            final_score = hybrid_score
+            # IMPORTANT: take max(hybrid, rule_score) so GNN can BOOST but never REDUCE
+            # This prevents zero-embeddings (unknown accounts not in PaySim) from dragging
+            # down a clearly fraudulent rule_score. GNN catches relational patterns;
+            # Rule Engine catches behavioral anomalies — both are floor signals.
+            final_score = max(hybrid_score, result.risk_score)
         else:
             # Fallback: max of Rule Engine and RF model
             final_score = max(result.risk_score, ml_score)
@@ -292,6 +296,7 @@ def analyze_transaction(transaction: Transaction):
         else:
             decision = "ALLOW"
             risk_level = "LOW"
+
 
     reasons = list(result.reasons)
     if gnn_loaded and gnn_score >= 60 and not any("GNN" in r for r in reasons):
