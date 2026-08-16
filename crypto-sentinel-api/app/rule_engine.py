@@ -185,7 +185,7 @@ def evaluate_transaction(transaction: Any, threat_df: pd.DataFrame, sender_profi
     if risk_score >= 85:
         decision = "BLOCK"
         risk_level = "HIGH"
-    elif risk_score >= 50:
+    elif risk_score >= 60:
         decision = "REVIEW"
         risk_level = "MEDIUM"
     else:

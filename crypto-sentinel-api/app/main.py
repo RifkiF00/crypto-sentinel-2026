@@ -650,9 +650,9 @@ def get_statistics():
     review_paysim = int(decision_counts.get('REVIEW', 0))
     block_paysim = int(decision_counts.get('BLOCK', 0))
     
-    high_risk_paysim = int((df['risk_score'] >= 80).sum())
-    medium_risk_paysim = int(((df['risk_score'] >= 50) & (df['risk_score'] < 80)).sum())
-    low_risk_paysim = int((df['risk_score'] < 50).sum())
+    high_risk_paysim = int((df['risk_score'] >= 85).sum())
+    medium_risk_paysim = int(((df['risk_score'] >= 60) & (df['risk_score'] < 85)).sum())
+    low_risk_paysim = int((df['risk_score'] < 60).sum())
     
     value_blocked_paysim = float(df[df['decision'] == 'BLOCK']['amount'].sum())
     
