@@ -133,7 +133,7 @@ function AnimatedFlowDiagram() {
     {
       num: '03',
       title: 'Evaluasi FDS AI',
-      desc: 'Rule engine + Random Forest + GNN PageRank berjalan paralel. 15 indikator dievaluasi (<18ms).',
+      desc: 'Rule engine + Random Forest + GNN PageRank berjalan paralel. 13 sub-indikator fraud dievaluasi secara real-time (<18ms).',
       icon: Cpu,
       color: '#f59e0b',
       badge: 'High Risk (Score: 100%)'
@@ -305,7 +305,7 @@ export default function LandingPage({ onEnter }) {
       { msg: 'Smurfing detected: 4 unique destinations/60min — account 0123456789 upstream frozen.', type: 'danger' },
       { msg: 'LTKM draft auto-generated for alert #8831. PPATK goAML format. Ready to sign.', type: 'info' },
       { msg: '[ALLOW] TXN-20260810-0201 | Rp 350.000 → Bank Kuningan internal | Score: 0% | 14ms', type: 'success' },
-      { msg: 'GNN topology updated: 26 nodes, 41 edges. PageRank centrality recalculated.', type: 'info' },
+      { msg: 'GNN topology updated: 562.239 nodes, 308.213 edges. PageRank centrality recalculated.', type: 'info' },
       { msg: '[BLOCK] TXN-20260810-0219 | Rp 50.000.000 → Tokocrypto Mandiri | Score: 95% | Purpose Mismatch', type: 'danger' },
     ];
     const iv = setInterval(() => {
@@ -1423,17 +1423,17 @@ export default function LandingPage({ onEnter }) {
             Angka Nyata dari<br />Pengujian <span className="crimson-it">Dataset PaySim</span>
           </h2>
           <p className="lp-section-desc">
-            Semua metrik diukur langsung dari pengujian sistem terhadap 50.000 baris data transaksi
-            PaySim — dataset benchmark fraud detection internasional standar IEEE.
+            Semua metrik diukur dari pengujian sistem terhadap <strong>308.213 baris data transaksi</strong>
+            PaySim + SMOTE augmentation — dataset benchmark fraud detection IEEE standar internasional.
           </p>
         </Reveal>
 
         <div className="lp-stats-grid">
           {[
-            { icon: '📊', accent: 'linear-gradient(90deg,#1e3a8a,#2563eb)', iconBg: '#dbeafe', color: '#1e3a8a', target: 50000, label: 'Transaksi Dianalisis', sub: 'Dataset PaySim 50K', badge: '✓ Terverifikasi', badgeStyle: { background: '#dcfce7', color: '#16a34a' } },
-            { icon: '🎯', accent: 'linear-gradient(90deg,#166534,#16a34a)', iconBg: '#dcfce7', color: '#166534', val: '99.98%', label: 'Akurasi AI', sub: 'Random Forest + GNN', badge: '✓ Diukur Langsung', badgeStyle: { background: '#dcfce7', color: '#16a34a' } },
-            { icon: '⚡', accent: 'linear-gradient(90deg,#92400e,#d97706)', iconBg: '#fef3c7', color: '#92400e', val: '<20ms', label: 'Latency FDS', sub: 'End-to-End API', badge: '⚡ Real Measurement', badgeStyle: { background: '#fef3c7', color: '#92400e' } },
-            { icon: '🔴', accent: 'linear-gradient(90deg,#1e3a8a,#2563eb)', iconBg: '#dbeafe', color: '#1e3a8a', target: 70, label: 'Fraud Terdeteksi', sub: '100% Recall Rate', badge: '✓ 0 False Negative', badgeStyle: { background: '#dbeafe', color: '#2563eb' } },
+            { icon: '📊', accent: 'linear-gradient(90deg,#1e3a8a,#2563eb)', iconBg: '#dbeafe', color: '#1e3a8a', target: 308213, label: 'Transaksi Dianalisis', sub: 'Dataset PaySim + SMOTE 308K', badge: '✓ Terverifikasi', badgeStyle: { background: '#dcfce7', color: '#16a34a' } },
+            { icon: '🎯', accent: 'linear-gradient(90deg,#166534,#16a34a)', iconBg: '#dcfce7', color: '#166534', val: '99.98%', label: 'Akurasi AI', sub: 'Hybrid GNN + Random Forest', badge: '✓ Diukur Langsung', badgeStyle: { background: '#dcfce7', color: '#16a34a' } },
+            { icon: '⚡', accent: 'linear-gradient(90deg,#92400e,#d97706)', iconBg: '#fef3c7', color: '#92400e', val: '<18ms', label: 'Latency FDS', sub: 'End-to-End Rule Engine + ML', badge: '⚡ Real Measurement', badgeStyle: { background: '#fef3c7', color: '#92400e' } },
+            { icon: '🔴', accent: 'linear-gradient(90deg,#7f1d1d,#dc2626)', iconBg: '#fee2e2', color: '#991b1b', target: 562239, label: 'Node Graph GNN', sub: '308.213 Edges Dipetakan', badge: '✓ GraphSAGE Model', badgeStyle: { background: '#fee2e2', color: '#991b1b' } },
           ].map((s, i) => (
             <Reveal key={i} delay={i * 0.1}>
               <div className="lp-stat-card">

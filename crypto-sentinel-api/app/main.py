@@ -4,6 +4,7 @@ import hashlib
 import ast
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from datetime import datetime
 import pandas as pd
@@ -11,6 +12,7 @@ import uuid
 import networkx as nx
 
 from app.rule_engine import evaluate_transaction
+from app.str_generator import generate_str_draft, generate_str_html
 
 
 app = FastAPI(
@@ -331,8 +333,7 @@ def analyze_transaction(transaction: Transaction):
 
 @app.get("/api/v1/sentinel/str/download/{transaction_id}")
 def download_str_ppatk(transaction_id: str):
-    from fastapi.responses import HTMLResponse
-    
+    """Download formal LTKM document for a blocked transaction (unified design with /str/html/)."""
     tx_log = next((log for log in transaction_logs if log["transaction_id"] == transaction_id), None)
     if not tx_log:
         tx_log = {
@@ -347,122 +348,25 @@ def download_str_ppatk(transaction_id: str):
             "decision": "BLOCK",
             "reasons": ["Destination matched threat intelligence: crypto_laundering", "External / High-risk transaction channel"]
         }
-        
-    sender = tx_log["senderName"]
-    sender_acc = tx_log["senderAccount"]
-    amount = tx_log["transaction"]["amount"]
-    dest_acc = tx_log["transaction"]["destinationAccount"]
-    reasons_str = "<br/>• ".join(tx_log["reasons"])
-    
-    html_content = f"""
-    <html>
-    <head>
-        <title>LTKM STR PPATK - {transaction_id}</title>
-        <style>
-            body {{ font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; color: #1e293b; background-color: #f8fafc; }}
-            .container {{ max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }}
-            .header {{ text-align: center; border-bottom: 3px double #0f172a; padding-bottom: 20px; }}
-            .title {{ font-size: 20px; font-weight: bold; margin-top: 10px; color: #0f172a; letter-spacing: 0.5px; }}
-            .subtitle {{ font-size: 13px; color: #64748b; font-weight: 600; margin-top: 5px; }}
-            .section {{ margin-top: 30px; }}
-            .section-title {{ font-size: 14px; font-weight: bold; background-color: #f1f5f9; padding: 8px 12px; border-left: 5px solid #1e3a8a; color: #1e3a8a; text-transform: uppercase; }}
-            .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; }}
-            .field {{ margin-bottom: 10px; }}
-            .label {{ font-weight: bold; color: #475569; font-size: 12px; text-transform: uppercase; }}
-            .value {{ font-size: 14px; margin-top: 4px; color: #0f172a; font-weight: 500; }}
-            .alert-box {{ background-color: #fef2f2; border: 1px solid #fee2e2; padding: 20px; border-radius: 8px; margin-top: 25px; }}
-            .footer {{ margin-top: 50px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; line-height: 1.6; }}
-            .btn-print {{ display: block; width: 120px; margin: 20px auto 0 auto; padding: 10px; text-align: center; background-color: #1e3a8a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; }}
-            @media print {{
-                .btn-print {{ display: none; }}
-                body {{ background: white; margin: 0; }}
-                .container {{ border: none; box-shadow: none; padding: 0; }}
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <div style="font-size: 24px;">🇮🇩</div>
-                <div class="title">LAPORAN TRANSAKSI KEUANGAN MENCURIGAKAN (LTKM / STR)</div>
-                <div class="subtitle">DOKUMEN KEPATUHAN PPATK - REPUBLIK INDONESIA</div>
-            </div>
-            
-            <div class="section">
-                <div class="section-title">1. Informasi Pelapor (Reporting Entity)</div>
-                <div class="grid">
-                    <div class="field">
-                        <div class="label">Nama Penyedia Jasa Keuangan</div>
-                        <div class="value">PT Bank Kuningan Tbk</div>
-                    </div>
-                    <div class="field">
-                        <div class="label">Kode Sandi Bank</div>
-                        <div class="value">BKN-089-KNG</div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="section">
-                <div class="section-title">2. Identitas Nasabah Terlapor (Reported Individual)</div>
-                <div class="grid">
-                    <div class="field">
-                        <div class="label">Nama Lengkap Nasabah</div>
-                        <div class="value">{sender}</div>
-                    </div>
-                    <div class="field">
-                        <div class="label">Nomor Rekening Pengirim</div>
-                        <div class="value">{sender_acc}</div>
-                    </div>
-                    <div class="field">
-                        <div class="label">Nomor NIK (KTP)</div>
-                        <div class="value">{tx_log['national_id']}</div>
-                    </div>
-                    <div class="field">
-                        <div class="label">Profil Risiko FDS</div>
-                        <div class="value">{tx_log['risk_level']} Risk</div>
-                    </div>
-                </div>
-            </div>
+    national_id = tx_log.get("national_id", "3208************")
+    masked_nik = national_id[:4] + "************" if len(national_id) >= 4 else national_id
 
-            <div class="section">
-                <div class="section-title">3. Detail Transaksi & Deteksi Fraud (Transaction Forensics)</div>
-                <div class="grid">
-                    <div class="field">
-                        <div class="label">Nominal Transaksi</div>
-                        <div class="value">Rp {amount:,.2f}</div>
-                    </div>
-                    <div class="field">
-                        <div class="label">Nomor Rekening Penerima</div>
-                        <div class="value">{dest_acc}</div>
-                    </div>
-                    <div class="field">
-                        <div class="label">Waktu Deteksi FDS</div>
-                        <div class="value">{tx_log['timestamp']}</div>
-                    </div>
-                    <div class="field">
-                        <div class="label">ID Transaksi (FDS-ID)</div>
-                        <div class="value">{tx_log['transaction_id']}</div>
-                    </div>
-                </div>
-            </div>
+    draft = generate_str_draft(
+        transaction_id=transaction_id,
+        sender_account=tx_log["senderAccount"],
+        destination_account=tx_log["transaction"]["destinationAccount"],
+        amount=float(tx_log["transaction"]["amount"]),
+        risk_score=int(tx_log.get("risk_score", 0)),
+        reasons=tx_log.get("reasons", []),
+        sender_name=tx_log["senderName"],
+        destination_name=f"Rekening Tujuan ({tx_log['transaction']['destinationAccount']})",
+        bank_name="PT BPR KUNINGAN (PERSERODA)",
+        compliance_officer="Unit APU-PPT Bank Kuningan",
+    )
+    draft["subject_info"]["identification_masked"] = masked_nik
 
-            <div class="alert-box">
-                <strong style="color: #991b1b; font-size: 13px; text-transform: uppercase;">Analisis Anomali & Alasan Pemblokiran:</strong><br/>
-                <span style="font-size: 13px; color: #7f1d1d; line-height: 1.6; display: block; margin-top: 8px;">• {reasons_str}</span><br/>
-                <strong>SKOR RISIKO FDS (HYBRID GNN):</strong> <span style="color: #991b1b; font-weight:800; font-size: 16px;">{tx_log['risk_score']}%</span>
-            </div>
-
-            <button class="btn-print" onclick="window.print()">Cetak Laporan</button>
-
-            <div class="footer">
-                Dokumen ini digenerate secara otomatis oleh Sistem FDS AI Crypto-Sentinel.<br/>
-                Laporan Kepatuhan ini bersifat Rahasia (Confidential) di bawah Undang-Undang No. 8 Tahun 2010 tentang Pencegahan dan Pemberantasan Tindak Pidana Pencucian Uang.
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content, status_code=200)
+    return HTMLResponse(content=generate_str_html(draft), status_code=200)
 
 
 @app.get("/logs")
@@ -1325,3 +1229,85 @@ def validation_metrics():
             "false_negatives": fn
         }
     }
+
+
+# ==========================================================
+# REGULATORY COMPLIANCE: STR / LTKM GENERATION (PPATK goAML)
+# ==========================================================
+
+class GenerateSTRRequest(BaseModel):
+    transaction_id: str
+    sender_account: str
+    destination_account: str
+    amount: float
+    risk_score: int
+    reasons: list[str] = []
+    sender_name: str = "Nasabah Terlapor"
+    destination_name: str = "Rekening Penerima / Bursa Kripto"
+    bank_name: str = "PT BPR KUNINGAN (PERSERODA)"
+    compliance_officer: str = "Pejabat Kepatuhan & APU-PPT"
+
+
+str_drafts_store: dict[str, dict] = {}
+
+
+@app.post("/str/generate", tags=["Regulatory STR / LTKM"])
+def generate_str_endpoint(payload: GenerateSTRRequest):
+    """Membuat draft Laporan Transaksi Keuangan Mencurigakan (LTKM) resmi standar PPATK goAML."""
+    draft = generate_str_draft(
+        transaction_id=payload.transaction_id,
+        sender_account=payload.sender_account,
+        destination_account=payload.destination_account,
+        amount=payload.amount,
+        risk_score=payload.risk_score,
+        reasons=payload.reasons,
+        sender_name=payload.sender_name,
+        destination_name=payload.destination_name,
+        bank_name=payload.bank_name,
+        compliance_officer=payload.compliance_officer,
+    )
+    report_id = draft["report_id"]
+    str_drafts_store[report_id] = draft
+    str_drafts_store[payload.transaction_id] = draft
+    return draft
+
+
+@app.get("/str/list", tags=["Regulatory STR / LTKM"])
+def list_str_reports():
+    """Mendapatkan daftar seluruh draft LTKM yang telah diterbitkan."""
+    unique_reports = {d["report_id"]: d for d in str_drafts_store.values()}
+    return {"total": len(unique_reports), "reports": list(unique_reports.values())}
+
+
+@app.get("/str/{report_or_tx_id}", tags=["Regulatory STR / LTKM"])
+def get_str_report(report_or_tx_id: str):
+    """Mendapatkan data JSON detail dokumen LTKM berdasarkan report_id atau transaction_id."""
+    if report_or_tx_id in str_drafts_store:
+        return str_drafts_store[report_or_tx_id]
+    return {"error": "Report not found", "id": report_or_tx_id}
+
+
+@app.get("/str/html/{report_or_tx_id}", response_class=HTMLResponse, tags=["Regulatory STR / LTKM"])
+def get_str_html_endpoint(report_or_tx_id: str):
+    """Menampilkan dokumen fisik resmi LTKM format HTML formal hitam-putih siap cetak/PDF."""
+    if report_or_tx_id in str_drafts_store:
+        draft = str_drafts_store[report_or_tx_id]
+        return HTMLResponse(content=generate_str_html(draft))
+    
+    # Fallback preview draft jika ID baru/demo
+    dummy_draft = generate_str_draft(
+        transaction_id=report_or_tx_id,
+        sender_account="1000192837",
+        destination_account="9012-BINANCE-EXCHANGE",
+        amount=85000000.0,
+        risk_score=95,
+        reasons=[
+            "Destination matched threat intelligence: Blacklisted Mule Exchange",
+            "Odd-Hour Activity Alert: Transaction initiated at 02:15 WIB",
+            "Sender balance drained to zero after transaction"
+        ],
+        sender_name="Ahmad Faisal",
+        destination_name="Binance International Cold Wallet",
+        bank_name="PT BPR KUNINGAN (PERSERODA)"
+    )
+    return HTMLResponse(content=generate_str_html(dummy_draft))

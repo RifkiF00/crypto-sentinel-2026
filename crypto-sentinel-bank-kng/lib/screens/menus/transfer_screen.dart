@@ -40,7 +40,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
 
   final List<Map<String, String>> _favorites = [
     {'name': 'Siti Rahma', 'account': '9876543210', 'bank': 'Bank Kuningan'},
-    {'name': 'Budi Santoso (Mule Relay)', 'account': '987654', 'bank': 'Bank Kuningan'},
+    {'name': 'Budi Santoso', 'account': '987654', 'bank': 'Bank Kuningan'},
     {'name': 'PT Indodax Nasional Indonesia', 'account': '9012666666', 'bank': 'BCA'},
     {'name': 'PT Binance Exchange Indonesia', 'account': '9012123456', 'bank': 'CIMB Niaga'},
   ];
@@ -208,7 +208,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
                   children: [
                     CircularProgressIndicator(color: AppColors.primary),
                     SizedBox(height: 16),
-                    Text('Memproses Transfer & Verifikasi FDS...', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Memproses transaksi...', style: TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -270,7 +270,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        isBlocked ? '⚠️ TRANSAKSI DIBLOKIR' : 'Gagal Transfer',
+                        isBlocked ? 'Transaksi Tidak Dapat Diproses' : 'Transfer Tidak Berhasil',
                         style: TextStyle(
                           color: isBlocked ? Colors.red : Colors.black87,
                           fontWeight: FontWeight.bold,
