@@ -96,7 +96,7 @@ const team = [
 // ---- FAQ ----
 const faqs = [
   { q: 'Apa itu Crypto-Sentinel FDS?', a: 'Crypto-Sentinel adalah Security Middleware Layer yang berjalan sebagai lapisan intersepsi antara aplikasi mobile banking nasabah dan core banking bank. Setiap transaksi melewati mesin AI kami sebelum saldo berubah — memastikan tidak ada dana yang keluar ke tangan yang salah.' },
-  { q: 'Bagaimana sistem bekerja dalam <20ms?', a: 'Mesin rule engine kami dioptimalkan untuk berjalan di RAM tanpa akses disk. Graf transaksi (NetworkX) disimpan in-memory dan diperbarui secara incremental. Model Random Forest hanya memerlukan forward pass pada vektor 12 fitur — total komputasi selesai dalam <20ms per transaksi.' },
+  { q: 'Bagaimana sistem bekerja dalam <18ms?', a: 'Mesin rule engine kami dioptimalkan untuk berjalan di RAM tanpa akses disk. Graf transaksi (NetworkX) disimpan in-memory dan diperbarui secara incremental. Model Hybrid GNN + Random Forest hanya memerlukan forward pass pada vektor 13 fitur — total komputasi selesai dalam <18ms per transaksi.' },
   { q: 'Apakah sistem ini patuh regulasi OJK dan PPATK?', a: 'Ya. Crypto-Sentinel mematuhi SNAP BI (PADG No. 23/18/PADG/2021) untuk autentikasi API, ISO 20022 untuk standardisasi pesan transaksi, dan menghasilkan laporan LTKM sesuai format PPATK goAML berdasarkan UU No. 8 Tahun 2010 tentang TPPU.' },
   { q: 'Bagaimana integrasi ke core banking yang sudah ada?', a: 'Sistem dirancang sebagai plug-and-play middleware. Bank cukup mengarahkan traffic transfer API ke endpoint Crypto-Sentinel sebelum meneruskan ke core banking. Tidak ada perubahan pada sistem core banking yang sudah berjalan.' },
   { q: 'Apakah data nasabah aman?', a: 'Data nasabah diproses secara in-memory dan tidak disimpan oleh Crypto-Sentinel. Hanya log transaksi anonim dan skor risiko yang dicatat untuk keperluan audit. Roadmap kami mencakup implementasi Federated Learning (UU PDP No. 27/2022 compliant).' },
@@ -1477,7 +1477,7 @@ export default function LandingPage({ onEnter }) {
               <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 3, color: '#2563eb', display: 'block', marginBottom: 14 }}>Masalah yang Kami Selesaikan</span>
               <h2>Rp 18 Triliun<br /><em>Bocor Setiap Tahun.</em></h2>
               <p>Data PPATK 2024 mencatat kerugian ekonomi Indonesia akibat kejahatan siber dan pencucian uang digital mencapai <strong>Rp 18 Triliun</strong> — sebagian besar mengalir lewat celah yang sama: <strong>transfer mobile banking ke rekening kripto</strong> tanpa intersepsi real-time.</p>
-              <p>Sistem FDS konvensional bekerja <em>post-facto</em> — mendeteksi setelah dana berpindah. Crypto-Sentinel membalik paradigma ini: setiap transaksi dianalisis oleh mesin AI <strong>sebelum saldo berubah</strong>, dalam waktu kurang dari 20ms, menggunakan 15 indikator behavioral dan graph topology.</p>
+              <p>Sistem FDS konvensional bekerja <em>post-facto</em> — mendeteksi setelah dana berpindah. Crypto-Sentinel membalik paradigma ini: setiap transaksi dianalisis oleh mesin AI <strong>sebelum saldo berubah</strong>, dalam waktu kurang dari 18ms, menggunakan <strong>13 sub-indikator</strong> behavioral dan graph topology GNN.</p>
               <p>Bukan sekadar alert. <strong>Sistem kami memblokir langsung.</strong> Mule account dibekukan. Draft LTKM digenerate otomatis. Compliance officer tinggal verifikasi dan tanda tangan.</p>
               <div className="lp-letter-blockquote">
                 <p>"Fraud detection yang baik bukan yang paling keras berteriak — melainkan yang paling cepat bertindak."</p>
@@ -1674,7 +1674,7 @@ export default function LandingPage({ onEnter }) {
                     <img src="/img/BMC.jpeg" alt="BMC" style={{ width: '100%', borderRadius: 10, marginBottom: 20 }} />
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
                       {[
-                        { label: 'Value Proposition', val: 'FDS real-time <20ms, standar SNAP BI, otomatisasi draft STR PPATK. Plug-and-play middleware tanpa modifikasi core banking.' },
+                        { label: 'Value Proposition', val: 'FDS real-time <18ms, standar SNAP BI, otomatisasi draft STR PPATK. Plug-and-play middleware tanpa modifikasi core banking.' },
                         { label: 'Customer Segments', val: 'Bank Pembangunan Daerah (Bank Kuningan, BJB), 250+ BPR & BPRS Jawa Barat, Bank KBMI IV.' },
                         { label: 'Revenue Streams', val: 'B2B SaaS Subscription + Micro-fee per API call. Target breakeven: 18 bank tahun pertama.' },
                         { label: 'Key Partners', val: 'OJK, PPATK, Bappebti, Perbarindo Jawa Barat, Indodax, Pintu, Tokocrypto.' },
