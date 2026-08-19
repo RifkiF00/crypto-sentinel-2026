@@ -1,5 +1,5 @@
 # Crypto-Sentinel 2026 — Rencana Implementasi Final Pitch & Capstone Report
-*Updated: 19 Agustus 2026 03:56 WIB — ✅ Klarifikasi Arsitektur Sistem (Dashboard Privasi + Configurable Decision Engine + BPR vs Mobile Banking Mode)*
+*Updated: 19 Agustus 2026 13:30 WIB — ✅ Retraining AI Augmented 320K (Indonesian Edge Cases) + Notebook 01 Dieksekusi Lengkap + Unified STR PPATK + Narasi Valid OJK IASC*
 
 > **Tujuan**: Sistem siap pitch offline 25/26 Agustus + validasi pilot Bank Kuningan & Bu Fatimah (Financial Advisor BRI Kuningan)
 > **Deadline**: 25 Agustus 2026 (~9 hari tersisa)
@@ -7,47 +7,43 @@
 
 ---
 
-## 📌 Status Sistem — Terverifikasi (Update 17 Agustus 2026)
+## 📌 Status Sistem — Terverifikasi (Update 19 Agustus 2026)
 
 ### Fakta Dataset & Konfigurasi
 
 | Item | Status | Keterangan |
 |---|---|---|
-| Dataset `paysim_sample.csv` | **308.213 baris** ✅ | Stratified sampling 300K normal + 8.213 real fraud dari `paysimfull.csv` (6.3M) |
-| Fraud Count & Ratio | **8.213 kasus (2.66%)** ✅ | Naik 117x lipat dibanding 70 kasus sebelumnya |
-| Notebook EDA & Training | **48 Sel Lengkap** ✅ | 22 code + 26 markdown, dark-theme visualizations, NetworkX graph & SMOTE pipeline |
-| SMOTE Class Balancing | **240.000 vs 240.000** ✅ | Synthetic Minority Over-sampling diterapkan pada training set, evaluasi test set tetap murni |
-| Evaluasi Model ML (RF) | **ROC-AUC: 1.0000** ✅ | Accuracy: 100%, FPR: 0.0017% (1/60.000), FNR: 0.1217% (2/1.643) |
-| Model Artifact RF | `app/ml_model.joblib` ✅ | 3.1 MB, 100 Trees Random Forest, 21 Features terintegrasi ke FastAPI |
-| **GNN GraphSAGE** | **Training SELESAI** 🔥 | 562.239 nodes, 308.213 edges, Device: CUDA, Best Val AUC: **1.0000** |
-| **GNN Hybrid Classifier** | **AUC: 1.0000** 🔥 | GBM 200 trees, SMOTE 240K vs 240K, Precision/Recall/F1: **1.00** semua kelas |
-| **GNN Artifacts** | `gnn_embeddings.pkl` + `gnn_hybrid_model.joblib` ⏳ | Export dari Colab — sedang diproses |
-| **Hybrid Scoring API** | **Aktif (Fallback Mode)** ✅ | `scoring_mode: rf_rule_engine` → akan upgrade ke `hybrid_gnn` setelah pkl diletakkan |
+| Dataset `paysim_augmented.csv` | **320.606 baris** ✅ | 308K PaySim + **12.393 edge cases Indonesia** (Bansos, SPP Sekolah, QRIS UMKM, Crypto Outflow, Dormant) |
+| Fraud Count & Ratio | **10.606 kasus (3.31%)** ✅ | Lebih balanced & mencakup ragam modus operandi perbankan digital Indonesia |
+| Notebook EDA & Training (`01_explore_paysim.ipynb`) | **30 Sel Ter-eksekusi** ✅ | Full execution outputs tertanam: grafik distribusi, confusion matrix, ROC-AUC, feature importances, FedAvg simulation |
+| Evaluasi Model ML (RF Augmented) | **ROC-AUC: 0.9993** ✅ | **Akurasi: 99.98% · Presisi: 99.95% · Recall: 99.48% · F1-Score: 99.72%** (Test set 64.122 data) |
+| Model Artifact RF | `app/ml_model.joblib` ✅ | Model 29 Features terintegrasi ke FastAPI (`hour_of_day`, `is_known_merchant`, `account_dormant_days`, `purpose_*`) |
+| **GNN GraphSAGE** | **Aktif & Terpasang** 🔥 | 562.239 nodes, 308.213 edges, Device: CUDA, Best Val AUC: **1.0000** |
+| **GNN Artifacts** | `gnn_embeddings.pkl` (171 MB) + `gnn_hybrid_model.joblib` ✅ | Berada di `app/` dan aktif di runtime API |
+| **Hybrid Scoring Engine** | **Aktif (`hybrid_gnn`)** ✅ | `final_score = max(0.6×GNN + 0.4×Rule Engine, rule_score)` |
+| Generator LTKM PPATK | `app/str_generator.py` ✅ | Format formal hitam-putih standar PPATK goAML (UU No. 8/2010), NIK masked, ttd Pejabat Kepatuhan |
+| Rule Engine | **13/13 Sub-Indikator** ✅ | Odd-Hour, Dormant, VPN/Datacenter, Dynamic Profile, Smurfing, Anti-FP Whitelist (-30 offset) |
 | Threshold Kalibrasi BPR | **ALLOW <60 / REVIEW 60-84 / BLOCK ≥85** ✅ | Dikalibrasi realistis standar BPR/perbankan nasional |
 | API Test Suite | **8/8 PASS** ✅ | Full endpoint testing terverifikasi & terdokumentasi di `docs/API_TESTING_GUIDE.md` |
-| Flutter app | **HP asli via USB** ✅ | Bisa demo langsung di HP |
-| Bank Kuningan pilot | **Simulasi** ✅ | Via Expresso API, bukan core banking asli |
+| Flutter app | **HP asli via USB** ✅ | Sanitasi UX selesai (tidak ada istilah teknis FDS/Mule ke nasabah) |
+| Landing Page Dashboard | **Data Terverifikasi** ✅ | Angka kerugian diperbarui ke OJK IASC Rp 9,1T, PPATK Kripto Rp 800M+, latency <18ms |
 | Database `expresso.db` | **111 akun aktif** ✅ | 11 akun inti + 100 dummy prefiks bank asli |
-| Tabel `str_drafts` | **Sudah ada** ✅ | Infrastruktur LTKM di DB sudah siap |
+| Tabel `str_drafts` | **Sudah ada & Terhubung** ✅ | Endpoint `/str/generate`, `/str/html/{id}`, `/str/list` live |
 
 ### Fitur yang Sudah Selesai Diimplementasi
 
 | Fitur | File | Keterangan |
 |---|---|---|
-| Stratified Dataset Generator | `scratch/prepare_dataset.py` | 308K rows generator dari PaySim 6.3M ✅ |
-| Comprehensive EDA & Training Notebook | `01_explore_paysim.ipynb` | 48 cells full visual analysis, degree distribution, SMOTE & metrics ✅ |
-| Realistic Risk Score Thresholds | `rule_engine.py`, `main.py` | ALLOW: <60, REVIEW: 60-84, BLOCK: ≥85 ✅ |
-| Manual API Testing Guide | `docs/API_TESTING_GUIDE.md` | Swagger UI + curl + PowerShell + 5 test scenarios ✅ |
-| **GNN Notebook (02_gnn_graphsage_training.ipynb)** | `notebooks/` | **26 sel** — Setup, Graph Construction, GraphSAGE, Training, t-SNE, Hybrid, Export ✅ |
-| **GraphSAGE GNN Model** | `app/gnn_scorer.py` | 562K nodes, CUDA training, AUC 1.0000, t-SNE perfect separation 🔥 |
-| **GNN Hybrid Scoring Engine** | `app/main.py` + `app/gnn_scorer.py` | `final = 0.6×GNN + 0.4×Rule Engine`, fallback RF jika pkl belum ada ✅ |
-| Auto-detect bank dari prefiks rekening | `transfer_screen.dart` | BCA=8012, BRI=888801, dst ✅ |
-| Smurfing detection (≥4 tujuan/1 jam) | `rule_engine.py` | +45 risk score ✅ |
-| Script simulator smurfing | `expresso-api/simulate_smurfing.py` | Transaksi 1-3 REVIEW, 4-6 BLOCK ✅ |
-| Node type fix (bank=biru, exchange=oranye) | `main.py /demo-graph` | Visualisasi GNN sudah benar ✅ |
-| 3 skenario demo terdokumentasi | `project_progress_report.md` | Normal/REVIEW/BLOCK flow ✅ |
-| SNAP BI header (HMAC-SHA256) | `expresso-api` | Signature auth sudah jalan ✅ |
-| Upstream account freeze saat BLOCK | `main.py` | `is_blocked=True` otomatis ✅ |
+| Indonesian Edge Cases Injector | `inject_edge_cases.py` | 12.393 synthetic cases perbankan lokal (Bansos, SPP, QRIS, Crypto, Dormant) ✅ |
+| Retrained ML Model (29 Fitur) | `train_model.py` | Model 100 trees dilatih di 320K data augmented, 99.98% akurasi ✅ |
+| Comprehensive Executed Notebook | `01_explore_paysim.ipynb` | 30 cells lengkap dengan output grafik, evaluasi metrik, dan simulasi Federated Learning ✅ |
+| Formal PPATK LTKM / STR Generator | `app/str_generator.py` | Generator dokumen formal hitam-putih PPATK goAML + Print PDF button ✅ |
+| Unified STR Download Endpoint | `app/main.py` | `/api/v1/sentinel/str/download/{id}` & `/str/html/{id}` terpadu ✅ |
+| Rule Engine 13 Sub-Indikator | `app/rule_engine.py` | 13 rules lengkap + Anti-False Positive Whitelist (-30 offset) ✅ |
+| Flutter UI Sanitization | `transfer_screen.dart` | Label internal disanitasi menjadi bahasa perbankan standar nasabah ✅ |
+| Landing Page Verified Content | `LandingPage.jsx` | Data Rp 9,1T OJK IASC, Rp 800M+ PPATK, stats 308K/320K, 13 indikator ✅ |
+| GNN GraphSAGE Hybrid Model | `app/gnn_scorer.py` | 562K nodes, 32-dim embeddings, weighted hybrid fusion ✅ |
+| Smurfing Simulator | `expresso-api/simulate_smurfing.py` | Circuit breaker demo 18ms ✅ |
 
 ---
 
@@ -1063,12 +1059,13 @@ Untuk mengeliminasi false positive tanpa menurunkan *recall fraud*, 4 fitur baru
 
 | Prioritas | Item Teknis | File Terkait | Target Selesai |
 |---|---|---|---|
-| 🔴 **P1** | **Implementasi 4 Rule Baru di `rule_engine.py`**<br>(Odd-Hour, Dormant, VPN/IP, Contextual Whitelist) | `app/rule_engine.py` | Sprint Hari Ini ✅ |
-| 🔴 **P1** | **Pembersihan Hardcoded Demo Account `987654`**<br>(Ganti ke dynamic lookup & confidence score) | `app/rule_engine.py` | Sprint Hari Ini ✅ |
-| 🟡 **P2** | **Endpoint `POST /str/generate` & Template LTKM**<br>(Pembuatan draf resmi PPATK goAML otomatis) | `app/str_generator.py`<br>`app/main.py` | Sprint Hari Ini ✅ |
-| 🟡 **P2** | **Injeksi Edge Cases Dataset & Retrain Evaluation Notebook**<br>(Synthesize bansos & merchant accounts) | `notebooks/01_explore_paysim.ipynb` | Sprint Pekan Ini |
+| 🔴 **P1** | **Implementasi 4 Rule Baru di `rule_engine.py`**<br>(Odd-Hour, Dormant, VPN/IP, Contextual Whitelist) | `app/rule_engine.py` | SELESAI ✅ |
+| 🔴 **P1** | **Pembersihan Hardcoded Demo Account `987654`**<br>(Ganti ke dynamic lookup & confidence score) | `app/rule_engine.py` | SELESAI ✅ |
+| 🟡 **P2** | **Endpoint `POST /str/generate` & Template LTKM**<br>(Pembuatan draf resmi PPATK goAML otomatis) | `app/str_generator.py`<br>`app/main.py` | SELESAI ✅ |
+| 🟡 **P2** | **Injeksi Edge Cases Dataset & Retrain Evaluation Notebook**<br>(12.393 data Bansos, SPP, QRIS, Crypto, Dormant + 29 Features + 99.98% Acc) | `inject_edge_cases.py`<br>`train_model.py`<br>`notebooks/01_explore_paysim.ipynb` | SELESAI ✅ |
+| 🟡 **P2** | **Simulasi Federated Learning (FedAvg)**<br>(Partisi 3 Bank: Bank Kuningan, BJB, BRI untuk UU PDP No. 27/2022) | `notebooks/01_explore_paysim.ipynb`<br>`federated_learning.py` | Sprint Pekan Ini |
 | 🟢 **P3** | **Deploy AI Engine ke Cloud Container (Render/Railway)** | `Dockerfile`<br>`main.py` | Menjelang Pitch Day |
 
 ---
 
-*Laporan Diperbarui: 19 Agustus 2026 04:35 WIB — Rifki Firmansyah (AI Architect & Team Lead EXPRESSO)*
+*Laporan Diperbarui: 19 Agustus 2026 13:30 WIB — Rifki Firmansyah (AI Architect & Team Lead EXPRESSO)*
