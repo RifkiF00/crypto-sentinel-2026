@@ -1475,10 +1475,10 @@ export default function LandingPage({ onEnter }) {
           <Reveal>
             <div className="lp-letter-text">
               <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 3, color: '#2563eb', display: 'block', marginBottom: 14 }}>Masalah yang Kami Selesaikan</span>
-              <h2>Rp 18 Triliun<br /><em>Bocor Setiap Tahun.</em></h2>
-              <p>Data PPATK 2024 mencatat kerugian ekonomi Indonesia akibat kejahatan siber dan pencucian uang digital mencapai <strong>Rp 18 Triliun</strong> — sebagian besar mengalir lewat celah yang sama: <strong>transfer mobile banking ke rekening kripto</strong> tanpa intersepsi real-time.</p>
+              <h2>Rp 9,1 Triliun<br /><em>Raib dari Penipuan Digital.</em></h2>
+              <p>OJK mencatat akumulasi kerugian masyarakat akibat <strong>penipuan keuangan digital mencapai Rp 9,1 Triliun</strong> dari 432.637 laporan (IASC OJK, Januari 2026). PPATK mendeteksi transaksi mencurigakan terkait <strong>aset kripto senilai lebih dari Rp 800 Miliar</strong> sepanjang 2022–2024. Celah utamanya selalu sama: <strong>tidak ada intersepsi real-time</strong> sebelum dana keluar ke bursa kripto.</p>
               <p>Sistem FDS konvensional bekerja <em>post-facto</em> — mendeteksi setelah dana berpindah. Crypto-Sentinel membalik paradigma ini: setiap transaksi dianalisis oleh mesin AI <strong>sebelum saldo berubah</strong>, dalam waktu kurang dari 18ms, menggunakan <strong>13 sub-indikator</strong> behavioral dan graph topology GNN.</p>
-              <p>Bukan sekadar alert. <strong>Sistem kami memblokir langsung.</strong> Mule account dibekukan. Draft LTKM digenerate otomatis. Compliance officer tinggal verifikasi dan tanda tangan.</p>
+              <p>Bukan sekadar alert. <strong>Sistem kami memblokir langsung.</strong> Mule account dibekukan. Draft LTKM digenerate otomatis sesuai format PPATK goAML. Compliance officer tinggal verifikasi dan tanda tangan.</p>
               <div className="lp-letter-blockquote">
                 <p>"Fraud detection yang baik bukan yang paling keras berteriak — melainkan yang paling cepat bertindak."</p>
               </div>
