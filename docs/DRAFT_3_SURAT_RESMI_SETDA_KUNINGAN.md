@@ -111,7 +111,7 @@ Tembusan Yth:
 
 ---
 
-# DRAFT 3: Surat Rekomendasi Wawancara & Pilot Project ke Bank bjb
+# DRAFT 3: Surat Rekomendasi Validasi Lapangan, Uji Coba UX Kepatuhan, & Pilot Project ke Bank bjb
 
 ```text
 PEMERINTAH KABUPATEN KUNINGAN
@@ -123,9 +123,9 @@ Telepon: (0232) 871045 | Website: kuningankab.go.id
 ========================================================================================
 
 Nomor       : 500 / ........ / Perek & SDA / 2026                 Kuningan, .... Agustus 2026
-Sifat       : Penting / Permohonan
+Sifat       : Penting / Rekomendasi & Permohonan
 Lampiran    : 1 (Satu) Berkas Ringkasan Sistem
-Perihal     : Permohonan Wawancara, Observasi Teknis, dan Kesediaan Uji Coba Terbatas (Pilot Project Sandbox)
+Perihal     : Rekomendasi Validasi Lapangan, Uji Coba User Experience (UX) Kepatuhan, dan Kesediaan Pilot Project Sandbox
 
 Kepada Yth.
 Pemimpin PT Bank Pembangunan Daerah Jawa Barat dan Banten, Tbk (bank bjb)
@@ -135,23 +135,24 @@ Tempat
 
 Dengan hormat,
 
-Sehubungan dengan keikutsertaan delegasi talenta digital muda daerah dari Fakultas Ilmu Komputer Universitas Kuningan (Tim EXPRESSO) yang berhasil lolos ke Babak Final program nasional PIDI - DIGDAYA X Hackathon 2026 (Pusat Inovasi Digital Indonesia) inisiasi Bank Indonesia (BI) dan Otoritas Jasa Keuangan (OJK);
+Sehubungan dengan keikutsertaan delegasi talenta digital muda daerah dari Fakultas Ilmu Komputer Universitas Kuningan (Tim EXPRESSO) yang berhasil lolos ke Babak Final program kompetisi inovasi nasional PIDI - DIGDAYA X Hackathon 2026 (Pusat Inovasi Digital Indonesia) inisiasi Bank Indonesia (BI) dan Otoritas Jasa Keuangan (OJK);
 
-Dengan membawa karya inovasi bertajuk "Crypto-Sentinel: Sistem Deteksi Dini Fraud Transaksi Digital dan Pencegahan Pencucian Uang Berbasis AI/Graph Neural Network untuk Perbankan Daerah", yang dirancang mendukung implementasi POJK No. 12 Tahun 2024;
+Dengan membawa karya inovasi bertajuk "Crypto-Sentinel: Sistem Deteksi Dini Fraud Transaksi Digital dan Pencegahan Pencucian Uang Berbasis AI/Graph Neural Network untuk Perbankan Daerah", yang dirancang selaras dengan implementasi POJK No. 12 Tahun 2024 tentang Penerapan Strategi Anti Fraud bagi Lembaga Jasa Keuangan;
 
-Maka Pemerintah Kabupaten Kuningan melalui Bagian Perekonomian dan SDA Sekretariat Daerah memohon perkenan Bapak/Ibu Pemimpin PT Bank Pembangunan Daerah Jawa Barat dan Banten, Tbk (bank bjb) Kantor Cabang Kuningan untuk dapat menerima dan memberikan dukungan berupa:
+Guna memastikan keselarasan sistem dengan kebutuhan operasional perbankan di lapangan (field-validated), maka Pemerintah Kabupaten Kuningan melalui Bagian Perekonomian dan SDA Sekretariat Daerah menyampaikan REKOMENDASI dan memohon perkenan Bapak/Ibu Pemimpin PT Bank Pembangunan Daerah Jawa Barat dan Banten, Tbk (bank bjb) Kantor Cabang Kuningan untuk dapat memfasilitasi:
 
-1. Kesempatan Wawancara dan Observasi Teknis bersama tim ahli / divisi operasional & kepatuhan terkait tren pencegahan fraud digital di perbankan daerah.
-2. Kesediaan Pelaksanaan Uji Coba Terbatas (Pilot Project / Proof of Concept) pada lingkungan simulasi mandiri (Sandbox Non-Komersial).
+1. Pelaksanaan Wawancara dan Observasi Teknis bersama tim ahli / divisi operasional terkait tren pencegahan fraud transaksi digital, mitigasi rekening perantara (mule account), dan tata kelola anti-pencucian uang.
+2. Uji Coba Pengalaman Pengguna (User Experience / Usability Testing) terhadap prototipe Dashboard Monitoring Crypto-Sentinel oleh Staf/Pejabat Divisi Kepatuhan (Compliance / APU-PPT) dan Divisi Teknologi Informasi / Keamanan Siber guna mendapatkan masukan praktis dari standar perbankan komersial/BPD.
+3. Pemberian Surat Kesediaan Pelaksanaan Uji Coba Terbatas (Pilot Project / Proof of Concept) pada lingkungan simulasi mandiri (Sandbox Non-Komersial).
 
-Kegiatan ini dipastikan:
-- Bersifat non-komersial, akademis, dan tidak mengikat secara operasional perbankan.
-- Tidak terhubung langsung ke Core Banking System maupun data sensitif nasabah (menggunakan synthetic data benchmark).
-- Sepenuhnya mematuhi Undang-Undang Nomor 27 Tahun 2022 tentang Pelindungan Data Pribadi.
+Adapun ketentuan pelaksanaan kegiatan adalah sebagai berikut:
+a. Bersifat Non-Komersial, Akademis, dan Bebas Risiko Finansial maupun operasional bagi bank bjb.
+b. Pengujian sistem murni bersifat simulasi laboratorium (Sandbox) menggunakan data buatan (Synthetic Dataset PaySim), TANPA terhubung langsung ke Core Banking System (CBS) maupun data sensitif nasabah bank bjb.
+c. Sepenuhnya menjunjung tinggi prinsip kerahasiaan dan kepatuhan terhadap Undang-Undang Nomor 27 Tahun 2022 tentang Pelindungan Data Pribadi (UU PDP).
 
-Sinergi antara akademisi daerah, Pemerintah Kabupaten Kuningan, dan bank bjb sebagai mitra strategis perbankan daerah diharapkan dapat menjadi contoh kolaborasi unggulan di tingkat nasional.
+Sinergi antara akademisi daerah, Pemerintah Kabupaten Kuningan, dan bank bjb sebagai mitra strategis perbankan daerah diharapkan dapat menghasilkan solusi teknologi unggulan yang mengharumkan nama Jawa Barat dan Kabupaten Kuningan di tingkat nasional.
 
-Demikian permohonan ini kami sampaikan. Atas perhatian, dukungan, dan perkenan Bapak/Ibu kami haturkan terima kasih.
+Demikian rekomendasi dan permohonan ini kami sampaikan. Atas perhatian, bimbingan, dukungan, dan perkenan Bapak/Ibu kami haturkan terima kasih.
 
 Kepala Bagian Perekonomian dan SDA
 Sekretariat Daerah Kabupaten Kuningan
