@@ -86,11 +86,17 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
       </nav>
 
       <div className="sidebar-footer">
-        <div className="sidebar-user" id="sidebar-user-profile">
-          <div className="user-avatar">{adminProfile?.avatar || 'AR'}</div>
-          <div className="user-info">
-            <span className="name">{adminProfile?.name || 'Admin Regulator'}</span>
-            <span className="role">{adminProfile?.role || 'OJK - Compliance Div.'}</span>
+        <div className="sidebar-user" id="sidebar-user-profile" style={{ padding: '8px 12px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+          <div className="user-avatar" style={{ background: 'var(--gradient-primary)', color: 'white', fontWeight: 800 }}>
+            {adminProfile?.avatar || 'HW'}
+          </div>
+          <div className="user-info" style={{ overflow: 'hidden' }}>
+            <span className="name" style={{ fontWeight: 800, color: 'white', fontSize: '0.82rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {adminProfile?.name || 'Capt. Ir. Hendra Wijaya, M.Sc.'}
+            </span>
+            <span className="role" style={{ fontSize: '0.68rem', color: '#818cf8', fontWeight: 700 }}>
+              {adminProfile?.badgeId || 'SENTINEL-007'} • {adminProfile?.role || 'Satgas TPPU OJK-PPATK'}
+            </span>
           </div>
         </div>
       </div>
