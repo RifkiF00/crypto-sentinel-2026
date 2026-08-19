@@ -36,10 +36,10 @@ def main():
 
     # 1. Load Dataset
     possible_paths = [
+        "data/paysim_augmented.csv",
+        "../data/paysim_augmented.csv",
         "data/paysim_sample.csv",
-        "../data/paysim_sample.csv",
-        "paysim_sample.csv",
-        "d:/Crypto-Sentinel 2026/crypto-sentinel-api/data/paysim_sample.csv"
+        "d:/Crypto-Sentinel 2026/crypto-sentinel-api/data/paysim_augmented.csv"
     ]
     data_path = next((p for p in possible_paths if os.path.exists(p)), None)
 
@@ -93,6 +93,30 @@ def main():
     # One-hot encode type
     type_dummies = pd.get_dummies(df["type"], prefix="type", drop_first=False)
     
+    # Feature 6: Hour of day (odd hour = malam/dini hari = mencurigakan)
+    if "hour_of_day" in df.columns:
+        df["hour_of_day"] = df["hour_of_day"].fillna(12).astype(int)
+    else:
+        df["hour_of_day"] = 12
+
+    # Feature 7: Is known merchant (QRIS / merchant ID terverifikasi)
+    if "is_known_merchant" in df.columns:
+        df["is_known_merchant"] = df["is_known_merchant"].fillna(0).astype(int)
+    else:
+        df["is_known_merchant"] = 0
+
+    # Feature 8: Account dormant days (rekening pasif sebelum transaksi)
+    if "account_dormant_days" in df.columns:
+        df["account_dormant_days"] = df["account_dormant_days"].fillna(0).astype(int)
+    else:
+        df["account_dormant_days"] = 0
+
+    # Feature 9: Purpose code one-hot (BANSOS, SPP, MERCHANT, CRYPTO, GENERAL)
+    if "purpose_code" in df.columns:
+        purpose_dummies = pd.get_dummies(df["purpose_code"].fillna("GENERAL"), prefix="purpose")
+    else:
+        purpose_dummies = pd.DataFrame(index=df.index)
+
     feature_cols = [
         "amount",
         "oldbalanceOrg",
@@ -109,10 +133,16 @@ def main():
         "sender_pagerank",
         "dest_in_degree",
         "dest_out_degree",
-        "dest_pagerank"
+        "dest_pagerank",
+        "hour_of_day",
+        "is_known_merchant",
+        "account_dormant_days",
     ] + list(type_dummies.columns)
 
-    X = pd.concat([df[feature_cols[:-len(type_dummies.columns)]], type_dummies], axis=1)
+    X = pd.concat(
+        [df[feature_cols[:-len(type_dummies.columns)]], type_dummies, purpose_dummies],
+        axis=1
+    )
     y = df["isFraud"]
 
     print(f"[OK] Features matrix shape: {X.shape}, Target distribution: Fraud={y.sum()}, Normal={len(y)-y.sum()}")
