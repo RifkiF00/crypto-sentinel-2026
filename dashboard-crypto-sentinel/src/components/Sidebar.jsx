@@ -44,15 +44,15 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`} id="sidebar-nav">
-      <div className="sidebar-header" style={{ padding: '16px 16px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', minHeight: '68px' }}>
+      <div className="sidebar-header" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', minHeight: '68px' }}>
         <img
           src="/img/Logo3_transparent.png"
           alt="Crypto - Sentinel"
           style={{
             width: '100%',
-            maxWidth: '210px',
+            maxWidth: '195px',
             height: 'auto',
-            maxHeight: '46px',
+            maxHeight: '44px',
             objectFit: 'contain',
             objectPosition: 'left center',
             display: 'block'
