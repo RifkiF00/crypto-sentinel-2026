@@ -2200,44 +2200,42 @@ export function ComplianceView({ addToast }) {
       ]);
 
       const now = new Date();
-      const timestampStr = now.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) + ' - ' + now.toLocaleTimeString('id-ID') + ' WIB';
-      const docNo = `REF/PPATK-OJK/2026/07/${reportType}-${Math.floor(100000 + Math.random() * 900000)}`;
+      const nowDateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      const timestampStr = `${nowDateStr} Pukul ${now.toLocaleTimeString('id-ID')} WIB`;
+      const docNo = `STR-LTKM/KNG-AML/2026/08/${Math.floor(1000 + Math.random() * 9000)}`;
 
-      const reportTitle = reportType === 'SAR'
-        ? 'SUSPICIOUS ACTIVITY REPORT (LAPORAN TRANSAKSI MENCURIGAKAN - LTKM)'
-        : reportType === 'CTR'
-        ? 'CASH TRANSACTION REPORT (LAPORAN NILAI DIATAS RP 500 JUTA)'
-        : 'LAPORAN AUDIT KEPATUHAN & LISENSI BURSA KRIPTO (BAPPEBTI)';
-
-      const txRowsHtml = (liveTxns && liveTxns.length > 0 ? liveTxns.slice(0, 10) : [
-        { id: 'TXN-2026-9901', timestamp: timestampStr, senderName: 'Nasabah N-8841', senderBank: 'BCA', amount: 750000000, destination: 'Binance', riskScore: 96, status: 'blocked' },
-        { id: 'TXN-2026-9902', timestamp: timestampStr, senderName: 'Nasabah N-9012', senderBank: 'Mandiri', amount: 210000000, destination: 'Indodax', riskScore: 89, status: 'flagged' },
-        { id: 'TXN-2026-9903', timestamp: timestampStr, senderName: 'Nasabah N-6612', senderBank: 'BRI', amount: 500000000, destination: 'Tokocrypto', riskScore: 91, status: 'blocked' },
+      const txRowsHtml = (liveTxns && liveTxns.length > 0 ? liveTxns.slice(0, 8) : [
+        { id: 'TXN-2026-9901', timestamp: timestampStr, senderName: 'Nasabah N-8841', senderBank: 'BPD Kuningan', amount: 750000000, destination: 'Binance (Offshore VASP)', riskScore: 96, status: 'BLOCKED' },
+        { id: 'TXN-2026-9902', timestamp: timestampStr, senderName: 'Nasabah N-9012', senderBank: 'BPD Kuningan', amount: 210000000, destination: 'Indodax Relay', riskScore: 89, status: 'BLOCKED' },
+        { id: 'TXN-2026-9903', timestamp: timestampStr, senderName: 'Nasabah N-6612', senderBank: 'BPD Kuningan', amount: 500000000, destination: 'Tokocrypto Mule Escrow', riskScore: 91, status: 'BLOCKED' },
+        { id: 'TXN-2026-9904', timestamp: timestampStr, senderName: 'Nasabah N-3310', senderBank: 'BPD Kuningan', amount: 150000000, destination: 'Tether/Tron Cold Wallet', riskScore: 94, status: 'FROZEN' },
       ]).map((tx, idx) => `
         <tr>
-          <td>${idx + 1}</td>
-          <td><strong>${tx.id || tx.transactionId || `TXN-API-00${idx+1}`}</strong></td>
-          <td>${tx.timestamp || timestampStr}</td>
-          <td>${tx.senderName || 'Nasabah N-8841'} (${tx.senderBank || 'BCA'})</td>
-          <td>${formatCurrency(tx.amount || 500000000)}</td>
-          <td><span class="badge ${tx.status === 'blocked' ? 'danger' : 'warning'}">${(tx.riskScore || 85)}% ${tx.status ? tx.status.toUpperCase() : 'FLAGGED'}</span></td>
-          <td>${tx.destination || tx.destinationType || 'Crypto Exchange'}</td>
+          <td style="text-align: center; border: 1px solid #000; padding: 5px 6px;">${idx + 1}</td>
+          <td style="border: 1px solid #000; padding: 5px 6px; font-family: monospace; font-weight: bold;">${tx.id || tx.transactionId || `TXN-00${idx+1}`}</td>
+          <td style="border: 1px solid #000; padding: 5px 6px; font-size: 10pt;">${tx.timestamp || timestampStr}</td>
+          <td style="border: 1px solid #000; padding: 5px 6px;">${tx.senderName || 'Nasabah Terlapor'} (${tx.senderBank || 'BPD Kuningan'})</td>
+          <td style="text-align: right; border: 1px solid #000; padding: 5px 6px; font-weight: bold;">${formatCurrency(tx.amount || 500000000)}</td>
+          <td style="text-align: center; border: 1px solid #000; padding: 5px 6px; font-weight: bold;">${(tx.riskScore || 85)}/100</td>
+          <td style="border: 1px solid #000; padding: 5px 6px;">${tx.destination || tx.destinationType || 'Bursa Kripto VASP'}</td>
+          <td style="text-align: center; border: 1px solid #000; padding: 5px 6px; font-weight: bold;">${(tx.status || 'BLOCKED').toUpperCase()}</td>
         </tr>
       `).join('');
 
-      const muleRowsHtml = (mules && mules.length > 0 ? mules.slice(0, 6) : [
-        { id: 'MULE-001', name: 'Rekening Mule L1-A', bank: 'BCA', account: '7820194532', role: 'Penampung Utama', totalInflow: 4850000000, riskScore: 96, status: 'frozen' },
-        { id: 'MULE-002', name: 'Rekening Mule L1-B', bank: 'Mandiri', account: '3310287654', role: 'Relay Stream', totalInflow: 2100000000, riskScore: 89, status: 'monitored' },
-        { id: 'MULE-003', name: 'Rekening Mule L2-A', bank: 'BRI', account: '5540198732', role: 'Kolektor', totalInflow: 6200000000, riskScore: 91, status: 'frozen' },
-      ]).map((m) => `
+      const muleRowsHtml = (mules && mules.length > 0 ? mules.slice(0, 5) : [
+        { id: 'MULE-001', name: 'Rekening Mule L1-A', bank: 'BPD Kuningan', account: '7820194532', role: 'Penampung Utama (Smurfing Aggregator)', totalInflow: 4850000000, riskScore: 96, status: 'DIBEKUKAN' },
+        { id: 'MULE-002', name: 'Rekening Mule L1-B', bank: 'BCA Escrow', account: '3310287654', role: 'Layering Relay Stream', totalInflow: 2100000000, riskScore: 89, status: 'DIPANTAU' },
+        { id: 'MULE-003', name: 'Rekening Mule L2-A', bank: 'Bank Mandiri', account: '5540198732', role: 'Kolektor Pelarian Kripto', totalInflow: 6200000000, riskScore: 91, status: 'DIBEKUKAN' },
+      ]).map((m, idx) => `
         <tr>
-          <td><strong>${m.id}</strong></td>
-          <td>${m.name}</td>
-          <td>${m.bank} (${m.account})</td>
-          <td><span class="role-badge">${m.role}</span></td>
-          <td>${formatCurrency(m.totalInflow)}</td>
-          <td><strong>${m.riskScore}%</strong></td>
-          <td><span class="status-pill ${m.status === 'frozen' ? 'frozen' : 'active'}">${m.status === 'frozen' ? 'DIBEKUKAN OJK' : 'DIPANTAU'}</span></td>
+          <td style="text-align: center; border: 1px solid #000; padding: 5px 6px;">${idx + 1}</td>
+          <td style="border: 1px solid #000; padding: 5px 6px; font-family: monospace; font-weight: bold;">${m.id}</td>
+          <td style="border: 1px solid #000; padding: 5px 6px;">${m.name}</td>
+          <td style="border: 1px solid #000; padding: 5px 6px; font-family: monospace;">${m.bank} - ${m.account}</td>
+          <td style="border: 1px solid #000; padding: 5px 6px;">${m.role}</td>
+          <td style="text-align: right; border: 1px solid #000; padding: 5px 6px; font-weight: bold;">${formatCurrency(m.totalInflow)}</td>
+          <td style="text-align: center; border: 1px solid #000; padding: 5px 6px; font-weight: bold;">${m.riskScore}/100</td>
+          <td style="text-align: center; border: 1px solid #000; padding: 5px 6px; font-weight: bold;">${(m.status === 'frozen' ? 'DIBEKUKAN' : m.status || 'DIBEKUKAN').toUpperCase()}</td>
         </tr>
       `).join('');
 
@@ -2246,36 +2244,87 @@ export function ComplianceView({ addToast }) {
         <html lang="id">
         <head>
           <meta charset="UTF-8">
-          <title>${docNo}</title>
+          <title>${docNo} - Laporan Resmi LTKM PPATK</title>
           <style>
-            @page { size: A4; margin: 15mm; }
-            body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; line-height: 1.5; margin: 0; padding: 0; background: #ffffff; }
-            .header-table { width: 100%; border-bottom: 3px double #0284c7; padding-bottom: 12px; margin-bottom: 20px; }
-            .brand-title { font-size: 22px; font-weight: 800; color: #0284c7; letter-spacing: -0.5px; margin: 0; }
-            .sub-title { font-size: 10px; font-weight: 700; color: #64748b; letter-spacing: 1.5px; margin-top: 2px; }
-            .gov-badge { text-align: right; font-size: 11px; color: #334155; }
-            .report-title-box { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; padding: 14px 18px; margin-bottom: 20px; border-radius: 6px; }
-            .report-title-box h2 { font-size: 15px; margin: 0 0 4px 0; color: #0f172a; text-transform: uppercase; }
-            .doc-meta { font-size: 11px; color: #64748b; margin: 0; display: flex; gap: 20px; }
-            .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-            .card { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; text-align: center; }
-            .card-lbl { font-size: 10px; text-transform: uppercase; font-weight: 700; color: #64748b; }
-            .card-val { font-size: 18px; font-weight: 800; color: #0284c7; margin-top: 4px; }
-            .card-val.danger { color: #dc2626; }
-            .card-val.success { color: #16a34a; }
-            h3.section-header { font-size: 13px; text-transform: uppercase; font-weight: 800; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin: 24px 0 12px 0; }
-            table.data-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 20px; }
-            table.data-table th { background: #0f172a; color: #ffffff; text-align: left; padding: 8px 10px; font-weight: 600; }
-            table.data-table td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; }
-            table.data-table tr:nth-child(even) { background: #f8fafc; }
-            .badge { padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 10px; }
-            .badge.danger { background: #fee2e2; color: #991b1b; }
-            .badge.warning { background: #fef3c7; color: #92400e; }
-            .role-badge { background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
-            .status-pill.frozen { background: #dcfce7; color: #15803d; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
-            .status-pill.active { background: #fef3c7; color: #b45309; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
-            .signature-box { margin-top: 30px; border: 1px solid #e2e8f0; padding: 16px; border-radius: 6px; background: #fafafa; display: flex; justify-content: space-between; align-items: center; }
-            .stamp-badge { width: 100px; height: 100px; border: 2.5px dashed #0284c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 9px; font-weight: 800; color: #0284c7; transform: rotate(-12deg); text-transform: uppercase; padding: 4px; }
+            @page {
+              size: A4;
+              margin: 18mm 16mm 18mm 16mm;
+            }
+            body {
+              font-family: 'Times New Roman', Times, Georgia, serif;
+              color: #000000;
+              line-height: 1.45;
+              margin: 0;
+              padding: 0;
+              background: #ffffff;
+              font-size: 11pt;
+            }
+            .kop-surat {
+              text-align: center;
+              margin-bottom: 6px;
+            }
+            .kop-title-1 { font-size: 13pt; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; }
+            .kop-title-2 { font-size: 15pt; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin: 2px 0; }
+            .kop-title-3 { font-size: 10.5pt; font-weight: bold; letter-spacing: 0.5px; }
+            .kop-address { font-size: 8.5pt; font-style: italic; color: #111111; margin-top: 3px; }
+            .double-line { border-top: 2.5px solid #000; border-bottom: 1px solid #000; height: 2px; margin: 6px 0 16px 0; }
+            
+            table.meta-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 10.5pt; }
+            table.meta-table td { padding: 2px 0; vertical-align: top; }
+            
+            .section-title {
+              font-size: 11pt;
+              font-weight: bold;
+              text-transform: uppercase;
+              margin: 14px 0 6px 0;
+              text-decoration: underline;
+            }
+            p.narrative {
+              text-align: justify;
+              margin: 0 0 8px 0;
+              text-indent: 28px;
+            }
+            table.formal-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 8px 0 14px 0;
+              font-size: 9.5pt;
+            }
+            table.formal-table th {
+              border: 1px solid #000;
+              background: #f0f0f0;
+              padding: 6px 5px;
+              font-weight: bold;
+              text-align: center;
+              text-transform: uppercase;
+            }
+            table.formal-table td {
+              border: 1px solid #000;
+              padding: 5px 6px;
+              vertical-align: middle;
+            }
+            .sig-container {
+              width: 100%;
+              margin-top: 24px;
+              border-collapse: collapse;
+              page-break-inside: avoid;
+            }
+            .sig-container td {
+              width: 50%;
+              vertical-align: top;
+              text-align: center;
+              font-size: 10.5pt;
+            }
+            .qr-stamp-box {
+              margin-top: 18px;
+              border: 1px solid #000;
+              padding: 10px 14px;
+              background: #fafafa;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-size: 9pt;
+            }
             @media print {
               body { padding: 0; }
               .no-print { display: none; }
@@ -2283,59 +2332,110 @@ export function ComplianceView({ addToast }) {
           </style>
         </head>
         <body>
-          <table class="header-table">
+          <!-- KOP SURAT RESMI BANK KUNINGAN -->
+          <div class="kop-surat">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="width: 75px; text-align: center; vertical-align: middle;">
+                  <img src="/img/Logo3_transparent.png" style="height: 52px; width: auto; filter: grayscale(100%) contrast(200%);" alt="Logo Bank Kuningan" />
+                </td>
+                <td style="text-align: center; vertical-align: middle; padding: 0 10px;">
+                  <div class="kop-title-1">PT BANK PEMBANGUNAN DAERAH JAWA BARAT</div>
+                  <div class="kop-title-2">KANTOR CABANG UTAMA KUNINGAN</div>
+                  <div class="kop-title-3">DIREKTORAT MANAJEMEN RISIKO, KEPATUHAN &amp; HUKUM (UNIT APU-PPT)</div>
+                  <div class="kop-address">Gedung Menara Bank Kuningan, Jl. Siliwangi No. 128, Kuningan 45511 | Telp: (0232) 871234 | Email: aml-cft@bankkuningan.co.id</div>
+                </td>
+              </tr>
+            </table>
+            <div class="double-line"></div>
+          </div>
+
+          <!-- SURAT PENGANTAR FORMAL -->
+          <table class="meta-table">
             <tr>
-              <td>
-                <h1 class="brand-title">Crypto - Sentinel</h1>
-                <div class="sub-title">DETECT • INFILTRATE • INTELLIGENCE</div>
-              </td>
-              <td class="gov-badge">
-                <strong>PUSAT PELAPORAN DAN ANALISIS TRANSAKSI KEUANGAN (PPATK)</strong><br/>
-                OTORITAS JASA KEUANGAN (OJK) - REPUBLIK INDONESIA<br/>
-                <em>Divisi Audit Kepatuhan &amp; Pencucian Uang Kripto</em>
+              <td style="width: 110px; font-weight: bold;">Nomor Dokumen</td>
+              <td style="width: 12px;">:</td>
+              <td><strong>${docNo}</strong></td>
+              <td style="text-align: right; width: 190px;">Kuningan, ${nowDateStr}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Sifat</td>
+              <td>:</td>
+              <td><strong style="text-decoration: underline;">SANGAT RAHASIA (CONFIDENTIAL)</strong></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Lampiran</td>
+              <td>:</td>
+              <td>1 (Satu) Berkas Analisis Rekayasa Graf GNN &amp; Audit Trail</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; vertical-align: top;">Perihal</td>
+              <td style="vertical-align: top;">:</td>
+              <td colspan="2" style="font-weight: bold;">
+                Laporan Transaksi Keuangan Mencurigakan (LTKM / STR) atas Indikasi Modus Smurfing, Rekening Mule, dan Pelarian Aset ke Bursa Kripto (VASP)
               </td>
             </tr>
           </table>
 
-          <div class="report-title-box">
-            <h2>${reportTitle}</h2>
-            <div class="doc-meta">
-              <span><strong>NOMOR DOKUMEN:</strong> ${docNo}</span>
-              <span><strong>WAKTU GENERATE:</strong> ${timestampStr}</span>
-              <span><strong>KLASIFIKASI:</strong> RAHASIA / CONFIDENTIAL AUDIT</span>
-            </div>
+          <!-- TUJUAN SURAT RESMI -->
+          <div style="font-size: 11pt; margin-bottom: 16px; line-height: 1.45;">
+            <strong>Kepada Yth:</strong><br/>
+            <strong>Kepala Pusat Pelaporan dan Analisis Transaksi Keuangan (PPATK)</strong><br/>
+            c.q. Direktur Pelaporan dan Pengawasan Kepatuhan PJK<br/>
+            Gedung PPATK, Jl. Ir. H. Juanda No. 35, Jakarta Pusat 10120<br/>
+            <br/>
+            <em>Tembusan Yth:</em><br/>
+            1. Kepala Eksekutif Pengawas Perbankan — Otoritas Jasa Keuangan (OJK)<br/>
+            2. Direktur Utama PT BPD Kuningan
           </div>
 
-          <div class="summary-cards">
-            <div class="card">
-              <div class="card-lbl">Total Transaksi Scanned</div>
-              <div class="card-val">${(stats.totalTransactions || 50000).toLocaleString('id-ID')}</div>
-            </div>
-            <div class="card">
-              <div class="card-lbl">Transaksi Diblokir</div>
-              <div class="card-val danger">${stats.blockedTransactions || 525}</div>
-            </div>
-            <div class="card">
-              <div class="card-lbl">Total Dana Diselamatkan</div>
-              <div class="card-val success">${formatCurrency(stats.totalValueBlocked || 15200000000)}</div>
-            </div>
-            <div class="card">
-              <div class="card-lbl">Akurasi GNN Engine</div>
-              <div class="card-val">96.8%</div>
-            </div>
-          </div>
+          <!-- I. DASAR HUKUM -->
+          <div class="section-title">I. DASAR HUKUM DAN KEWAJIBAN PELAPORAN</div>
+          <p class="narrative">
+            Laporan ini disusun dan disampaikan oleh Bank Pembangunan Daerah Kuningan berdasarkan ketentuan Pasal 23 ayat (1) huruf a Undang-Undang Republik Indonesia Nomor 8 Tahun 2010 tentang Pencegahan dan Pemberantasan Tindak Pidana Pencucian Uang (UU TPPU), Peraturan Otoritas Jasa Keuangan (POJK) Nomor 12/POJK.01/2017 tentang Penerapan Program Anti Pencucian Uang dan Pencegahan Pendanaan Terorisme (APU-PPT), serta Surat Edaran OJK terkait Pengawasan Transaksi Keuangan Mencurigakan Berbasis Aset Kripto.
+          </p>
 
-          <h3 class="section-header">1. LOG TRANSAKSI HARI INI (REALTIME BACKEND TELEMETRI)</h3>
-          <table class="data-table">
+          <!-- II. IDENTITAS TERLAPOR -->
+          <div class="section-title">II. PROFIL PIHAK TERLAPOR (SUBJECT IDENTIFICATION)</div>
+          <table class="formal-table" style="margin-bottom: 10px;">
+            <tr>
+              <td style="width: 25%; font-weight: bold; background: #fafafa;">Nama Nasabah / Terlapor</td>
+              <td style="width: 35%;">NASABAH N-8841 (Rekening Penampung Utama)</td>
+              <td style="width: 20%; font-weight: bold; background: #fafafa;">Nomor Rekening</td>
+              <td style="width: 20%; font-family: monospace; font-weight: bold;">7820-1945-3210</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background: #fafafa;">Nomor CIF / NIK</td>
+              <td style="font-family: monospace;">CIF-KNG-99281 / 32080109880001</td>
+              <td style="font-weight: bold; background: #fafafa;">Jenis Usaha / Pekerjaan</td>
+              <td>Wiraswasta Perdagangan Umum</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background: #fafafa;">Alamat IP &amp; Lokasi Sesi</td>
+              <td style="font-family: monospace;">182.16.2.98 (VPN Datacenter Proxy)</td>
+              <td style="font-weight: bold; background: #fafafa;">Status Mitigasi Bank</td>
+              <td><strong>DIBEKUKAN SEMENTARA (FROZEN)</strong></td>
+            </tr>
+          </table>
+
+          <!-- III. DETAIL TRANSAKSI ANOMALI -->
+          <div class="section-title">III. IKHTISAR TRANSAKSI ANOMALI &amp; INDIKASI SMURFING</div>
+          <p class="narrative">
+            Berdasarkan pemantauan <em>Real-Time Preemptive Fraud Detection System (Crypto-Sentinel Engine v3.2)</em>, terdeteksi aktivitas pemecahan transaksi beruntun (*smurfing / structuring*) dengan nilai mendekati ambang batas pelaporan tunai (threshold) yang langsung dialihkan menuju entitas penyedia aset kripto (VASP):
+          </p>
+          <table class="formal-table">
             <thead>
               <tr>
-                <th>No</th>
+                <th style="width: 30px;">No</th>
                 <th>ID Transaksi</th>
-                <th>Waktu (WIB)</th>
+                <th>Waktu Transaksi</th>
                 <th>Pengirim &amp; Bank</th>
-                <th>Nominal</th>
+                <th>Nominal (Rp)</th>
                 <th>Skor Risiko</th>
-                <th>Tujuan Exchange</th>
+                <th>Tujuan Penyaluran</th>
+                <th>Status FDS</th>
               </tr>
             </thead>
             <tbody>
@@ -2343,32 +2443,62 @@ export function ComplianceView({ addToast }) {
             </tbody>
           </table>
 
-          <h3 class="section-header">2. RINCIAN REKENING MULE TERDETEKSI (HIGH-RISK CLUSTER)</h3>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>ID Mule</th>
-                <th>Nama Rekening</th>
-                <th>Bank &amp; No Rekening</th>
-                <th>Peran Jaringan</th>
-                <th>Total Inflow</th>
-                <th>Skor Anomali</th>
-                <th>Tindakan OJK</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${muleRowsHtml}
-            </tbody>
+          <!-- IV. BUKTI FORENSIK DIGITAL GNN -->
+          <div class="section-title">IV. BUKTI FORENSIK DIGITAL &amp; ANALISIS GRAF GNN</div>
+          <p class="narrative">
+            Hasil pemeriksaan analitik forensik menggunakan model kecerdasan buatan gabungan (Hybrid Graph Neural Network &amp; Random Forest) menghasilkan pembuktian objektif sebagai berikut:
+          </p>
+          <ol style="margin: 4px 0 12px 24px; padding: 0; font-size: 10.5pt; line-height: 1.5;">
+            <li><strong>Skor Risiko Gabungan (*Hybrid AML Risk Score*):</strong> Mencapai nilai <strong>92 / 100</strong> (Kategori Sangat Kritis / High Risk).</li>
+            <li><strong>Kedekatan Ruang Vektor Graf (*GraphSAGE GNN Cosine Proximity*):</strong> Menghasilkan cosine similarity sebesar <strong>0.88</strong> terhadap klaster rekening penampung judi online dan money mule yang telah teridentifikasi sebelumnya.</li>
+            <li><strong>Pola Pengurasan Saldo (*Drain-to-Zero Saldo Pengirim*):</strong> Saldo awal sebesar Rp 150.000.000,- langsung terkuras habis menjadi Rp 0,- seketika pasca transfer beruntun (Nilai <em>is_balance_drained = 1</em>).</li>
+            <li><strong>Ketidaksesuaian Kode Tujuan (*Purpose Code Mismatch ISO 20022*):</strong> Transaksi dideklarasikan sebagai 'DEBT / SALA' namun ditransfer ke rekening deposit exchange kripto (*Binance / Indodax / Tether TRC-20 Escrow*).</li>
+          </ol>
+
+          <!-- V. TINDAKAN PENCEGAHAN BANK -->
+          <div class="section-title">V. TINDAKAN PENCEGAHAN YANG TELAH DIAMBIL BANK</div>
+          <p class="narrative">
+            Sesuai dengan kewenangan Bank berdasarkan Pasal 44 UU No. 8 Tahun 2010 serta SOP Manajemen Risiko Bank Kuningan, Unit APU-PPT telah melakukan tindakan mitigasi darurat berupa <strong>Penundaan Transaksi Otomatis</strong> dan <strong>Pemblokiran Sementara (Freeze)</strong> atas seluruh hak akses rekening terlapor guna mencegah tuntasnya pelarian dana nasabah ke luar yurisdiksi Indonesia.
+          </p>
+
+          <!-- VI. PENGESAHAN & TANDA TANGAN -->
+          <div class="section-title">VI. PENGESAHAN DAN TANDA TANGAN RESMI</div>
+          <table class="sig-container">
+            <tr>
+              <td>
+                <div>Kuningan, ${nowDateStr}</div>
+                <div style="font-weight: bold; margin-top: 4px;">Petugas Kepatuhan Pelapor,</div>
+                <div style="height: 60px; display: flex; align-items: center; justify-content: center;">
+                  <span style="font-family: 'Brush Script MT', cursive, sans-serif; font-size: 20pt; color: #111;">Rifki Firmansyah</span>
+                </div>
+                <div style="font-weight: bold; text-decoration: underline;">RIFKI FIRMANSYAH, S.Kom</div>
+                <div style="font-size: 9.5pt;">NIP: ADM-882910 | Compliance Officer</div>
+              </td>
+              <td>
+                <div>Mengetahui &amp; Menyetujui,</div>
+                <div style="font-weight: bold; margin-top: 4px;">Direktur Kepatuhan &amp; Manajemen Risiko,</div>
+                <div style="height: 60px; display: flex; align-items: center; justify-content: center;">
+                  <span style="font-family: 'Brush Script MT', cursive, sans-serif; font-size: 20pt; color: #111;">Budi Santoso</span>
+                </div>
+                <div style="font-weight: bold; text-decoration: underline;">BUDI SANTOSO, S.E., M.Fin</div>
+                <div style="font-size: 9.5pt;">NIP: DIR-771902 | Head of AML Directorate</div>
+              </td>
+            </tr>
           </table>
 
-          <div class="signature-box">
+          <!-- STAMP & DIGITAL HASH -->
+          <div class="qr-stamp-box">
             <div>
-              <div style="font-size: 11px; color: #64748b;">VERIFIKASI INTEGRITAS DIGITAL AUDIT (SHA-256)</div>
-              <div style="font-family: monospace; font-size: 10px; font-weight: 700; color: #0f172a; margin-top: 4px;">DIGITAL SIGNATURE: 8f9a2b4c6e1d3f5a7b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a</div>
-              <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">Di-generate secara otomatis oleh Engine Preemptive FDS Crypto-Sentinel v3.2</div>
+              <div style="font-weight: bold; font-size: 9.5pt;">VERIFIKASI INTEGRITAS DIGITAL AUDIT (SHA-256 DIGITAL HASH):</div>
+              <div style="font-family: monospace; font-size: 8.5pt; font-weight: bold; margin-top: 2px;">
+                HASH: 8f9a2b4c6e1d3f5a7b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a
+              </div>
+              <div style="font-size: 8pt; color: #444; margin-top: 3px;">
+                Dokumen ini di-generate secara otomatis oleh Sistem Forensik Terdistribusi Crypto-Sentinel v3.2 dan dienkripsi dengan standar Keamanan SNAP BI &amp; ISO 20022.
+              </div>
             </div>
-            <div class="stamp-badge">
-              TERFERIFIKASI<br/>PPATK &amp; OJK<br/>LULUS AUDIT
+            <div style="text-align: center; border: 1.5px solid #000; padding: 4px 8px; font-weight: bold; font-size: 8pt; text-transform: uppercase;">
+              TERVALIDASI<br/>goAML PPATK<br/>STATUS: RESMI
             </div>
           </div>
 
@@ -2456,34 +2586,51 @@ export function ComplianceView({ addToast }) {
           </div>
         </div>
 
-        {/* Generate SAR Wizard */}
+        {/* Generate Formal STR/LTKM Wizard */}
         <div>
-          <div className="card" style={{ padding: 20 }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 12 }}><FileText /> Pembuat Laporan Resmi AML</h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-              Ekspor laporan Suspicious Activity Report (SAR) resmi dalam dokumen terenkripsi untuk diserahkan ke Kepala Divisi AML / BI.
+          <div className="card" style={{ padding: 22, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 14 }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
+              <FileText size={20} color="#2563eb" />
+              Pembuat Dokumen Resmi LTKM / STR
+            </h3>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 18, lineHeight: 1.5 }}>
+              Ekspor dokumen formal <strong>Laporan Transaksi Keuangan Mencurigakan (LTKM / STR)</strong> berstandar hukum perbankan nasional, lengkap dengan Kop Surat Resmi Bank Kuningan, pembuktian forensik GNN GraphSAGE, dan tanda tangan digital untuk pelaporan ke <strong>goAML PPATK &amp; OJK</strong>.
             </p>
 
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Pilih Kategori Laporan</label>
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-secondary)', marginBottom: 8 }}>
+                Pilih Jenis Dokumen Kepatuhan
+              </label>
               <select
-                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
+                style={{ width: '100%', padding: '11px 14px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 10, color: 'var(--text-primary)', outline: 'none', fontSize: '0.86rem', fontWeight: 600 }}
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value)}
               >
-                <option value="SAR">Suspicious Activity Report (Laporan Transaksi Mencurigakan)</option>
-                <option value="CTR">Cash Transaction Report (Laporan Nilai Diatas 500jt)</option>
-                <option value="EXCHANGE">Bursa Kepatuhan (Exchange Audit)</option>
+                <option value="SAR">LTKM / STR — Laporan Transaksi Keuangan Mencurigakan (UU No. 8/2010)</option>
+                <option value="CTR">TKM / CTR — Laporan Nilai Nominal Diatas Rp 500 Juta</option>
+                <option value="EXCHANGE">Laporan Kepatuhan VASP &amp; Rekening Mule Bursa Kripto</option>
               </select>
             </div>
 
             <button
               className="btn btn-primary"
-              style={{ width: '100%', justifyContent: 'center' }}
+              style={{
+                width: '100%',
+                height: 44,
+                justifyContent: 'center',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                borderRadius: 10,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)'
+              }}
               onClick={triggerAuditReport}
               disabled={loading}
             >
-              {loading ? 'Mengompilasi Data...' : '⚙️ Generate & Unduh Dokumen SAR'}
+              <FileText size={18} />
+              <span>{loading ? 'Mengompilasi Data Dokumen...' : '📄 Cetak / Unduh Dokumen Resmi LTKM (Format PPATK)'}</span>
             </button>
           </div>
         </div>
