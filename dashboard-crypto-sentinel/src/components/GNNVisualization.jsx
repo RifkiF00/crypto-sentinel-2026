@@ -718,14 +718,76 @@ export default function GNNVisualization({ addToast }) {
     setPan({ x: 40, y: 20 });
   };
 
-  // Wheel Zoom with Focal Point
-  const handleWheel = (e) => {
+  // Touchpad Pinch-to-Zoom & 2-Finger Pan Handlers (Native Touchpad Feel)
+  const touchStartRef = useRef({ dist: 0, panStart: { x: 0, y: 0 } });
+
+  const handleWheel = useCallback((e) => {
     e.preventDefault();
-    const zoomDelta = e.deltaY < 0 ? 0.08 : -0.08;
-    setZoom(z => {
-      const nextZoom = Math.min(2.5, Math.max(0.4, Number((z + zoomDelta).toFixed(2))));
-      return nextZoom;
-    });
+
+    // Check if it is a touchpad pinch gesture (browsers send ctrlKey: true for trackpad pinch)
+    if (e.ctrlKey) {
+      // Touchpad pinch-to-zoom (fine-grained & smooth)
+      const zoomFactor = -e.deltaY * 0.008;
+      setZoom(prevZoom => {
+        const nextZoom = Math.min(2.8, Math.max(0.4, Number((prevZoom + zoomFactor).toFixed(3))));
+        
+        // Keep zoom focal point exactly at cursor position
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+          const scaleRatio = nextZoom / prevZoom;
+          setPan(prevPan => ({
+            x: mouseX - (mouseX - prevPan.x) * scaleRatio,
+            y: mouseY - (mouseY - prevPan.y) * scaleRatio
+          }));
+        }
+        return nextZoom;
+      });
+    } else {
+      // Touchpad 2-finger swipe / pan (smoothly moves map without accidental zoom)
+      setPan(prevPan => ({
+        x: prevPan.x - e.deltaX * 0.9,
+        y: prevPan.y - e.deltaY * 0.9
+      }));
+    }
+  }, []);
+
+  // Multi-Touch Pinch & Drag for Touchpad / Touchscreen
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      touchStartRef.current = { dist, panStart: { ...pan } };
+    } else if (e.touches.length === 1) {
+      setIsPanning(true);
+      setPanStart({ x: e.touches[0].clientX - pan.x, y: e.touches[0].clientY - pan.y });
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2 && touchStartRef.current.dist > 0) {
+      e.preventDefault();
+      const currentDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const ratio = currentDist / touchStartRef.current.dist;
+      setZoom(prev => Math.min(2.8, Math.max(0.4, Number((prev * ratio).toFixed(3)))));
+      touchStartRef.current.dist = currentDist;
+    } else if (e.touches.length === 1 && isPanning) {
+      setPan({
+        x: e.touches[0].clientX - panStart.x,
+        y: e.touches[0].clientY - panStart.y
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsPanning(false);
+    touchStartRef.current.dist = 0;
   };
 
   // Pan Canvas Mouse Events
@@ -1070,6 +1132,9 @@ export default function GNNVisualization({ addToast }) {
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{
           position: 'relative',
           width: '100%',
@@ -1547,7 +1612,7 @@ export default function GNNVisualization({ addToast }) {
         </svg>
 
         {/* ------------------------------------------------------------------
-            CANVAS HINT BAR (Bawah Tengah)
+            CANVAS HINT BAR (Bawah Tengah - Touchpad Guidance)
         ------------------------------------------------------------------ */}
         <div style={{
           position: 'absolute',
@@ -1555,23 +1620,30 @@ export default function GNNVisualization({ addToast }) {
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 8,
-          background: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255,255,255,0.12)',
+          background: 'rgba(8, 14, 30, 0.88)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(148, 163, 184, 0.25)',
           borderRadius: 20,
-          padding: '6px 16px',
-          fontSize: '0.72rem',
-          color: 'var(--text-muted)',
+          padding: '7px 18px',
+          fontSize: '0.74rem',
+          color: '#cbd5e1',
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
+          gap: 14,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
           pointerEvents: 'none'
         }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Move size={12} color="#38bdf8" /> Geser & Tarik Node untuk Merapikan Posisi
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#93c5fd', fontWeight: 600 }}>
+            <Move size={13} color="#38bdf8" /> Geser Touchpad 2 Jari untuk Pan Peta
           </span>
-          <span>•</span>
-          <span>Scroll Mouse untuk Zoom In/Out Maps</span>
+          <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
+          <span style={{ color: '#86efac', fontWeight: 600 }}>
+            🤏 Pinch Touchpad 2 Jari untuk Zoom In / Out
+          </span>
+          <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
+          <span style={{ color: '#fca5a5', fontWeight: 600 }}>
+            🖱️ Klik &amp; Tarik Node untuk Reposisi
+          </span>
         </div>
       </div>
 
