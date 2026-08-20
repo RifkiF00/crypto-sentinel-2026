@@ -1,35 +1,27 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Lock, User, Key, ArrowRight, ArrowLeft, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Shield, Check } from 'lucide-react';
 
 export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
-  const [role, setRole] = useState('compliance');
-  const [nip, setNip] = useState('ADM-882910');
-  const [password, setPassword] = useState('••••••••••••');
+  const [email, setEmail] = useState('compliance@bankkuningan.co.id');
+  const [password, setPassword] = useState('SentinelPass2026!');
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const roles = [
-    { id: 'compliance', label: 'Compliance Officer', icon: Shield, desc: 'Verifikasi STR/LTKM PPATK & Freeze Rekening' },
-    { id: 'risk', label: 'Risk & AML Lead', icon: Key, desc: 'Pengaturan Threshold FDS & Parameter GNN' },
-    { id: 'auditor', label: 'Auditor Eksekutif', icon: User, desc: 'Laporan Forensik & Kepatuhan OJK' }
-  ];
-
-  const handleLogin = (e) => {
+  const handleSubmit = (e) => {
     if (e) e.preventDefault();
-    setIsSubmitting(true);
-    setErrorMsg('');
+    setIsLoading(true);
 
     setTimeout(() => {
-      setIsSubmitting(false);
+      setIsLoading(false);
       onLoginSuccess({
-        nip: nip || 'ADM-882910',
-        role: role,
-        name: role === 'compliance' ? 'Rifki Firmansyah, S.Kom' : 'Budi Santoso, M.Fin',
-        roleLabel: roles.find(r => r.id === role)?.label || 'Compliance Officer'
+        email: email || 'compliance@bankkuningan.co.id',
+        name: 'Rifki Firmansyah, S.Kom',
+        role: 'compliance',
+        roleLabel: 'Compliance Officer (PPATK/OJK)'
       });
-    }, 600);
+    }, 500);
   };
 
   return (
@@ -37,308 +29,392 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
       style={{
         minHeight: '100vh',
         width: '100%',
-        background: 'radial-gradient(ellipse at 50% 20%, #0d1e44 0%, #060d21 60%, #020617 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '32px 16px',
-        color: '#ffffff',
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
         position: 'relative',
-        boxSizing: 'border-box'
+        backgroundImage: 'url(/img/login.jpeg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center right',
+        backgroundRepeat: 'no-repeat',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        padding: '32px clamp(16px, 6vw, 80px)',
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        boxSizing: 'border-box',
+        overflowX: 'hidden'
       }}
     >
-      {/* Background Ambience */}
+      {/* Subtle Mobile/Tablet Gradient Overlay to guarantee contrast */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: 'radial-gradient(rgba(59, 130, 246, 0.12) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-          opacity: 0.6,
+          background: 'linear-gradient(to right, rgba(10, 25, 55, 0.4) 0%, rgba(10, 25, 55, 0.1) 60%, transparent 100%)',
           pointerEvents: 'none'
         }}
       />
 
-      {/* Top Back to Landing Button */}
+      {/* Top Floating Back Button */}
       <button
         onClick={onBackToLanding}
         style={{
           position: 'absolute',
           top: 24,
           left: 24,
-          background: 'rgba(255, 255, 255, 0.06)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
-          color: '#cbd5e1',
-          padding: '8px 16px',
+          background: 'rgba(255, 255, 255, 0.85)',
+          border: '1px solid rgba(255, 255, 255, 0.6)',
+          color: '#0f172a',
+          padding: '8px 18px',
           borderRadius: 9999,
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           gap: 8,
-          fontSize: '0.8rem',
-          fontWeight: 600,
-          transition: 'all 0.2s ease',
+          fontSize: '0.82rem',
+          fontWeight: 700,
+          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.12)',
           backdropFilter: 'blur(10px)',
-          zIndex: 10
+          transition: 'all 0.2s ease',
+          zIndex: 20
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.14)')}
-        onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)')}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = '#ffffff';
+          e.currentTarget.style.transform = 'translateX(-3px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.85)';
+          e.currentTarget.style.transform = 'none';
+        }}
       >
         <ArrowLeft size={16} /> Kembali ke Beranda
       </button>
 
-      {/* Main Login Card Container */}
+      {/* Pixel-Perfect Glassmorphic Login Card */}
       <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.45, ease: 'easeOut' }}
+        initial={{ opacity: 0, x: -30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
         style={{
           width: '100%',
-          maxWidth: 480,
-          background: 'rgba(15, 23, 42, 0.75)',
-          border: '1px solid rgba(59, 130, 246, 0.25)',
-          borderRadius: 24,
+          maxWidth: 440,
+          background: 'rgba(255, 255, 255, 0.92)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255, 255, 255, 0.95)',
+          borderRadius: 28,
           padding: '36px 32px',
-          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.6), 0 0 35px rgba(37, 99, 235, 0.15)',
-          backdropFilter: 'blur(20px)',
+          boxShadow: '0 25px 60px rgba(10, 25, 60, 0.22), 0 0 30px rgba(255, 255, 255, 0.5)',
           position: 'relative',
-          zIndex: 2,
+          zIndex: 10,
           boxSizing: 'border-box'
         }}
       >
-        {/* Brand Header */}
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div
+        {/* Brand Logo */}
+        <div style={{ marginBottom: 20 }}>
+          <img
+            src="/img/Logo3_transparent.png"
+            alt="Crypto-Sentinel"
             style={{
-              width: 64,
-              height: 64,
-              borderRadius: 18,
-              background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(15, 23, 42, 0.9))',
-              border: '1px solid rgba(59, 130, 246, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 14px',
-              boxShadow: '0 0 25px rgba(37, 99, 235, 0.3)'
+              height: 48,
+              width: 'auto',
+              objectFit: 'contain',
+              display: 'block'
+            }}
+          />
+        </div>
+
+        {/* Header Title */}
+        <div style={{ marginBottom: 24 }}>
+          <h1
+            style={{
+              fontSize: '1.45rem',
+              fontWeight: 800,
+              color: '#0f172a',
+              margin: '0 0 6px 0',
+              letterSpacing: '-0.3px',
+              fontFamily: "'Plus Jakarta Sans', sans-serif"
             }}
           >
-            <img
-              src="/img/Logo3_transparent.png"
-              alt="Crypto-Sentinel"
-              style={{ height: 38, width: 'auto', objectFit: 'contain' }}
-            />
-          </div>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 4px 0', color: '#f8fafc' }}>
-            Portal Masuk Forensik FDS
+            Selamat Datang Kembali
           </h1>
-          <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>
-            Sistem Deteksi Penipuan Keuangan &amp; Pelarian Kripto Bank Kuningan
+          <p
+            style={{
+              fontSize: '0.82rem',
+              color: '#64748b',
+              lineHeight: 1.5,
+              margin: 0
+            }}
+          >
+            Masuk untuk mengakses dashboard dan memantau transaksi secara real-time.
           </p>
         </div>
 
-        {/* Role Selector Tabs */}
-        <div style={{ marginBottom: 22 }}>
-          <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#94a3b8', marginBottom: 8 }}>
-            Pilih Peran Otorisasi
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-            {roles.map((r) => {
-              const Icon = r.icon;
-              const isSelected = role === r.id;
-              return (
-                <button
-                  type="button"
-                  key={r.id}
-                  onClick={() => setRole(r.id)}
-                  style={{
-                    padding: '10px 6px',
-                    borderRadius: 12,
-                    border: isSelected ? '1.5px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.08)',
-                    background: isSelected ? 'rgba(37, 99, 235, 0.25)' : 'rgba(255, 255, 255, 0.03)',
-                    color: isSelected ? '#ffffff' : '#94a3b8',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 6,
-                    transition: 'all 0.2s ease',
-                    textAlign: 'center'
-                  }}
-                >
-                  <Icon size={18} color={isSelected ? '#60a5fa' : '#64748b'} />
-                  <span style={{ fontSize: '0.68rem', fontWeight: isSelected ? 700 : 500, lineHeight: 1.2 }}>
-                    {r.label.split(' ')[0]}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Login Form */}
-        <form onSubmit={handleLogin}>
-          {/* NIP Field */}
+        <form onSubmit={handleSubmit}>
+          {/* Email Field */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#94a3b8', marginBottom: 6 }}>
-              NIP / ID Petugas
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                color: '#334155',
+                marginBottom: 6
+              }}
+            >
+              Email
             </label>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                background: '#ffffff',
+                border: '1.5px solid #e2e8f0',
                 borderRadius: 12,
                 padding: '0 14px',
-                height: 44
+                height: 44,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                transition: 'border-color 0.2s ease'
               }}
             >
-              <User size={18} color="#64748b" style={{ marginRight: 10 }} />
+              <Mail size={17} color="#94a3b8" style={{ marginRight: 10, flexShrink: 0 }} />
               <input
-                type="text"
-                value={nip}
-                onChange={(e) => setNip(e.target.value)}
-                placeholder="Contoh: ADM-882910"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Masukkan email Anda"
                 style={{
-                  background: 'transparent',
                   border: 'none',
                   outline: 'none',
-                  color: '#f8fafc',
-                  fontSize: '0.88rem',
                   width: '100%',
-                  fontFamily: "'JetBrains Mono', monospace"
+                  fontSize: '0.86rem',
+                  color: '#0f172a',
+                  background: 'transparent',
+                  fontFamily: 'inherit'
                 }}
               />
             </div>
           </div>
 
           {/* Password Field */}
-          <div style={{ marginBottom: 22 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#94a3b8' }}>
-                Kata Sandi / PIN Dinamis
-              </label>
-              <span style={{ fontSize: '0.68rem', color: '#38bdf8', cursor: 'pointer' }}>
-                Mode Demo Aktif
-              </span>
-            </div>
+          <div style={{ marginBottom: 16 }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                color: '#334155',
+                marginBottom: 6
+              }}
+            >
+              Password
+            </label>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                background: '#ffffff',
+                border: '1.5px solid #e2e8f0',
                 borderRadius: 12,
                 padding: '0 14px',
-                height: 44
+                height: 44,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                transition: 'border-color 0.2s ease'
               }}
             >
-              <Lock size={18} color="#64748b" style={{ marginRight: 10 }} />
+              <Lock size={17} color="#94a3b8" style={{ marginRight: 10, flexShrink: 0 }} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Kata sandi petugas"
+                placeholder="Masukkan password"
                 style={{
-                  background: 'transparent',
                   border: 'none',
                   outline: 'none',
-                  color: '#f8fafc',
-                  fontSize: '0.88rem',
-                  width: '100%'
+                  width: '100%',
+                  fontSize: '0.86rem',
+                  color: '#0f172a',
+                  background: 'transparent',
+                  fontFamily: 'inherit'
                 }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
               </button>
             </div>
           </div>
 
-          {/* Submit Button */}
+          {/* Remember Me & Forgot Password Row */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 20,
+              fontSize: '0.78rem'
+            }}
+          >
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                color: '#334155',
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                style={{
+                  width: 16,
+                  height: 16,
+                  accentColor: '#2563eb',
+                  cursor: 'pointer',
+                  borderRadius: 4
+                }}
+              />
+              <span>Ingat saya</span>
+            </label>
+
+            <a
+              href="#lupa"
+              onClick={(e) => {
+                e.preventDefault();
+                alert('Silakan hubungi Administrator Bank Kuningan untuk reset kredensial FDS.');
+              }}
+              style={{
+                color: '#2563eb',
+                textDecoration: 'none',
+                fontWeight: 600
+              }}
+            >
+              Lupa password?
+            </a>
+          </div>
+
+          {/* Primary Submit Button */}
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isLoading}
             style={{
               width: '100%',
               height: 46,
-              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+              background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
               border: 'none',
               borderRadius: 12,
               color: '#ffffff',
               fontSize: '0.92rem',
               fontWeight: 700,
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              cursor: isLoading ? 'wait' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 8,
-              boxShadow: '0 4px 20px rgba(37, 99, 235, 0.4)',
+              boxShadow: '0 8px 20px rgba(37, 99, 235, 0.35)',
               transition: 'all 0.2s ease',
-              marginBottom: 12
+              marginBottom: 18
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 10px 25px rgba(37, 99, 235, 0.5)')}
+            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 8px 20px rgba(37, 99, 235, 0.35)')}
           >
-            {isSubmitting ? (
-              <span>Mengotentikasi Sesi...</span>
+            {isLoading ? (
+              <span>Mengotentikasi...</span>
             ) : (
               <>
-                <span>Masuk ke Dashboard Forensik</span>
+                <span>Masuk</span>
                 <ArrowRight size={18} />
               </>
             )}
           </button>
 
-          {/* 1-Click Demo Shortcut */}
+          {/* Divider */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              margin: '18px 0',
+              color: '#94a3b8',
+              fontSize: '0.74rem'
+            }}
+          >
+            <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+            <span style={{ padding: '0 12px' }}>atau masuk dengan</span>
+            <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+          </div>
+
+          {/* Secondary SSO Button */}
           <button
             type="button"
-            onClick={() => handleLogin()}
+            onClick={() => handleSubmit()}
             style={{
               width: '100%',
-              height: 40,
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              height: 44,
+              background: '#f8fafc',
+              border: '1.5px solid #e2e8f0',
               borderRadius: 12,
-              color: '#93c5fd',
-              fontSize: '0.8rem',
-              fontWeight: 600,
+              color: '#1e293b',
+              fontSize: '0.84rem',
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 6,
-              transition: 'all 0.2s ease'
+              gap: 8,
+              transition: 'all 0.2s ease',
+              marginBottom: 22
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)')}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#f1f5f9';
+              e.currentTarget.style.borderColor = '#cbd5e1';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#f8fafc';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }}
           >
-            ⚡ Masuk Otomatis (Akses Cepat Penguji)
+            <Shield size={18} color="#2563eb" />
+            <span>SSO Perusahaan</span>
           </button>
-        </form>
 
-        {/* Security Footer Info */}
-        <div
-          style={{
-            marginTop: 24,
-            paddingTop: 16,
-            borderTop: '1px solid rgba(255, 255, 255, 0.07)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: '0.68rem',
-            color: '#64748b'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <CheckCircle size={14} color="#10b981" />
-            <span>Enkripsi TLS 1.3 / SNAP BI</span>
+          {/* Footer Text */}
+          <div
+            style={{
+              textAlign: 'center',
+              fontSize: '0.78rem',
+              color: '#64748b'
+            }}
+          >
+            Belum memiliki akun?{' '}
+            <a
+              href="#kontak"
+              onClick={(e) => {
+                e.preventDefault();
+                alert('Silakan hubungi IT Security Administrator Bank Kuningan / Tim EXPRESSO.');
+              }}
+              style={{
+                color: '#2563eb',
+                fontWeight: 700,
+                textDecoration: 'underline'
+              }}
+            >
+              Hubungi administrator
+            </a>
           </div>
-          <span>PPATK goAML Ready</span>
-        </div>
+        </form>
       </motion.div>
     </div>
   );
