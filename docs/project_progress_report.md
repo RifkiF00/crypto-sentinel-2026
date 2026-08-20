@@ -977,35 +977,63 @@ Nasabah input transfer di Flutter App
 
 ---
 
-### D. Status Pitching & Offtaker — 19 Agustus 2026
+### D. Status Pitching, Offtaker & Validasi Lapangan — 20 Agustus 2026
 
-| Target | Status | Catatan |
+| Target / Stakeholder | Status | Catatan & Milestone Terkini |
 |---|---|---|
-| **Bank Kuningan (BPR)** | 🟡 **Dalam proses** | Pertemuan Kabag Ekonomi dijadwalkan — draft LoI & Surat Rekomendasi sudah siap di `docs/` |
-| **Bank bjb (BPD)** | 🔴 **Belum ada respons** | Sudah dikirim pendekatan awal, belum ada balasan — diakui jujur dalam narasi pitching |
-
-**Fakta penting yang perlu diingat tim:**
-- Bank Kuningan menggunakan sistem internal **SIBAKU** (bukan BI-FAST langsung)
-- Transfer antarbank Bank Kuningan melalui **bank mitra bjb** (bukan langsung ke BI-FAST)
-- Sistem kita tidak perlu menyentuh core banking — cukup akses **log transaksi** via sidecar/middleware
-- Target regulasi yang relevan: **POJK No. 12/2024** (bukan BI-FAST regulation yang terlalu besar untuk BPR)
+| **Pemerintah Kabupaten Kuningan (Setda)** | 🟢 **RESMI TERCAPAI (100%)** ✅ | **Surat Pernyataan Dukungan Resmi (Letter of Endorsement)** No: `500/38/PEREKONOMIAN/2026` telah terbit resmi ditandatangani secara elektronik (**Sertifikasi BSrE BSSN**) oleh **Bpk. Wawan Setiawan, S.Hut., M.T. (Asisten Perekonomian dan Pembangunan Setda Kab. Kuningan)**. |
+| **PT Bank Pembangunan Daerah Jawa Barat dan Banten, Tbk (bank bjb)** | 🟢 **RESPON POSITIF & AUDIENSI JALAN** 🔥 | Bank bjb Cabang Kuningan langsung merespon surat rekomendasi Setda dan mengundang Tim EXPRESSO untuk **audiensi teknis, validasi alur mitigasi fraud, dan pengujian UX Kepatuhan** pada Jumat, 21 Agustus 2026. |
+| **PT Perseroda BPR Kuningan (Bank Kuningan)** | 🟡 **Dalam Proses Koordinasi** | Surat rekomendasi Setda telah siap; diposisikan sebagai BPR mitra binaan dalam ekosistem APEX perbankan daerah. |
 
 ---
 
-### E. Koreksi Narasi: PENDING/REVIEW bukan Blokir Permanen
+### E. Arsitektur Hub & Spoke APEX: Menjawab Validitas BI-FAST & RTOL di Lapangan
+
+> [!IMPORTANT]
+> **Keputusan Strategis Arsitektur Transaksi (20 Agustus 2026):**
+> Untuk memastikan demo prototipe **100% valid secara regulasi dan tidak dianggap mengada-ada oleh juri Bank Indonesia & OJK**, tim menerapkan pemetaan arsitektur perbankan nyata:
+
+```
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│              ARSITEKTUR HUB & SPOKE PERBANKAN DAERAH (CRYPTO-SENTINEL)            │
+├───────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                   │
+│  [HUB / SETTLEMENT ANCHOR]                                                        │
+│  PT Bank Pembangunan Daerah Jawa Barat dan Banten, Tbk (bank bjb)                 │
+│  • Kategori: Bank Umum Komersial / BPD Devisa (KBMI 2)                            │
+│  • Lisensi: Direct Participant BI-FAST & RTOL (Bank Indonesia)                    │
+│  • Kanal Digital: Mobile Banking "DIGI by bank bjb"                               │
+│  • Peran FDS: Crypto-Sentinel memproteksi transaksi instan BI-FAST (Rp 2.500) &   │
+│               RTOL (Rp 6.500) secara pre-authorization (<18ms) sebelum dana       │
+│               dilarikan ke bursa kripto / mule network.                           │
+│                                                                                   │
+│  [SPOKE / INCLUSION AFFILIATE]                                                    │
+│  PT Perseroda BPR Kuningan (Bank Kuningan)                                        │
+│  • Kategori: Bank Perekonomian Rakyat (BPR)                                       │
+│  • Mekanisme: Terhubung melalui Gateway APEX BPR / Virtual Account via bank bjb   │
+│  • Peran FDS: Monitoring post-transaction, deteksi anomali rekening pasif, dan   │
+│               otomasi draf pelaporan LTKM resmi ke PPATK goAML.                   │
+│                                                                                   │
+└───────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Implikasi Teknis & Demo:**
+1. **Demo Mobile Banking Flutter** diselaraskan dengan identitas **DIGI by bank bjb** sehingga menu transfer **BI-FAST** dan **Real-Time Online (RTOL)** memiliki dasar hukum dan kepesertaan yang sah di Bank Indonesia.
+2. **Bank Kuningan tetap hadir** sebagai entitas BPR mitra APEX yang dilindungi oleh sistem, membuktikan bahwa Crypto-Sentinel dapat diterapkan secara terpadu baik di bank umum devisa maupun BPR daerah.
+
+---
+
+### F. Koreksi Narasi: PENDING/REVIEW bukan Blokir Permanen
 
 Status `PENDING` atau `REVIEW` di sistem kita berarti:
-
 - AI mendeteksi anomali → **menahan transaksi sementara**
 - Compliance Officer mendapat alert → **manual review dalam X menit**
 - Officer memutuskan: lanjutkan / tolak / investigasi lebih lanjut
-- **Bukan otomatis BLOCK permanen** — ini penting agar bank tidak takut salah blokir
-
-Ini persis yang dimaksud dengan **"Responsible AI"** — ada human-in-the-loop untuk kasus ambiguous, auto-block hanya untuk kasus risk score sangat tinggi (≥85).
+- **Bukan otomatis BLOCK permanen** — ini penting agar bank tidak takut salah blokir (*Responsible AI dengan Human-in-the-Loop*).
 
 ---
 
-*Update section ini: 19 Agustus 2026 03:56 WIB — Rifki Firmansyah*
+*Update section ini: 20 Agustus 2026 20:45 WIB — Rifki Firmansyah (AI Architect & Team Lead)*
 
 ---
 
