@@ -718,22 +718,21 @@ export default function GNNVisualization({ addToast }) {
     setPan({ x: 40, y: 20 });
   };
 
-  // Touchpad Pinch-to-Zoom & 2-Finger Pan Handlers (Native Touchpad Feel)
-  const touchStartRef = useRef({ dist: 0, panStart: { x: 0, y: 0 } });
+  // Attach native non-passive wheel listener so browser web page doesn't zoom
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
 
-  const handleWheel = useCallback((e) => {
-    e.preventDefault();
+    const onWheel = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    // Check if it is a touchpad pinch gesture (browsers send ctrlKey: true for trackpad pinch)
-    if (e.ctrlKey) {
-      // Touchpad pinch-to-zoom (fine-grained & smooth)
-      const zoomFactor = -e.deltaY * 0.008;
-      setZoom(prevZoom => {
-        const nextZoom = Math.min(2.8, Math.max(0.4, Number((prevZoom + zoomFactor).toFixed(3))));
-        
-        // Keep zoom focal point exactly at cursor position
-        if (containerRef.current) {
-          const rect = containerRef.current.getBoundingClientRect();
+      if (e.ctrlKey) {
+        // Touchpad pinch-to-zoom (fine-grained & smooth)
+        const zoomFactor = -e.deltaY * 0.008;
+        setZoom(prevZoom => {
+          const nextZoom = Math.min(2.8, Math.max(0.4, Number((prevZoom + zoomFactor).toFixed(3))));
+          const rect = el.getBoundingClientRect();
           const mouseX = e.clientX - rect.left;
           const mouseY = e.clientY - rect.top;
           const scaleRatio = nextZoom / prevZoom;
@@ -741,16 +740,21 @@ export default function GNNVisualization({ addToast }) {
             x: mouseX - (mouseX - prevPan.x) * scaleRatio,
             y: mouseY - (mouseY - prevPan.y) * scaleRatio
           }));
-        }
-        return nextZoom;
-      });
-    } else {
-      // Touchpad 2-finger swipe / pan (smoothly moves map without accidental zoom)
-      setPan(prevPan => ({
-        x: prevPan.x - e.deltaX * 0.9,
-        y: prevPan.y - e.deltaY * 0.9
-      }));
-    }
+          return nextZoom;
+        });
+      } else {
+        // Touchpad 2-finger pan
+        setPan(prevPan => ({
+          x: prevPan.x - e.deltaX * 0.9,
+          y: prevPan.y - e.deltaY * 0.9
+        }));
+      }
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+    };
   }, []);
 
   // Multi-Touch Pinch & Drag for Touchpad / Touchscreen
@@ -1078,46 +1082,50 @@ export default function GNNVisualization({ addToast }) {
       </div>
 
       {/* ----------------------------------------------------------------------
-          STAGE PIPELINE LABELS HEADER (Sesuai Diagram Referensi)
+          STAGE PIPELINE LABELS HEADER (Compact & Sleek)
       ---------------------------------------------------------------------- */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${scenario.stages.length}, 1fr)`,
-        gap: 12,
-        padding: '0 8px'
+        gap: 8,
+        padding: '0 4px'
       }}>
         {scenario.stages.map((stg, idx) => (
           <div
             key={stg.id}
             style={{
-              padding: '10px 14px',
-              borderRadius: 12,
+              padding: '6px 10px',
+              borderRadius: 8,
               background: 'var(--bg-card)',
-              border: `1.5px dashed ${stg.color}40`,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              border: `1px dashed ${stg.color}50`,
               display: 'flex',
               alignItems: 'center',
-              gap: 10
+              gap: 8
             }}
           >
             <div style={{
-              width: 28,
-              height: 28,
+              width: 22,
+              height: 22,
               borderRadius: '50%',
               background: `${stg.color}20`,
-              border: `1.5px solid ${stg.color}`,
+              border: `1px solid ${stg.color}`,
               color: stg.color,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 900,
-              fontSize: '0.75rem'
+              fontSize: '0.68rem',
+              flexShrink: 0
             }}>
               {idx + 1}
             </div>
-            <div>
-              <div style={{ fontSize: '0.76rem', fontWeight: 800, color: stg.color }}>{stg.title}</div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{stg.subtitle}</div>
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 800, color: stg.color, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                {stg.title}
+              </div>
+              <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                {stg.subtitle}
+              </div>
             </div>
           </div>
         ))}
@@ -1164,7 +1172,7 @@ export default function GNNVisualization({ addToast }) {
         />
 
         {/* ------------------------------------------------------------------
-            FLOATING WIDGET 1: CRIMINAL ACTIVITIES CARD (Sesuai Screenshot 1)
+            FLOATING WIDGET 1: CRIMINAL ACTIVITIES (Kiri Bawah - Compact)
         ------------------------------------------------------------------ */}
         <motion.div
           drag
@@ -1173,73 +1181,73 @@ export default function GNNVisualization({ addToast }) {
           animate={{ opacity: 1, x: 0 }}
           style={{
             position: 'absolute',
-            left: 20,
-            bottom: 20,
+            left: 16,
+            bottom: 16,
             zIndex: 10,
-            width: 290,
-            background: 'rgba(15, 23, 42, 0.88)',
+            width: 240,
+            background: 'rgba(8, 14, 30, 0.94)',
             backdropFilter: 'blur(16px)',
             border: '1px solid rgba(239, 68, 68, 0.35)',
-            borderRadius: 16,
-            padding: '16px 18px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.6), 0 0 25px rgba(239, 68, 68, 0.15)',
+            borderRadius: 12,
+            padding: '12px 14px',
+            boxShadow: '0 16px 32px rgba(0,0,0,0.6)',
             color: 'white',
             cursor: 'default'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <ShieldAlert size={18} color="#ef4444" />
-              <span style={{ fontWeight: 800, fontSize: '0.92rem' }}>Criminal activities</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <ShieldAlert size={15} color="#ef4444" />
+              <span style={{ fontWeight: 800, fontSize: '0.8rem', color: '#f8fafc' }}>Criminal activities</span>
             </div>
             <span style={{
               background: '#ef4444',
               color: 'white',
-              fontSize: '0.78rem',
+              fontSize: '0.7rem',
               fontWeight: 800,
-              padding: '2px 8px',
-              borderRadius: 6
+              padding: '1px 6px',
+              borderRadius: 4
             }}>
               {scenario.metrics.criminalActivities}%
             </span>
           </div>
 
           {/* Metric Bars */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 4, color: '#cbd5e1' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: '#cbd5e1' }}>
                 <span>Familiar Behavior</span>
                 <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.familiarBehavior}%</span>
               </div>
-              <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ width: `${scenario.metrics.familiarBehavior}%`, height: '100%', background: '#38bdf8', borderRadius: 3 }} />
+              <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ width: `${scenario.metrics.familiarBehavior}%`, height: '100%', background: '#38bdf8', borderRadius: 2 }} />
               </div>
             </div>
 
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 4, color: '#cbd5e1' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: '#cbd5e1' }}>
                 <span>Suspicious patterns</span>
                 <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.suspiciousPatterns}%</span>
               </div>
-              <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ width: `${scenario.metrics.suspiciousPatterns}%`, height: '100%', background: '#f59e0b', borderRadius: 3 }} />
+              <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ width: `${scenario.metrics.suspiciousPatterns}%`, height: '100%', background: '#f59e0b', borderRadius: 2 }} />
               </div>
             </div>
 
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 4, color: '#cbd5e1' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: '#cbd5e1' }}>
                 <span>Historical data</span>
                 <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.historicalData}%</span>
               </div>
-              <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ width: `${scenario.metrics.historicalData}%`, height: '100%', background: '#10b981', borderRadius: 3 }} />
+              <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ width: `${scenario.metrics.historicalData}%`, height: '100%', background: '#10b981', borderRadius: 2 }} />
               </div>
             </div>
           </div>
         </motion.div>
 
         {/* ------------------------------------------------------------------
-            FLOATING WIDGET 2: RISK SCORE & GNN CLASSIFICATION (Sesuai Screenshot 2)
+            FLOATING WIDGET 2: RISK SCORE & CLASSIFICATION (Kanan Atas - Compact)
         ------------------------------------------------------------------ */}
         <motion.div
           drag
@@ -1248,28 +1256,28 @@ export default function GNNVisualization({ addToast }) {
           animate={{ opacity: 1, x: 0 }}
           style={{
             position: 'absolute',
-            right: 20,
-            top: 20,
+            right: 16,
+            top: 16,
             zIndex: 10,
-            width: 310,
-            background: 'rgba(15, 23, 42, 0.9)',
+            width: 250,
+            background: 'rgba(8, 14, 30, 0.94)',
             backdropFilter: 'blur(16px)',
             border: `1.5px solid ${scenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.45)' : 'rgba(16, 185, 129, 0.45)'}`,
-            borderRadius: 16,
-            padding: '16px 18px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+            borderRadius: 14,
+            padding: '12px 14px',
+            boxShadow: '0 16px 32px rgba(0,0,0,0.6)',
             color: 'white',
             cursor: 'default'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: 1, color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <span style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: 0.8, color: '#94a3b8' }}>
               GNN RISK SCORE
             </span>
             <span style={{
-              fontSize: '0.7rem',
+              fontSize: '0.62rem',
               fontWeight: 800,
-              padding: '2px 6px',
+              padding: '1px 5px',
               borderRadius: 4,
               background: scenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
               color: scenario.riskLevel === 'HIGH' ? '#ef4444' : '#10b981',
@@ -1279,9 +1287,9 @@ export default function GNNVisualization({ addToast }) {
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, margin: '6px 0 10px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, margin: '2px 0 6px' }}>
             <span style={{
-              fontSize: '2.4rem',
+              fontSize: '1.8rem',
               fontWeight: 900,
               fontFamily: 'var(--font-mono)',
               color: scenario.riskLevel === 'HIGH' ? '#ef4444' : '#10b981',
@@ -1289,107 +1297,182 @@ export default function GNNVisualization({ addToast }) {
             }}>
               {scenario.riskScore}
             </span>
-            <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-muted)' }}>/ 100</span>
+            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b' }}>/ 100</span>
           </div>
 
           <div style={{
-            fontSize: '0.74rem',
-            padding: '8px 10px',
-            borderRadius: 8,
+            fontSize: '0.65rem',
+            padding: '5px 8px',
+            borderRadius: 6,
             background: scenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
             color: scenario.riskLevel === 'HIGH' ? '#fca5a5' : '#86efac',
             fontWeight: 800,
-            marginBottom: 10
+            marginBottom: 6
           }}>
-            KLASIFIKASI: {scenario.classification}
+            {scenario.classification}
           </div>
 
-          <ul style={{ margin: 0, paddingLeft: 16, fontSize: '0.72rem', color: '#cbd5e1', lineHeight: 1.6 }}>
-            <li>Banyak akun perantara (fan-out tinggi)</li>
-            <li>Nominal seragam / mirip (structuring & smurfing)</li>
-            <li>Waktu transaksi berurutan sangat singkat (&lt; 5 mnt)</li>
-            <li>Alur dana bermuara pada deposit exchange kripto</li>
+          <ul style={{ margin: 0, paddingLeft: 14, fontSize: '0.65rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+            <li>Banyak akun perantara (fan-out)</li>
+            <li>Nominal pecahan seragam (structuring)</li>
+            <li>Waktu singkat &lt; 5 menit</li>
+            <li>Alur bermuara ke bursa kripto</li>
           </ul>
         </motion.div>
 
         {/* ------------------------------------------------------------------
-            FLOATING WIDGET 3: LEGENDA & POLA ALIRAN (Kiri Atas - High Contrast)
+            FLOATING WIDGET 3: LEGENDA (Kiri Atas - Compact & High Contrast)
         ------------------------------------------------------------------ */}
         <div style={{
           position: 'absolute',
-          left: 20,
-          top: 20,
+          left: 16,
+          top: 16,
           zIndex: 10,
-          background: 'rgba(8, 14, 30, 0.95)',
+          background: 'rgba(8, 14, 30, 0.94)',
           backdropFilter: 'blur(16px)',
-          border: '1.5px solid rgba(99, 102, 241, 0.4)',
-          borderRadius: 14,
-          padding: '14px 16px',
-          boxShadow: '0 18px 36px rgba(0, 0, 0, 0.7), 0 0 20px rgba(99, 102, 241, 0.15)',
+          border: '1.5px solid rgba(99, 102, 241, 0.35)',
+          borderRadius: 12,
+          padding: '10px 12px',
+          boxShadow: '0 16px 32px rgba(0, 0, 0, 0.7)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 8,
-          minWidth: 230,
+          gap: 5,
+          minWidth: 195,
           pointerEvents: 'auto'
         }}>
           <div style={{
             fontWeight: 900,
             color: '#93c5fd',
-            fontSize: '0.74rem',
+            fontSize: '0.65rem',
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
+            gap: 5,
             marginBottom: 2
           }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#38bdf8' }} />
-            LEGENDA ENTITAS &amp; ALIRAN DANA
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#38bdf8' }} />
+            LEGENDA ENTITAS &amp; ALIRAN
           </div>
 
           {/* Node Category Legend */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#38bdf8', border: '1.5px solid #ffffff', flexShrink: 0, boxShadow: '0 0 6px rgba(56,189,248,0.8)' }} />
-              <span style={{ fontSize: '0.74rem', color: '#ffffff', fontWeight: 700 }}>Akun Sumber (Originator)</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#38bdf8', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.67rem', color: '#ffffff', fontWeight: 700 }}>Akun Sumber (Originator)</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#10b981', border: '1.5px solid #ffffff', flexShrink: 0, boxShadow: '0 0 6px rgba(16,185,129,0.8)' }} />
-              <span style={{ fontSize: '0.74rem', color: '#ffffff', fontWeight: 700 }}>Akun Mule / Perantara (L1)</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.67rem', color: '#ffffff', fontWeight: 700 }}>Akun Mule / Perantara (L1)</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#f59e0b', border: '1.5px solid #ffffff', flexShrink: 0, boxShadow: '0 0 6px rgba(245,158,11,0.8)' }} />
-              <span style={{ fontSize: '0.74rem', color: '#ffffff', fontWeight: 700 }}>Merchant / Transit Escrow (L2)</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.67rem', color: '#ffffff', fontWeight: 700 }}>Merchant / Transit (L2)</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#ef4444', border: '1.5px solid #ffffff', flexShrink: 0, boxShadow: '0 0 8px rgba(239,68,68,0.9)' }} />
-              <span style={{ fontSize: '0.74rem', color: '#ffffff', fontWeight: 700 }}>Bursa Kripto / Cold Wallet</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.67rem', color: '#ffffff', fontWeight: 700 }}>Bursa Kripto / Cold Wallet</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#94a3b8', border: '1.5px solid #ffffff', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.74rem', color: '#ffffff', fontWeight: 700 }}>Shared Device / IP Infrastructure</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#94a3b8', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.67rem', color: '#ffffff', fontWeight: 700 }}>Perangkat / Shared IP</span>
             </div>
           </div>
 
           {/* Edge Stream Legend */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 8, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 18, height: 3, background: '#38bdf8', borderRadius: 2, flexShrink: 0, boxShadow: '0 0 4px #38bdf8' }} />
-              <span style={{ fontSize: '0.72rem', color: '#e2e8f0', fontWeight: 600 }}>Transfer Pecahan (Smurfing)</span>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: 5, marginTop: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 14, height: 2.5, background: '#38bdf8', borderRadius: 1, flexShrink: 0 }} />
+              <span style={{ fontSize: '0.65rem', color: '#e2e8f0', fontWeight: 600 }}>Transfer Pecahan (Smurfing)</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 18, height: 3, background: '#f59e0b', borderRadius: 2, flexShrink: 0, boxShadow: '0 0 4px #f59e0b' }} />
-              <span style={{ fontSize: '0.72rem', color: '#e2e8f0', fontWeight: 600 }}>Agregasi Transit (Layering)</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 14, height: 2.5, background: '#f59e0b', borderRadius: 1, flexShrink: 0 }} />
+              <span style={{ fontSize: '0.65rem', color: '#e2e8f0', fontWeight: 600 }}>Agregasi Transit (Layering)</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 18, height: 3, background: '#ef4444', borderRadius: 2, flexShrink: 0, boxShadow: '0 0 6px #ef4444' }} />
-              <span style={{ fontSize: '0.72rem', color: '#fca5a5', fontWeight: 700 }}>🚨 Outflow Kripto (High Risk)</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 14, height: 2.5, background: '#ef4444', borderRadius: 1, flexShrink: 0 }} />
+              <span style={{ fontSize: '0.65rem', color: '#fca5a5', fontWeight: 700 }}>🚨 Outflow Kripto</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 18, height: 0, borderTop: '2px dotted #06b6d4', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.72rem', color: '#67e8f9', fontWeight: 600 }}>Relasi IP / Perangkat Bersama</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 14, height: 0, borderTop: '1.5px dotted #06b6d4', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.65rem', color: '#67e8f9', fontWeight: 600 }}>Relasi IP / Perangkat</span>
             </div>
           </div>
+        </div>
+
+        {/* ------------------------------------------------------------------
+            FLOATING WIDGET 4: ON-CANVAS ZOOM CONTROLS (Kanan Bawah - Icon Controls)
+        ------------------------------------------------------------------ */}
+        <div style={{
+          position: 'absolute',
+          right: 16,
+          bottom: 16,
+          zIndex: 10,
+          background: 'rgba(8, 14, 30, 0.92)',
+          backdropFilter: 'blur(14px)',
+          border: '1px solid rgba(99, 102, 241, 0.35)',
+          borderRadius: 10,
+          padding: '4px 6px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          boxShadow: '0 12px 24px rgba(0,0,0,0.6)'
+        }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={handleZoomOut}
+            title="Zoom Out (-)"
+            style={{ padding: 4, height: 26, width: 26, color: '#f8fafc' }}
+          >
+            <ZoomOut size={14} />
+          </button>
+          
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
+            title="Klik untuk Reset ke 100%"
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              minWidth: 46,
+              textAlign: 'center',
+              fontFamily: 'var(--font-mono)',
+              color: '#38bdf8',
+              padding: '0 4px',
+              height: 24
+            }}
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={handleZoomIn}
+            title="Zoom In (+)"
+            style={{ padding: 4, height: 26, width: 26, color: '#f8fafc' }}
+          >
+            <ZoomIn size={14} />
+          </button>
+
+          <span style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.15)', margin: '0 2px' }} />
+
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={handleFitView}
+            title="Paskan Tampilan (Fit View)"
+            style={{ padding: 4, height: 26, width: 26, color: '#86efac' }}
+          >
+            <Maximize2 size={14} />
+          </button>
+
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={handleResetLayout}
+            title="Reset Posisi Node"
+            style={{ padding: 4, height: 26, width: 26, color: '#fca5a5' }}
+          >
+            <RotateCcw size={14} />
+          </button>
         </div>
 
         {/* ------------------------------------------------------------------
