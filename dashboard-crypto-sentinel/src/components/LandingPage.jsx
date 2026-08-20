@@ -5,6 +5,7 @@ import {
   ChevronDown, Radio, CheckCircle, Play, Check, Clock, Lock,
   Send, Server, Cpu, Activity, RefreshCw
 } from 'lucide-react';
+import GlobalBankingFlowGlobe from './GlobalBankingFlowGlobe';
 
 // ---- Scroll reveal wrapper ----
 const Reveal = ({ children, delay = 0, direction = 'up', className = '' }) => {
@@ -1379,35 +1380,10 @@ export default function LandingPage({ onEnter }) {
             </div>
           </Reveal>
 
-          {/* Right Column: Animated heroo.jpeg with Smooth Floating Motion */}
+          {/* Right Column: Interactive 3D Cross-Border Banking Flow Globe */}
           <Reveal delay={0.2} direction="left">
             <div className="lp-hero-visual-box">
-              <motion.div
-                animate={{ 
-                  y: [0, -14, 0],
-                }}
-                transition={{ 
-                  duration: 4.5, 
-                  repeat: Infinity, 
-                  ease: 'easeInOut' 
-                }}
-                style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}
-              >
-                {/* Main 3D Shield Image */}
-                <div
-                  style={{
-                    borderRadius: '24px',
-                    overflow: 'hidden',
-                    filter: 'drop-shadow(0 25px 50px rgba(37,99,235,0.28))'
-                  }}
-                >
-                  <img
-                    src="/img/heroo.jpeg"
-                    alt="Crypto-Sentinel 3D Shield"
-                    className="lp-hero-shield-img"
-                  />
-                </div>
-              </motion.div>
+              <GlobalBankingFlowGlobe isLight={true} />
             </div>
           </Reveal>
         </div>
