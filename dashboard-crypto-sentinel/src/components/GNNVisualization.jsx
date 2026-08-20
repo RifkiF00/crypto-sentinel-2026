@@ -1248,54 +1248,81 @@ export default function GNNVisualization({ addToast }) {
         </motion.div>
 
         {/* ------------------------------------------------------------------
-            FLOATING WIDGET 3: LEGENDA & POLA ALIRAN (Kiri Atas)
+            FLOATING WIDGET 3: LEGENDA & POLA ALIRAN (Kiri Atas - High Contrast)
         ------------------------------------------------------------------ */}
         <div style={{
           position: 'absolute',
           left: 20,
           top: 20,
           zIndex: 10,
-          background: 'rgba(15, 23, 42, 0.85)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid var(--border-color)',
+          background: 'rgba(8, 14, 30, 0.95)',
+          backdropFilter: 'blur(16px)',
+          border: '1.5px solid rgba(99, 102, 241, 0.4)',
           borderRadius: 14,
-          padding: '12px 14px',
-          fontSize: '0.72rem',
-          color: 'var(--text-primary)',
-          boxShadow: '0 12px 28px rgba(0,0,0,0.5)',
+          padding: '14px 16px',
+          boxShadow: '0 18px 36px rgba(0, 0, 0, 0.7), 0 0 20px rgba(99, 102, 241, 0.15)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 6
+          gap: 8,
+          minWidth: 230,
+          pointerEvents: 'auto'
         }}>
-          <div style={{ fontWeight: 800, color: '#818cf8', fontSize: '0.74rem', marginBottom: 2 }}>LEGENDA NODE & ALIRAN</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#38bdf8' }} />
-            <span>Akun Sumber (Originator)</span>
+          <div style={{
+            fontWeight: 900,
+            color: '#93c5fd',
+            fontSize: '0.74rem',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            marginBottom: 2
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#38bdf8' }} />
+            LEGENDA ENTITAS &amp; ALIRAN DANA
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981' }} />
-            <span>Akun Mule / Perantara (Layer 1)</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b' }} />
-            <span>Merchant / Transit (Layer 2)</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
-            <span>Bursa Kripto / Cold Wallet</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#94a3b8' }} />
-            <span>Perangkat / Shared IP</span>
-          </div>
-          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 6, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444' }}>
-              <span style={{ width: 14, height: 2, background: '#ef4444' }} />
-              <span>Garis Merah: Outflow ke Kripto</span>
+
+          {/* Node Category Legend */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#38bdf8', border: '1.5px solid #ffffff', flexShrink: 0, boxShadow: '0 0 6px rgba(56,189,248,0.8)' }} />
+              <span style={{ fontSize: '0.74rem', color: '#ffffff', fontWeight: 700 }}>Akun Sumber (Originator)</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#06b6d4' }}>
-              <span style={{ width: 14, height: 2, borderTop: '2px dotted #06b6d4' }} />
-              <span>Garis Cyan: Relasi IP / Device</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#10b981', border: '1.5px solid #ffffff', flexShrink: 0, boxShadow: '0 0 6px rgba(16,185,129,0.8)' }} />
+              <span style={{ fontSize: '0.74rem', color: '#ffffff', fontWeight: 700 }}>Akun Mule / Perantara (L1)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#f59e0b', border: '1.5px solid #ffffff', flexShrink: 0, boxShadow: '0 0 6px rgba(245,158,11,0.8)' }} />
+              <span style={{ fontSize: '0.74rem', color: '#ffffff', fontWeight: 700 }}>Merchant / Transit Escrow (L2)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#ef4444', border: '1.5px solid #ffffff', flexShrink: 0, boxShadow: '0 0 8px rgba(239,68,68,0.9)' }} />
+              <span style={{ fontSize: '0.74rem', color: '#ffffff', fontWeight: 700 }}>Bursa Kripto / Cold Wallet</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#94a3b8', border: '1.5px solid #ffffff', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.74rem', color: '#ffffff', fontWeight: 700 }}>Shared Device / IP Infrastructure</span>
+            </div>
+          </div>
+
+          {/* Edge Stream Legend */}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 8, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 18, height: 3, background: '#38bdf8', borderRadius: 2, flexShrink: 0, boxShadow: '0 0 4px #38bdf8' }} />
+              <span style={{ fontSize: '0.72rem', color: '#e2e8f0', fontWeight: 600 }}>Transfer Pecahan (Smurfing)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 18, height: 3, background: '#f59e0b', borderRadius: 2, flexShrink: 0, boxShadow: '0 0 4px #f59e0b' }} />
+              <span style={{ fontSize: '0.72rem', color: '#e2e8f0', fontWeight: 600 }}>Agregasi Transit (Layering)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 18, height: 3, background: '#ef4444', borderRadius: 2, flexShrink: 0, boxShadow: '0 0 6px #ef4444' }} />
+              <span style={{ fontSize: '0.72rem', color: '#fca5a5', fontWeight: 700 }}>🚨 Outflow Kripto (High Risk)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 18, height: 0, borderTop: '2px dotted #06b6d4', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.72rem', color: '#67e8f9', fontWeight: 600 }}>Relasi IP / Perangkat Bersama</span>
             </div>
           </div>
         </div>
@@ -1475,44 +1502,44 @@ export default function GNNVisualization({ addToast }) {
                     {node.code}
                   </text>
 
-                  {/* Label Text below node */}
-                  <g transform={`translate(0, ${nodeRadius + 14})`}>
+                  {/* Unified High-Contrast Label Pill below node */}
+                  <g transform={`translate(0, ${nodeRadius + 15})`}>
                     <rect
-                      x="-65"
-                      y="-8"
-                      width="130"
-                      height="16"
-                      rx="4"
-                      fill="rgba(15, 23, 42, 0.85)"
-                      stroke="rgba(255,255,255,0.1)"
-                      strokeWidth="0.8"
+                      x="-70"
+                      y="-9"
+                      width="140"
+                      height="30"
+                      rx="6"
+                      fill="rgba(8, 14, 30, 0.94)"
+                      stroke={isSelected ? col.border : 'rgba(148, 163, 184, 0.35)'}
+                      strokeWidth={isSelected ? 1.5 : 1}
                     />
+                    {/* Primary Name */}
                     <text
                       x="0"
-                      y="3.5"
+                      y="4"
                       textAnchor="middle"
-                      fill="white"
+                      fill="#ffffff"
                       fontSize="9.5"
-                      fontWeight="700"
+                      fontWeight="800"
                       pointerEvents="none"
                     >
                       {node.label.length > 17 ? node.label.substring(0, 15) + '...' : node.label}
                     </text>
+                    {/* Secondary Bank & Account */}
+                    <text
+                      x="0"
+                      y="16"
+                      textAnchor="middle"
+                      fill="#93c5fd"
+                      fontSize="7.8"
+                      fontWeight="700"
+                      fontFamily="var(--font-mono)"
+                      pointerEvents="none"
+                    >
+                      {node.bank} • {node.account ? (node.account.length > 11 ? node.account.substring(0, 9) + '..' : node.account) : ''}
+                    </text>
                   </g>
-
-                  {/* Secondary info (Bank & Account) */}
-                  <text
-                    x="0"
-                    y={nodeRadius + 30}
-                    textAnchor="middle"
-                    fill="var(--text-muted)"
-                    fontSize="8"
-                    fontWeight="600"
-                    fontFamily="var(--font-mono)"
-                    pointerEvents="none"
-                  >
-                    {node.bank} ({node.account ? node.account.substring(0, 10) : ''})
-                  </text>
                 </g>
               );
             })}
