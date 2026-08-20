@@ -27,9 +27,8 @@ async def analyze_via_sentinel(
     try:
         with Session(engine) as db:
             txs = db.query(Transaction).filter(
-                (Transaction.sender_account == sender_account) &
-                (Transaction.status.in_(["SUCCESS", "PENDING", "REVIEW"]))
-            ).order_by(Transaction.timestamp.desc()).limit(5).all()
+                Transaction.sender_account == sender_account
+            ).order_by(Transaction.timestamp.desc()).limit(20).all()
             
             for tx in txs:
                 past_transactions.append({

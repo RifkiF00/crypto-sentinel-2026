@@ -198,9 +198,12 @@ def evaluate_transaction(transaction: Any, threat_df: pd.DataFrame, sender_profi
             if dest_str:
                 destinations.add(dest_str)
             
-            if len(destinations) >= 4:
+            if len(destinations) >= 3:
                 risk_score += 45
-                reasons.append(f"Potential Smurfing/Structuring Pattern: {len(destinations)} distinct destination accounts in the last 1 hour")
+                reasons.append(f"Potential Smurfing/Structuring Pattern: {len(destinations)} distinct destination accounts targeted in rapid succession")
+            elif len(recent_txs) >= 3:
+                risk_score += 35
+                reasons.append(f"Rapid Velocity Spike: {len(recent_txs)} rapid outbound transfers detected within 1 hour")
         except Exception as e:
             print(f"[Smurfing Detection Calculation Error]: {e}")
 
