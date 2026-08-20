@@ -1918,43 +1918,60 @@ export default function GNNVisualization({ addToast }) {
             </div>
           </div>
 
-          {/* 4 Indicator Groups */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 14 }}>
+          {/* 4 Indicator Groups - 100% Symmetrical Equal-Height Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 285px), 1fr))',
+            gap: 14,
+            alignItems: 'stretch'
+          }}>
             {Object.entries(scenario.metrics.subIndicators).map(([key, indicator], groupIdx) => (
               <div key={key} style={{
                 border: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b',
-                borderRadius: 12,
+                borderRadius: 14,
                 background: isLight ? '#ffffff' : '#090d16',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
               }}>
                 {/* Indicator Group Header */}
                 <div style={{
-                  padding: '10px 14px',
+                  padding: '12px 14px',
                   background: isLight ? '#f8fafc' : '#1e293b',
                   borderBottom: isLight ? '1px solid #e2e8f0' : '1px solid #334155',
                   borderLeft: `4px solid ${indicator.color}`,
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  minHeight: 64,
+                  boxSizing: 'border-box'
                 }}>
-                  <div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: isLight ? '#0f172a' : '#f8fafc' }}>
+                  <div style={{ flex: 1, paddingRight: 8 }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: isLight ? '#0f172a' : '#f8fafc', lineHeight: 1.3 }}>
                       {indicator.label}
                     </div>
-                    <div style={{ fontSize: '0.67rem', color: isLight ? '#64748b' : '#94a3b8', marginTop: 2 }}>
+                    <div style={{ fontSize: '0.65rem', color: isLight ? '#64748b' : '#94a3b8', marginTop: 2 }}>
                       {indicator.source}
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 900, color: indicator.color, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 900, color: indicator.color, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
                       {indicator.score}
                     </div>
-                    <div style={{ fontSize: '0.6rem', color: '#64748b' }}>Risk Score</div>
+                    <div style={{ fontSize: '0.58rem', color: '#64748b', fontWeight: 700 }}>Risk Score</div>
                   </div>
                 </div>
 
-                {/* Sub-Indicators */}
-                <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {/* Sub-Indicators: Symmetrical 3-Row Grid */}
+                <div style={{
+                  padding: '12px',
+                  display: 'grid',
+                  gridTemplateRows: 'repeat(3, 1fr)',
+                  gap: 10,
+                  flex: 1
+                }}>
                   {indicator.subs.map((sub, subIdx) => {
                     const statusColor = sub.status === 'critical' ? '#dc2626' : sub.status === 'high' ? '#d97706' : '#059669';
                     const statusLabel = sub.status === 'critical' ? 'KRITIS' : sub.status === 'high' ? 'TINGGI' : 'SEDANG';
@@ -1963,54 +1980,64 @@ export default function GNNVisualization({ addToast }) {
                         background: isLight ? '#f8fafc' : '#0f172a',
                         border: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b',
                         borderLeft: `3px solid ${statusColor}`,
-                        borderRadius: 8,
-                        padding: '9px 12px'
+                        borderRadius: 10,
+                        padding: '10px 12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        height: '100%',
+                        boxSizing: 'border-box'
                       }}>
                         {/* Sub-indicator header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 5 }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                              <span style={{
-                                fontSize: '0.62rem', fontWeight: 800, padding: '1px 5px', borderRadius: 3,
-                                background: `${statusColor}18`, color: statusColor, border: `1px solid ${statusColor}40`
-                              }}>
-                                {statusLabel}
-                              </span>
-                              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: isLight ? '#0f172a' : '#f8fafc' }}>
-                                Sub-{groupIdx + 1}.{subIdx + 1} — {sub.name}
-                              </span>
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6, marginBottom: 4 }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                                <span style={{
+                                  fontSize: '0.6rem', fontWeight: 800, padding: '1px 5px', borderRadius: 3,
+                                  background: `${statusColor}18`, color: statusColor, border: `1px solid ${statusColor}40`
+                                }}>
+                                  {statusLabel}
+                                </span>
+                                <span style={{ fontSize: '0.73rem', fontWeight: 700, color: isLight ? '#0f172a' : '#f8fafc', lineHeight: 1.25 }}>
+                                  Sub-{groupIdx + 1}.{subIdx + 1} — {sub.name}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '0.64rem', color: '#64748b' }}>{sub.source}</div>
                             </div>
-                            <div style={{ fontSize: '0.66rem', color: '#64748b' }}>{sub.source}</div>
+                            {/* Score with bar */}
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              <div style={{ fontSize: '0.98rem', fontWeight: 900, color: statusColor, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
+                                {sub.score}
+                              </div>
+                              <div style={{ width: 40, height: 3, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.08)', borderRadius: 2, marginTop: 3, overflow: 'hidden' }}>
+                                <div style={{ width: `${sub.score}%`, height: '100%', background: statusColor, borderRadius: 2 }} />
+                              </div>
+                            </div>
                           </div>
-                          {/* Score with bar */}
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div style={{ fontSize: '1rem', fontWeight: 900, color: statusColor, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
-                              {sub.score}
-                            </div>
-                            <div style={{ width: 44, height: 3.5, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.08)', borderRadius: 2, marginTop: 3, overflow: 'hidden' }}>
-                              <div style={{ width: `${sub.score}%`, height: '100%', background: statusColor, borderRadius: 2 }} />
-                            </div>
+
+                          {/* Value badge */}
+                          <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '3px 8px', borderRadius: 5,
+                            background: isLight ? '#ffffff' : '#020617',
+                            border: isLight ? '1px solid #cbd5e1' : '1px solid #1e293b',
+                            fontSize: '0.68rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
+                            color: isLight ? '#0f172a' : '#f8fafc', margin: '4px 0 6px 0'
+                          }}>
+                            <span style={{ color: '#64748b' }}>Nilai Aktual:</span>
+                            <span style={{ color: statusColor }}>{sub.value}</span>
                           </div>
                         </div>
 
-                        {/* Value badge */}
+                        {/* Detail explanation with minimum height for symmetry */}
                         <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          padding: '3px 8px', borderRadius: 4,
-                          background: isLight ? '#ffffff' : '#020617',
-                          border: isLight ? '1px solid #cbd5e1' : '1px solid #1e293b',
-                          fontSize: '0.7rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
-                          color: isLight ? '#0f172a' : '#f8fafc', marginBottom: 5
-                        }}>
-                          <span style={{ color: '#64748b' }}>Nilai Aktual:</span>
-                          <span style={{ color: statusColor }}>{sub.value}</span>
-                        </div>
-
-                        {/* Detail explanation */}
-                        <div style={{
-                          fontSize: '0.68rem', color: isLight ? '#475569' : '#94a3b8', lineHeight: 1.5,
-                          padding: '5px 8px', borderRadius: 4,
-                          background: isLight ? '#f1f5f9' : '#020617'
+                          fontSize: '0.66rem', color: isLight ? '#475569' : '#94a3b8', lineHeight: 1.45,
+                          padding: '6px 8px', borderRadius: 6,
+                          background: isLight ? '#f1f5f9' : '#020617',
+                          minHeight: 38,
+                          display: 'flex',
+                          alignItems: 'center'
                         }}>
                           {sub.detail}
                         </div>
@@ -2022,13 +2049,13 @@ export default function GNNVisualization({ addToast }) {
             ))}
           </div>
 
-          {/* Bottom: Model Technical Details */}
+          {/* Bottom: Model Technical Details - Symmetrical 6-Column Grid */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
-            gap: 8,
-            marginTop: 14,
-            paddingTop: 14,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
+            gap: 10,
+            marginTop: 16,
+            paddingTop: 16,
             borderTop: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b'
           }}>
             {[
@@ -2041,8 +2068,8 @@ export default function GNNVisualization({ addToast }) {
             ].map((item, i) => (
               <div key={i} style={{
                 background: isLight ? '#f8fafc' : '#020617',
-                padding: '7px 10px',
-                borderRadius: 6,
+                padding: '8px 12px',
+                borderRadius: 8,
                 border: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b',
                 display: 'flex',
                 alignItems: 'center',
