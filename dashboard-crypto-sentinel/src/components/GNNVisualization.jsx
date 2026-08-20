@@ -1925,44 +1925,97 @@ export default function GNNVisualization({ addToast }) {
             gap: 14,
             alignItems: 'stretch'
           }}>
-            {Object.entries(scenario.metrics.subIndicators).map(([key, indicator], groupIdx) => (
-              <div key={key} style={{
-                border: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b',
-                borderRadius: 14,
-                background: isLight ? '#ffffff' : '#090d16',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%',
-                boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-              }}>
-                {/* Indicator Group Header */}
-                <div style={{
-                  padding: '12px 14px',
-                  background: isLight ? '#f8fafc' : '#1e293b',
-                  borderBottom: isLight ? '1px solid #e2e8f0' : '1px solid #334155',
-                  borderLeft: `4px solid ${indicator.color}`,
+            {Object.entries(scenario.metrics.subIndicators).map(([key, indicator], groupIdx) => {
+              const groupThemes = [
+                {
+                  bgLight: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+                  bgDark: 'linear-gradient(135deg, rgba(220, 38, 38, 0.22) 0%, rgba(153, 27, 27, 0.12) 100%)',
+                  borderLight: '#fecaca',
+                  borderDark: 'rgba(220, 38, 38, 0.35)',
+                  titleLight: '#991b1b',
+                  titleDark: '#fca5a5',
+                  subLight: '#b91c1c',
+                  subDark: '#f87171',
+                  cardBorderLight: '#fecaca',
+                  cardBorderDark: 'rgba(220, 38, 38, 0.3)'
+                },
+                {
+                  bgLight: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                  bgDark: 'linear-gradient(135deg, rgba(217, 119, 6, 0.22) 0%, rgba(180, 83, 9, 0.12) 100%)',
+                  borderLight: '#fde68a',
+                  borderDark: 'rgba(217, 119, 6, 0.35)',
+                  titleLight: '#92400e',
+                  titleDark: '#fde68a',
+                  subLight: '#b45309',
+                  subDark: '#fbbf24',
+                  cardBorderLight: '#fde68a',
+                  cardBorderDark: 'rgba(217, 119, 6, 0.3)'
+                },
+                {
+                  bgLight: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+                  bgDark: 'linear-gradient(135deg, rgba(124, 58, 237, 0.22) 0%, rgba(91, 33, 182, 0.12) 100%)',
+                  borderLight: '#e9d5ff',
+                  borderDark: 'rgba(124, 58, 237, 0.35)',
+                  titleLight: '#5b21b6',
+                  titleDark: '#d8b4fe',
+                  subLight: '#7c3aed',
+                  subDark: '#c084fc',
+                  cardBorderLight: '#e9d5ff',
+                  cardBorderDark: 'rgba(124, 58, 237, 0.3)'
+                },
+                {
+                  bgLight: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                  bgDark: 'linear-gradient(135deg, rgba(2, 132, 199, 0.22) 0%, rgba(3, 105, 161, 0.12) 100%)',
+                  borderLight: '#bfdbfe',
+                  borderDark: 'rgba(2, 132, 199, 0.35)',
+                  titleLight: '#075985',
+                  titleDark: '#7dd3fc',
+                  subLight: '#0284c7',
+                  subDark: '#38bdf8',
+                  cardBorderLight: '#bfdbfe',
+                  cardBorderDark: 'rgba(2, 132, 199, 0.3)'
+                }
+              ];
+              const theme = groupThemes[groupIdx] || groupThemes[0];
+
+              return (
+                <div key={key} style={{
+                  border: isLight ? `1.5px solid ${theme.cardBorderLight}` : `1.5px solid ${theme.cardBorderDark}`,
+                  borderRadius: 14,
+                  background: isLight ? '#ffffff' : '#090d16',
+                  overflow: 'hidden',
                   display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  minHeight: 64,
-                  boxSizing: 'border-box'
+                  flexDirection: 'column',
+                  height: '100%',
+                  boxShadow: isLight ? '0 3px 12px rgba(0,0,0,0.04)' : 'none'
                 }}>
-                  <div style={{ flex: 1, paddingRight: 8 }}>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: isLight ? '#0f172a' : '#f8fafc', lineHeight: 1.3 }}>
-                      {indicator.label}
+                  {/* Indicator Group Header with Distinct Themed Background */}
+                  <div style={{
+                    padding: '12px 14px',
+                    background: isLight ? theme.bgLight : theme.bgDark,
+                    borderBottom: isLight ? `1.5px solid ${theme.borderLight}` : `1px solid ${theme.borderDark}`,
+                    borderLeft: `5px solid ${indicator.color}`,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    minHeight: 64,
+                    boxSizing: 'border-box'
+                  }}>
+                    <div style={{ flex: 1, paddingRight: 8 }}>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 800, color: isLight ? theme.titleLight : theme.titleDark, lineHeight: 1.3 }}>
+                        {indicator.label}
+                      </div>
+                      <div style={{ fontSize: '0.66rem', color: isLight ? theme.subLight : theme.subDark, marginTop: 2, fontWeight: 600 }}>
+                        {indicator.source}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.65rem', color: isLight ? '#64748b' : '#94a3b8', marginTop: 2 }}>
-                      {indicator.source}
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: '1.35rem', fontWeight: 900, color: indicator.color, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
+                        {indicator.score}
+                      </div>
+                      <div style={{ fontSize: '0.58rem', color: isLight ? theme.subLight : theme.subDark, fontWeight: 700 }}>Risk Score</div>
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: '1.3rem', fontWeight: 900, color: indicator.color, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
-                      {indicator.score}
-                    </div>
-                    <div style={{ fontSize: '0.58rem', color: '#64748b', fontWeight: 700 }}>Risk Score</div>
-                  </div>
-                </div>
 
                 {/* Sub-Indicators: Symmetrical 3-Row Grid */}
                 <div style={{
@@ -2046,7 +2099,8 @@ export default function GNNVisualization({ addToast }) {
                   })}
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
 
           {/* Bottom: Model Technical Details - Symmetrical 6-Column Grid */}
