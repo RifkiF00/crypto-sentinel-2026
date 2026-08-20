@@ -1380,7 +1380,7 @@ export default function LandingPage({ onEnter }) {
             </div>
           </Reveal>
 
-          {/* Right Column: Hero Visual with landing2.jpeg */}
+          {/* Right Column: Hero Visual with landing2.jpeg (Seamless Feathered Blend) */}
           <Reveal delay={0.2} direction="left">
             <div className="lp-hero-visual-box">
               <motion.div
@@ -1396,13 +1396,12 @@ export default function LandingPage({ onEnter }) {
               >
                 <div
                   style={{
-                    borderRadius: '24px',
-                    overflow: 'hidden',
-                    boxShadow: '0 25px 60px rgba(37, 99, 235, 0.22)',
-                    border: '1px solid rgba(37, 99, 235, 0.15)',
-                    background: '#ffffff',
-                    maxWidth: 520,
-                    width: '100%'
+                    position: 'relative',
+                    maxWidth: 540,
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center'
                   }}
                 >
                   <img
@@ -1412,7 +1411,11 @@ export default function LandingPage({ onEnter }) {
                       width: '100%',
                       height: 'auto',
                       display: 'block',
-                      objectFit: 'cover'
+                      objectFit: 'contain',
+                      borderRadius: '24px',
+                      WebkitMaskImage: 'radial-gradient(ellipse 95% 92% at 58% 50%, black 68%, transparent 100%)',
+                      maskImage: 'radial-gradient(ellipse 95% 92% at 58% 50%, black 68%, transparent 100%)',
+                      filter: 'drop-shadow(0 20px 40px rgba(37, 99, 235, 0.18))'
                     }}
                   />
                 </div>
