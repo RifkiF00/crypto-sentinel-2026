@@ -1833,7 +1833,7 @@ export default function LandingPage({ onEnter }) {
       <section className="lp-section" style={{ paddingTop: 80 }}>
         <Reveal>
           <span className="lp-section-tag">Dokumentasi Produk</span>
-          <h2 className="lp-section-title">Target Pengguna,<br />Arsitektur & <span className="crimson-it">Model Bisnis</span></h2>
+          <h2 className="lp-section-title">Target Pengguna &amp;<br /><span className="crimson-it">Arsitektur Alur Sistem</span></h2>
         </Reveal>
         <Reveal delay={0.1}>
           <div className="lp-docs">
@@ -1841,7 +1841,6 @@ export default function LandingPage({ onEnter }) {
               {[
                 { key: 'tp', label: '1. Target Pengguna', desc: '4 aktor utama: Compliance Officer, Risk Manager, Regulator, Nasabah', accent: '#1e3a8a' },
                 { key: 'flow', label: '2. Flowchart & Rich Picture', desc: 'Alur sistem end-to-end dan logika keputusan FDS', accent: '#d97706' },
-                { key: 'bmc', label: '3. Business Model Canvas', desc: 'Komersialisasi SaaS, Revenue Streams, Key Partners', accent: '#16a34a' },
               ].map(tab => (
                 <div key={tab.key} className="lp-doc-tab" onClick={() => setActiveDocTab(tab.key)} style={{ background: activeDocTab === tab.key ? tab.accent + '0f' : '#fafaf8', borderColor: activeDocTab === tab.key ? tab.accent : 'rgba(0,0,0,0.08)' }}>
                   <h4 style={{ color: activeDocTab === tab.key ? tab.accent : '#333333' }}>{tab.label}</h4>
@@ -1881,27 +1880,6 @@ export default function LandingPage({ onEnter }) {
                         <p style={{ color: '#666666', fontSize: '0.83rem', lineHeight: 1.7, margin: 0, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{item.desc}</p>
                       </div>
                     ))}
-                  </div>
-                </motion.div>
-              )}
-              {activeDocTab === 'bmc' && (
-                <motion.div key="bmc" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-                  <div style={{ background: '#fafaf8', border: '1px solid rgba(22,163,74,0.15)', borderRadius: 16, padding: 24 }}>
-                    <h4 style={{ color: '#16a34a', fontWeight: 700, fontSize: '0.9rem', marginBottom: 16 }}>Business Model Canvas — Crypto-Sentinel FDS</h4>
-                    <img src="/img/BMC.jpeg" alt="BMC" style={{ width: '100%', borderRadius: 10, marginBottom: 20 }} />
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
-                      {[
-                        { label: 'Value Proposition', val: 'FDS real-time <18ms, standar SNAP BI, otomatisasi draft STR PPATK. Plug-and-play middleware tanpa modifikasi core banking.' },
-                        { label: 'Customer Segments', val: 'Bank Pembangunan Daerah (Bank Kuningan, BJB), 250+ BPR & BPRS Jawa Barat, Bank KBMI IV.' },
-                        { label: 'Revenue Streams', val: 'B2B SaaS Subscription + Micro-fee per API call. Target breakeven: 18 bank tahun pertama.' },
-                        { label: 'Key Partners', val: 'OJK, PPATK, Bappebti, Perbarindo Jawa Barat, Indodax, Pintu, Tokocrypto.' },
-                      ].map((item, i) => (
-                        <div key={i} style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid rgba(0,0,0,0.07)' }}>
-                          <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: 1, color: '#16a34a', fontWeight: 800, marginBottom: 6, fontFamily: 'JetBrains Mono, monospace' }}>{item.label}</div>
-                          <p style={{ fontSize: '0.82rem', color: '#666666', lineHeight: 1.65, margin: 0, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{item.val}</p>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 </motion.div>
               )}
