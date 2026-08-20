@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
 import {
   Brain,
   Cpu,
@@ -665,6 +666,9 @@ const SCENARIOS = {
 // ============================================================================
 
 export default function GNNVisualization({ addToast }) {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
+
   // Scenario State
   const [selectedScenarioKey, setSelectedScenarioKey] = useState('smurfing_crypto');
   const scenario = SCENARIOS[selectedScenarioKey];
@@ -973,7 +977,7 @@ export default function GNNVisualization({ addToast }) {
                       borderRadius: '50%',
                       background: sc.riskLevel === 'HIGH' ? '#ef4444' : '#10b981'
                     }} />
-                    {key === 'smurfing_crypto' ? '🔥 Smurfing Kripto' : key === 'mule_ring' ? '⭕ Mule Ring Loop' : '✅ Payroll BPR'}
+                    {key === 'smurfing_crypto' ? 'Smurfing Kripto' : key === 'mule_ring' ? 'Mule Ring Loop' : 'Payroll BPR'}
                   </button>
                 );
               })}
@@ -1009,21 +1013,21 @@ export default function GNNVisualization({ addToast }) {
               onClick={() => setActiveFilter('crypto')}
               style={{ fontSize: '0.74rem', height: 28, padding: '0 10px', borderRadius: 6, color: activeFilter === 'crypto' ? 'white' : '#ef4444' }}
             >
-              🚨 Jalur Pelarian Kripto (Red Path)
+              Jalur Pelarian Kripto (Red Path)
             </button>
             <button
               className={`btn btn-sm ${activeFilter === 'mule' ? 'btn-secondary' : 'btn-ghost'}`}
               onClick={() => setActiveFilter('mule')}
               style={{ fontSize: '0.74rem', height: 28, padding: '0 10px', borderRadius: 6 }}
             >
-              👥 Mule Layering Network
+              Mule Layering Network
             </button>
             <button
               className={`btn btn-sm ${activeFilter === 'device' ? 'btn-secondary' : 'btn-ghost'}`}
               onClick={() => setActiveFilter('device')}
               style={{ fontSize: '0.74rem', height: 28, padding: '0 10px', borderRadius: 6 }}
             >
-              📱 Device & IP Linkage
+              Device &amp; IP Linkage
             </button>
           </div>
 
@@ -1152,24 +1156,27 @@ export default function GNNVisualization({ addToast }) {
           position: 'relative',
           width: '100%',
           height: 620,
-          background: 'radial-gradient(ellipse at center, rgba(15, 23, 42, 0.98) 0%, rgba(9, 13, 26, 1) 100%)',
+          background: isLight
+            ? 'radial-gradient(ellipse at center, #ffffff 0%, #f1f5f9 100%)'
+            : 'radial-gradient(ellipse at center, rgba(15, 23, 42, 0.98) 0%, rgba(9, 13, 26, 1) 100%)',
           borderRadius: 20,
-          border: '1px solid var(--border-color)',
+          border: isLight ? '1px solid #cbd5e1' : '1px solid var(--border-color)',
           overflow: 'hidden',
           cursor: isPanning ? 'grabbing' : 'grab',
-          boxShadow: 'inset 0 0 40px rgba(0,0,0,0.8), 0 12px 36px rgba(0,0,0,0.4)'
+          boxShadow: isLight
+            ? '0 10px 30px rgba(0,0,0,0.06)'
+            : 'inset 0 0 40px rgba(0,0,0,0.8), 0 12px 36px rgba(0,0,0,0.4)'
         }}
       >
-        {/* Subtle Cyber Blueprint Background Grid */}
+        {/* Subtle Background Grid (Adaptive Light / Dark) */}
         <div
           className="canvas-bg"
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundImage: `
-              linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(99, 102, 241, 0.05) 1px, transparent 1px)
-            `,
+            backgroundImage: isLight
+              ? `linear-gradient(to right, rgba(148, 163, 184, 0.18) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.18) 1px, transparent 1px)`
+              : `linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(99, 102, 241, 0.05) 1px, transparent 1px)`,
             backgroundSize: `${30 * zoom}px ${30 * zoom}px`,
             backgroundPosition: `${pan.x}px ${pan.y}px`,
             pointerEvents: 'none'
@@ -1190,20 +1197,20 @@ export default function GNNVisualization({ addToast }) {
             bottom: 16,
             zIndex: 10,
             width: 240,
-            background: 'rgba(8, 14, 30, 0.94)',
+            background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.94)',
             backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(239, 68, 68, 0.35)',
+            border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(239, 68, 68, 0.35)',
             borderRadius: 12,
             padding: '12px 14px',
-            boxShadow: '0 16px 32px rgba(0,0,0,0.6)',
-            color: 'white',
+            boxShadow: isLight ? '0 10px 25px rgba(0,0,0,0.1)' : '0 16px 32px rgba(0,0,0,0.6)',
+            color: isLight ? '#0f172a' : 'white',
             cursor: 'default'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <ShieldAlert size={15} color="#ef4444" />
-              <span style={{ fontWeight: 800, fontSize: '0.8rem', color: '#f8fafc' }}>Criminal activities</span>
+              <span style={{ fontWeight: 800, fontSize: '0.8rem', color: isLight ? '#0f172a' : '#f8fafc' }}>Criminal activities</span>
             </div>
             <span style={{
               background: '#ef4444',
@@ -1220,32 +1227,32 @@ export default function GNNVisualization({ addToast }) {
           {/* Metric Bars */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: '#cbd5e1' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: isLight ? '#475569' : '#cbd5e1' }}>
                 <span>Familiar Behavior</span>
                 <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.familiarBehavior}%</span>
               </div>
-              <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ width: `${scenario.metrics.familiarBehavior}%`, height: '100%', background: '#38bdf8', borderRadius: 2 }} />
+              <div style={{ width: '100%', height: 4, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ width: `${scenario.metrics.familiarBehavior}%`, height: '100%', background: '#0284c7', borderRadius: 2 }} />
               </div>
             </div>
 
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: '#cbd5e1' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: isLight ? '#475569' : '#cbd5e1' }}>
                 <span>Suspicious patterns</span>
                 <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.suspiciousPatterns}%</span>
               </div>
-              <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ width: `${scenario.metrics.suspiciousPatterns}%`, height: '100%', background: '#f59e0b', borderRadius: 2 }} />
+              <div style={{ width: '100%', height: 4, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ width: `${scenario.metrics.suspiciousPatterns}%`, height: '100%', background: '#d97706', borderRadius: 2 }} />
               </div>
             </div>
 
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: '#cbd5e1' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: isLight ? '#475569' : '#cbd5e1' }}>
                 <span>Historical data</span>
                 <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.historicalData}%</span>
               </div>
-              <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ width: `${scenario.metrics.historicalData}%`, height: '100%', background: '#10b981', borderRadius: 2 }} />
+              <div style={{ width: '100%', height: 4, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ width: `${scenario.metrics.historicalData}%`, height: '100%', background: '#059669', borderRadius: 2 }} />
               </div>
             </div>
           </div>
@@ -1265,18 +1272,20 @@ export default function GNNVisualization({ addToast }) {
             top: 16,
             zIndex: 10,
             width: 250,
-            background: 'rgba(8, 14, 30, 0.94)',
+            background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.94)',
             backdropFilter: 'blur(16px)',
-            border: `1.5px solid ${scenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.45)' : 'rgba(16, 185, 129, 0.45)'}`,
+            border: isLight
+              ? (scenario.riskLevel === 'HIGH' ? '1.5px solid #ef4444' : '1.5px solid #10b981')
+              : `1.5px solid ${scenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.45)' : 'rgba(16, 185, 129, 0.45)'}`,
             borderRadius: 14,
             padding: '12px 14px',
-            boxShadow: '0 16px 32px rgba(0,0,0,0.6)',
-            color: 'white',
+            boxShadow: isLight ? '0 10px 25px rgba(0,0,0,0.1)' : '0 16px 32px rgba(0,0,0,0.6)',
+            color: isLight ? '#0f172a' : 'white',
             cursor: 'default'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <span style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: 0.8, color: '#94a3b8' }}>
+            <span style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: 0.8, color: isLight ? '#64748b' : '#94a3b8' }}>
               GNN RISK SCORE
             </span>
             <span style={{
@@ -1284,9 +1293,9 @@ export default function GNNVisualization({ addToast }) {
               fontWeight: 800,
               padding: '1px 5px',
               borderRadius: 4,
-              background: scenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
-              color: scenario.riskLevel === 'HIGH' ? '#ef4444' : '#10b981',
-              border: `1px solid ${scenario.riskLevel === 'HIGH' ? '#ef4444' : '#10b981'}`
+              background: scenario.riskLevel === 'HIGH' ? '#fef2f2' : '#f0fdf4',
+              color: scenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
+              border: `1px solid ${scenario.riskLevel === 'HIGH' ? '#fca5a5' : '#86efac'}`
             }}>
               {scenario.riskLevel === 'HIGH' ? 'RISIKO TINGGI' : 'RISIKO RENDAH'}
             </span>
@@ -1297,7 +1306,7 @@ export default function GNNVisualization({ addToast }) {
               fontSize: '1.8rem',
               fontWeight: 900,
               fontFamily: 'var(--font-mono)',
-              color: scenario.riskLevel === 'HIGH' ? '#ef4444' : '#10b981',
+              color: scenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
               lineHeight: 1
             }}>
               {scenario.riskScore}
@@ -1309,15 +1318,15 @@ export default function GNNVisualization({ addToast }) {
             fontSize: '0.65rem',
             padding: '5px 8px',
             borderRadius: 6,
-            background: scenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-            color: scenario.riskLevel === 'HIGH' ? '#fca5a5' : '#86efac',
+            background: scenario.riskLevel === 'HIGH' ? (isLight ? '#fef2f2' : 'rgba(239, 68, 68, 0.15)') : (isLight ? '#f0fdf4' : 'rgba(16, 185, 129, 0.15)'),
+            color: scenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
             fontWeight: 800,
             marginBottom: 6
           }}>
             {scenario.classification}
           </div>
 
-          <ul style={{ margin: 0, paddingLeft: 14, fontSize: '0.65rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+          <ul style={{ margin: 0, paddingLeft: 14, fontSize: '0.65rem', color: isLight ? '#334155' : '#cbd5e1', lineHeight: 1.5 }}>
             <li>Banyak akun perantara (fan-out)</li>
             <li>Nominal pecahan seragam (structuring)</li>
             <li>Waktu singkat &lt; 5 menit</li>
@@ -1326,19 +1335,19 @@ export default function GNNVisualization({ addToast }) {
         </motion.div>
 
         {/* ------------------------------------------------------------------
-            FLOATING WIDGET 3: LEGENDA (Kiri Atas - Compact & High Contrast)
+            FLOATING WIDGET 3: LEGENDA (Kiri Atas - Compact & Adaptive)
         ------------------------------------------------------------------ */}
         <div style={{
           position: 'absolute',
           left: 16,
           top: 16,
           zIndex: 10,
-          background: 'rgba(8, 14, 30, 0.94)',
+          background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.94)',
           backdropFilter: 'blur(16px)',
-          border: '1.5px solid rgba(99, 102, 241, 0.35)',
+          border: isLight ? '1px solid #cbd5e1' : '1.5px solid rgba(99, 102, 241, 0.35)',
           borderRadius: 12,
           padding: '10px 12px',
-          boxShadow: '0 16px 32px rgba(0, 0, 0, 0.7)',
+          boxShadow: isLight ? '0 10px 25px rgba(0,0,0,0.1)' : '0 16px 32px rgba(0, 0, 0, 0.7)',
           display: 'flex',
           flexDirection: 'column',
           gap: 5,
@@ -1347,7 +1356,7 @@ export default function GNNVisualization({ addToast }) {
         }}>
           <div style={{
             fontWeight: 900,
-            color: '#93c5fd',
+            color: isLight ? '#1e40af' : '#93c5fd',
             fontSize: '0.65rem',
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
@@ -1356,51 +1365,51 @@ export default function GNNVisualization({ addToast }) {
             gap: 5,
             marginBottom: 2
           }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#38bdf8' }} />
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#0284c7' }} />
             LEGENDA ENTITAS &amp; ALIRAN
           </div>
 
           {/* Node Category Legend */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#38bdf8', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.67rem', color: '#ffffff', fontWeight: 700 }}>Akun Sumber (Originator)</span>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0284c7', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Akun Sumber (Originator)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.67rem', color: '#ffffff', fontWeight: 700 }}>Akun Mule / Perantara (L1)</span>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#059669', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Akun Mule / Perantara (L1)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.67rem', color: '#ffffff', fontWeight: 700 }}>Merchant / Transit (L2)</span>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#d97706', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Merchant / Transit (L2)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.67rem', color: '#ffffff', fontWeight: 700 }}>Bursa Kripto / Cold Wallet</span>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Bursa Kripto / Cold Wallet</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#94a3b8', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.67rem', color: '#ffffff', fontWeight: 700 }}>Perangkat / Shared IP</span>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#64748b', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Perangkat / Shared IP</span>
             </div>
           </div>
 
           {/* Edge Stream Legend */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: 5, marginTop: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ borderTop: isLight ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.12)', paddingTop: 5, marginTop: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 14, height: 2.5, background: '#38bdf8', borderRadius: 1, flexShrink: 0 }} />
-              <span style={{ fontSize: '0.65rem', color: '#e2e8f0', fontWeight: 600 }}>Transfer Pecahan (Smurfing)</span>
+              <span style={{ width: 14, height: 2.5, background: '#0284c7', borderRadius: 1, flexShrink: 0 }} />
+              <span style={{ fontSize: '0.65rem', color: isLight ? '#334155' : '#e2e8f0', fontWeight: 600 }}>Transfer Pecahan (Smurfing)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 14, height: 2.5, background: '#f59e0b', borderRadius: 1, flexShrink: 0 }} />
-              <span style={{ fontSize: '0.65rem', color: '#e2e8f0', fontWeight: 600 }}>Agregasi Transit (Layering)</span>
+              <span style={{ width: 14, height: 2.5, background: '#d97706', borderRadius: 1, flexShrink: 0 }} />
+              <span style={{ fontSize: '0.65rem', color: isLight ? '#334155' : '#e2e8f0', fontWeight: 600 }}>Agregasi Transit (Layering)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 14, height: 2.5, background: '#ef4444', borderRadius: 1, flexShrink: 0 }} />
-              <span style={{ fontSize: '0.65rem', color: '#fca5a5', fontWeight: 700 }}>🚨 Outflow Kripto</span>
+              <span style={{ width: 14, height: 2.5, background: '#dc2626', borderRadius: 1, flexShrink: 0 }} />
+              <span style={{ fontSize: '0.65rem', color: '#dc2626', fontWeight: 700 }}>Outflow Kripto (High Risk)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 14, height: 0, borderTop: '1.5px dotted #06b6d4', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.65rem', color: '#67e8f9', fontWeight: 600 }}>Relasi IP / Perangkat</span>
+              <span style={{ width: 14, height: 0, borderTop: '1.5px dotted #0284c7', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.65rem', color: isLight ? '#0369a1' : '#67e8f9', fontWeight: 600 }}>Relasi IP / Perangkat</span>
             </div>
           </div>
         </div>
@@ -1413,21 +1422,21 @@ export default function GNNVisualization({ addToast }) {
           right: 16,
           bottom: 16,
           zIndex: 10,
-          background: 'rgba(8, 14, 30, 0.92)',
+          background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.92)',
           backdropFilter: 'blur(14px)',
-          border: '1px solid rgba(99, 102, 241, 0.35)',
+          border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(99, 102, 241, 0.35)',
           borderRadius: 10,
           padding: '4px 6px',
           display: 'flex',
           alignItems: 'center',
           gap: 4,
-          boxShadow: '0 12px 24px rgba(0,0,0,0.6)'
+          boxShadow: isLight ? '0 8px 20px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.6)'
         }}>
           <button
             className="btn btn-ghost btn-sm"
             onClick={handleZoomOut}
             title="Zoom Out (-)"
-            style={{ padding: 4, height: 26, width: 26, color: '#f8fafc' }}
+            style={{ padding: 4, height: 26, width: 26, color: isLight ? '#0f172a' : '#f8fafc' }}
           >
             <ZoomOut size={14} />
           </button>
@@ -1442,7 +1451,7 @@ export default function GNNVisualization({ addToast }) {
               minWidth: 46,
               textAlign: 'center',
               fontFamily: 'var(--font-mono)',
-              color: '#38bdf8',
+              color: isLight ? '#0284c7' : '#38bdf8',
               padding: '0 4px',
               height: 24
             }}
@@ -1454,18 +1463,18 @@ export default function GNNVisualization({ addToast }) {
             className="btn btn-ghost btn-sm"
             onClick={handleZoomIn}
             title="Zoom In (+)"
-            style={{ padding: 4, height: 26, width: 26, color: '#f8fafc' }}
+            style={{ padding: 4, height: 26, width: 26, color: isLight ? '#0f172a' : '#f8fafc' }}
           >
             <ZoomIn size={14} />
           </button>
 
-          <span style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.15)', margin: '0 2px' }} />
+          <span style={{ width: 1, height: 16, background: isLight ? '#cbd5e1' : 'rgba(255,255,255,0.15)', margin: '0 2px' }} />
 
           <button
             className="btn btn-ghost btn-sm"
             onClick={handleFitView}
             title="Paskan Tampilan (Fit View)"
-            style={{ padding: 4, height: 26, width: 26, color: '#86efac' }}
+            style={{ padding: 4, height: 26, width: 26, color: '#10b981' }}
           >
             <Maximize2 size={14} />
           </button>
@@ -1474,7 +1483,7 @@ export default function GNNVisualization({ addToast }) {
             className="btn btn-ghost btn-sm"
             onClick={handleResetLayout}
             title="Reset Posisi Node"
-            style={{ padding: 4, height: 26, width: 26, color: '#fca5a5' }}
+            style={{ padding: 4, height: 26, width: 26, color: '#ef4444' }}
           >
             <RotateCcw size={14} />
           </button>
@@ -1506,19 +1515,19 @@ export default function GNNVisualization({ addToast }) {
               </feMerge>
             </filter>
             <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-              <path d="M0,1 L7,4 L0,7 Z" fill="#38bdf8" />
+              <path d="M0,1 L7,4 L0,7 Z" fill={isLight ? '#0284c7' : '#38bdf8'} />
             </marker>
             <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-              <path d="M0,1 L7,4 L0,7 Z" fill="#f59e0b" />
+              <path d="M0,1 L7,4 L0,7 Z" fill="#d97706" />
             </marker>
             <marker id="arrow-red" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
-              <path d="M0,1 L8,4.5 L0,8 Z" fill="#ef4444" />
+              <path d="M0,1 L8,4.5 L0,8 Z" fill="#dc2626" />
             </marker>
             <marker id="arrow-cyan" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-              <path d="M0,1 L5,3 L0,5 Z" fill="#06b6d4" />
+              <path d="M0,1 L5,3 L0,5 Z" fill={isLight ? '#0284c7' : '#06b6d4'} />
             </marker>
             <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-              <path d="M0,1 L7,4 L0,7 Z" fill="#10b981" />
+              <path d="M0,1 L7,4 L0,7 Z" fill="#059669" />
             </marker>
           </defs>
 
@@ -1582,16 +1591,16 @@ export default function GNNVisualization({ addToast }) {
                         width="96"
                         height="20"
                         rx="5"
-                        fill="rgba(15, 23, 42, 0.9)"
-                        stroke={edgeStyle.stroke}
+                        fill={isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(15, 23, 42, 0.9)'}
+                        stroke={isLight ? '#cbd5e1' : edgeStyle.stroke}
                         strokeWidth="1"
-                        opacity="0.9"
+                        opacity="0.95"
                       />
                       <text
                         x="0"
                         y="3"
                         textAnchor="middle"
-                        fill="white"
+                        fill={isLight ? '#0f172a' : 'white'}
                         fontSize="8.5"
                         fontWeight="700"
                         fontFamily="var(--font-mono)"
@@ -1663,8 +1672,8 @@ export default function GNNVisualization({ addToast }) {
                       width="140"
                       height="30"
                       rx="6"
-                      fill="rgba(8, 14, 30, 0.94)"
-                      stroke={isSelected ? col.border : 'rgba(148, 163, 184, 0.35)'}
+                      fill={isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.94)'}
+                      stroke={isSelected ? col.border : isLight ? '#cbd5e1' : 'rgba(148, 163, 184, 0.35)'}
                       strokeWidth={isSelected ? 1.5 : 1}
                     />
                     {/* Primary Name */}
@@ -1672,7 +1681,7 @@ export default function GNNVisualization({ addToast }) {
                       x="0"
                       y="4"
                       textAnchor="middle"
-                      fill="#ffffff"
+                      fill={isLight ? '#0f172a' : '#ffffff'}
                       fontSize="9.5"
                       fontWeight="800"
                       pointerEvents="none"
@@ -1684,7 +1693,7 @@ export default function GNNVisualization({ addToast }) {
                       x="0"
                       y="16"
                       textAnchor="middle"
-                      fill="#93c5fd"
+                      fill={isLight ? '#0284c7' : '#93c5fd'}
                       fontSize="7.8"
                       fontWeight="700"
                       fontFamily="var(--font-mono)"
@@ -1708,29 +1717,29 @@ export default function GNNVisualization({ addToast }) {
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 8,
-          background: 'rgba(8, 14, 30, 0.88)',
+          background: isLight ? 'rgba(255, 255, 255, 0.94)' : 'rgba(8, 14, 30, 0.88)',
           backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(148, 163, 184, 0.25)',
+          border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(148, 163, 184, 0.25)',
           borderRadius: 20,
           padding: '7px 18px',
           fontSize: '0.74rem',
-          color: '#cbd5e1',
+          color: isLight ? '#334155' : '#cbd5e1',
           display: 'flex',
           alignItems: 'center',
           gap: 14,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+          boxShadow: isLight ? '0 6px 16px rgba(0,0,0,0.08)' : '0 8px 24px rgba(0,0,0,0.6)',
           pointerEvents: 'none'
         }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#93c5fd', fontWeight: 600 }}>
-            <Move size={13} color="#38bdf8" /> Geser Touchpad 2 Jari untuk Pan Peta
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: isLight ? '#0284c7' : '#93c5fd', fontWeight: 600 }}>
+            <Move size={13} color={isLight ? '#0284c7' : '#38bdf8'} /> Geser Touchpad 2 Jari untuk Pan Peta
           </span>
-          <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-          <span style={{ color: '#86efac', fontWeight: 600 }}>
-            🤏 Pinch Touchpad 2 Jari untuk Zoom In / Out
+          <span style={{ color: isLight ? '#cbd5e1' : 'rgba(255,255,255,0.2)' }}>|</span>
+          <span style={{ color: isLight ? '#059669' : '#86efac', fontWeight: 600 }}>
+            Pinch Touchpad 2 Jari untuk Zoom In / Out
           </span>
-          <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-          <span style={{ color: '#fca5a5', fontWeight: 600 }}>
-            🖱️ Klik &amp; Tarik Node untuk Reposisi
+          <span style={{ color: isLight ? '#cbd5e1' : 'rgba(255,255,255,0.2)' }}>|</span>
+          <span style={{ color: isLight ? '#dc2626' : '#fca5a5', fontWeight: 600 }}>
+            Klik &amp; Tarik Node untuk Reposisi
           </span>
         </div>
       </div>
@@ -1851,42 +1860,58 @@ export default function GNNVisualization({ addToast }) {
           PANEL: 4 INDIKATOR UTAMA + 15 SUB-INDIKATOR REAL (RF + GNN + Rule Engine)
       ---------------------------------------------------------------------- */}
       {scenario.metrics.subIndicators && (
-        <div style={{ padding: 20, background: '#0f172a', border: '1px solid #1e293b', borderRadius: 14 }}>
+        <div style={{
+          padding: 20,
+          background: isLight ? '#ffffff' : '#0f172a',
+          border: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b',
+          borderRadius: 14,
+          boxShadow: isLight ? '0 4px 12px rgba(0,0,0,0.03)' : 'none'
+        }}>
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
                 width: 38, height: 38, borderRadius: 10,
-                background: '#1e293b',
-                border: '1.5px solid #334155',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8'
+                background: isLight ? '#f1f5f9' : '#1e293b',
+                border: isLight ? '1.5px solid #cbd5e1' : '1.5px solid #334155',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: isLight ? '#0284c7' : '#38bdf8'
               }}>
                 <Brain size={20} />
               </div>
               <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: '#f8fafc' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: isLight ? '#0f172a' : '#f8fafc' }}>
                   4 Indikator Utama + 15 Sub-Indikator AML
                 </h3>
-                <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0' }}>
-                  Sumber: <strong style={{ color: '#38bdf8' }}>Random Forest 29 fitur (308K data)</strong> · <strong style={{ color: '#a855f7' }}>GraphSAGE GNN (32-dim)</strong> · <strong style={{ color: '#10b981' }}>Rule Engine 13 aturan OJK/PPATK</strong>
+                <p style={{ fontSize: '0.72rem', color: isLight ? '#64748b' : '#94a3b8', margin: '2px 0 0' }}>
+                  Sumber: <strong style={{ color: isLight ? '#0284c7' : '#38bdf8' }}>Random Forest 29 fitur (308K data)</strong> · <strong style={{ color: '#8b5cf6' }}>GraphSAGE GNN (32-dim)</strong> · <strong style={{ color: '#059669' }}>Rule Engine 13 aturan OJK/PPATK</strong>
                 </p>
               </div>
             </div>
 
             {/* Hybrid Score Breakdown */}
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', background: '#020617', border: '1px solid #1e293b', borderRadius: 10, padding: '8px 14px', flexWrap: 'wrap' }}>
+            <div style={{
+              display: 'flex',
+              gap: 10,
+              alignItems: 'center',
+              background: isLight ? '#f8fafc' : '#020617',
+              border: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b',
+              borderRadius: 10,
+              padding: '8px 14px',
+              flexWrap: 'wrap'
+            }}>
               {[
-                { label: 'GNN Score', value: scenario.metrics.gnnScore, color: '#a855f7', sub: 'GraphSAGE' },
-                { label: 'RF Score', value: scenario.metrics.rfScore, color: '#3b82f6', sub: 'Random Forest' },
-                { label: 'Rule Score', value: scenario.metrics.ruleScore, color: '#10b981', sub: '13 Aturan' },
-                { label: 'HYBRID FINAL', value: scenario.metrics.hybridScore, color: '#ef4444', sub: '0.6×GNN + 0.4×Rule' },
+                { label: 'GNN Score', value: scenario.metrics.gnnScore, color: '#8b5cf6', sub: 'GraphSAGE' },
+                { label: 'RF Score', value: scenario.metrics.rfScore, color: '#0284c7', sub: 'Random Forest' },
+                { label: 'Rule Score', value: scenario.metrics.ruleScore, color: '#059669', sub: '13 Aturan' },
+                { label: 'HYBRID FINAL', value: scenario.metrics.hybridScore, color: '#dc2626', sub: '0.6×GNN + 0.4×Rule' },
               ].map((item, i) => (
-                <div key={i} style={{ textAlign: 'center', paddingRight: i < 3 ? 10 : 0, borderRight: i < 3 ? '1px solid #1e293b' : 'none' }}>
+                <div key={i} style={{ textAlign: 'center', paddingRight: i < 3 ? 10 : 0, borderRight: i < 3 ? (isLight ? '1px solid #e2e8f0' : '1px solid #1e293b') : 'none' }}>
                   <div style={{ fontSize: i === 3 ? '1.35rem' : '1.1rem', fontWeight: 900, color: item.color, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
                     {item.value}
                   </div>
                   <div style={{ fontSize: '0.62rem', fontWeight: 800, color: item.color, marginTop: 2 }}>{item.label}</div>
-                  <div style={{ fontSize: '0.58rem', color: '#64748b' }}>{item.sub}</div>
+                  <div style={{ fontSize: '0.58rem', color: isLight ? '#64748b' : '#64748b' }}>{item.sub}</div>
                 </div>
               ))}
             </div>
@@ -1896,26 +1921,26 @@ export default function GNNVisualization({ addToast }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: 14 }}>
             {Object.entries(scenario.metrics.subIndicators).map(([key, indicator], groupIdx) => (
               <div key={key} style={{
-                border: '1px solid #1e293b',
+                border: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b',
                 borderRadius: 12,
-                background: '#090d16',
+                background: isLight ? '#ffffff' : '#090d16',
                 overflow: 'hidden'
               }}>
                 {/* Indicator Group Header */}
                 <div style={{
                   padding: '10px 14px',
-                  background: '#1e293b',
-                  borderBottom: '1px solid #334155',
+                  background: isLight ? '#f8fafc' : '#1e293b',
+                  borderBottom: isLight ? '1px solid #e2e8f0' : '1px solid #334155',
                   borderLeft: `4px solid ${indicator.color}`,
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center'
                 }}>
                   <div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc' }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: isLight ? '#0f172a' : '#f8fafc' }}>
                       {indicator.label}
                     </div>
-                    <div style={{ fontSize: '0.67rem', color: '#94a3b8', marginTop: 2 }}>
+                    <div style={{ fontSize: '0.67rem', color: isLight ? '#64748b' : '#94a3b8', marginTop: 2 }}>
                       {indicator.source}
                     </div>
                   </div>
@@ -1930,12 +1955,12 @@ export default function GNNVisualization({ addToast }) {
                 {/* Sub-Indicators */}
                 <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {indicator.subs.map((sub, subIdx) => {
-                    const statusColor = sub.status === 'critical' ? '#ef4444' : sub.status === 'high' ? '#f59e0b' : '#10b981';
+                    const statusColor = sub.status === 'critical' ? '#dc2626' : sub.status === 'high' ? '#d97706' : '#059669';
                     const statusLabel = sub.status === 'critical' ? 'KRITIS' : sub.status === 'high' ? 'TINGGI' : 'SEDANG';
                     return (
                       <div key={sub.id} style={{
-                        background: '#0f172a',
-                        border: '1px solid #1e293b',
+                        background: isLight ? '#f8fafc' : '#0f172a',
+                        border: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b',
                         borderLeft: `3px solid ${statusColor}`,
                         borderRadius: 8,
                         padding: '9px 12px'
@@ -1946,11 +1971,11 @@ export default function GNNVisualization({ addToast }) {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                               <span style={{
                                 fontSize: '0.62rem', fontWeight: 800, padding: '1px 5px', borderRadius: 3,
-                                background: `${statusColor}25`, color: statusColor, border: `1px solid ${statusColor}50`
+                                background: `${statusColor}18`, color: statusColor, border: `1px solid ${statusColor}40`
                               }}>
                                 {statusLabel}
                               </span>
-                              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#f8fafc' }}>
+                              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: isLight ? '#0f172a' : '#f8fafc' }}>
                                 Sub-{groupIdx + 1}.{subIdx + 1} — {sub.name}
                               </span>
                             </div>
@@ -1961,7 +1986,7 @@ export default function GNNVisualization({ addToast }) {
                             <div style={{ fontSize: '1rem', fontWeight: 900, color: statusColor, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
                               {sub.score}
                             </div>
-                            <div style={{ width: 44, height: 3.5, background: 'rgba(255,255,255,0.08)', borderRadius: 2, marginTop: 3, overflow: 'hidden' }}>
+                            <div style={{ width: 44, height: 3.5, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.08)', borderRadius: 2, marginTop: 3, overflow: 'hidden' }}>
                               <div style={{ width: `${sub.score}%`, height: '100%', background: statusColor, borderRadius: 2 }} />
                             </div>
                           </div>
@@ -1971,9 +1996,10 @@ export default function GNNVisualization({ addToast }) {
                         <div style={{
                           display: 'inline-flex', alignItems: 'center', gap: 6,
                           padding: '3px 8px', borderRadius: 4,
-                          background: '#020617', border: '1px solid #1e293b',
+                          background: isLight ? '#ffffff' : '#020617',
+                          border: isLight ? '1px solid #cbd5e1' : '1px solid #1e293b',
                           fontSize: '0.7rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
-                          color: '#f8fafc', marginBottom: 5
+                          color: isLight ? '#0f172a' : '#f8fafc', marginBottom: 5
                         }}>
                           <span style={{ color: '#64748b' }}>Nilai Aktual:</span>
                           <span style={{ color: statusColor }}>{sub.value}</span>
@@ -1981,9 +2007,9 @@ export default function GNNVisualization({ addToast }) {
 
                         {/* Detail explanation */}
                         <div style={{
-                          fontSize: '0.68rem', color: '#94a3b8', lineHeight: 1.5,
+                          fontSize: '0.68rem', color: isLight ? '#475569' : '#94a3b8', lineHeight: 1.5,
                           padding: '5px 8px', borderRadius: 4,
-                          background: '#020617'
+                          background: isLight ? '#f1f5f9' : '#020617'
                         }}>
                           {sub.detail}
                         </div>
@@ -1996,20 +2022,34 @@ export default function GNNVisualization({ addToast }) {
           </div>
 
           {/* Bottom: Model Technical Details */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8, marginTop: 14, paddingTop: 14, borderTop: '1px solid #1e293b' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: 8,
+            marginTop: 14,
+            paddingTop: 14,
+            borderTop: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b'
+          }}>
             {[
-              { label: 'Model Klasifikasi', value: 'Random Forest Classifier', icon: '🌲' },
-              { label: 'Jumlah Fitur RF', value: '29 fitur tabular', icon: '📊' },
-              { label: 'Dataset Training', value: scenario.metrics.datasetSize, icon: '🗃️' },
-              { label: 'GNN Embedding Dim', value: `${scenario.metrics.embeddingDim} dimensi (GraphSAGE)`, icon: '🕸️' },
-              { label: 'Formula Hybrid', value: '0.6×GNN + 0.4×Rule Engine', icon: '⚖️' },
-              { label: 'Validasi AUC-ROC', value: `${scenario.metrics.modelAUC} (Near-Perfect)`, icon: '🎯' },
+              { label: 'Model Klasifikasi', value: 'Random Forest Classifier' },
+              { label: 'Jumlah Fitur RF', value: '29 fitur tabular' },
+              { label: 'Dataset Training', value: scenario.metrics.datasetSize },
+              { label: 'GNN Embedding Dim', value: `${scenario.metrics.embeddingDim} dimensi (GraphSAGE)` },
+              { label: 'Formula Hybrid', value: '0.6×GNN + 0.4×Rule Engine' },
+              { label: 'Validasi AUC-ROC', value: `${scenario.metrics.modelAUC} (Near-Perfect)` },
             ].map((item, i) => (
-              <div key={i} style={{ background: '#020617', padding: '7px 10px', borderRadius: 6, border: '1px solid #1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: '1rem' }}>{item.icon}</span>
+              <div key={i} style={{
+                background: isLight ? '#f8fafc' : '#020617',
+                padding: '7px 10px',
+                borderRadius: 6,
+                border: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8
+              }}>
                 <div>
                   <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 700 }}>{item.label}</div>
-                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f8fafc' }}>{item.value}</div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: isLight ? '#0f172a' : '#f8fafc' }}>{item.value}</div>
                 </div>
               </div>
             ))}

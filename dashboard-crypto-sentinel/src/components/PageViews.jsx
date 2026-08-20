@@ -1106,9 +1106,9 @@ AUDITOR SYSTEM    : CRYPTO-SENTINEL FDS ENGINE v3.2
   };
 
   const analysisTabs = [
-    { id: 'patterns', label: '📊 Analisis Pola AML', icon: <BarChart3 size={16} /> },
-    { id: 'mule', label: '🏦 Deteksi Rekening Mule', icon: <Users size={16} /> },
-    { id: 'gnn', label: '🧠 GNN Network Analysis', icon: <Activity size={16} /> },
+    { id: 'patterns', label: 'Analisis Pola AML', icon: <BarChart3 size={16} /> },
+    { id: 'mule', label: 'Deteksi Rekening Mule', icon: <Users size={16} /> },
+    { id: 'gnn', label: 'GNN Network Analysis', icon: <Activity size={16} /> },
   ];
 
   return (
