@@ -1661,8 +1661,7 @@ export default function LandingPage({ onEnter }) {
               iconColor: '#7c3aed',
               title: 'Forensic GNN Visualizer',
               desc: 'Memetakan jaringan relasional antara pengirim, mule account, dan rekening tujuan kripto dalam bentuk graf interaktif real-time. Saat pola smurfing terdeteksi, seluruh jalur aliran dana menyala merah — memperlihatkan kepada analis struktur sindikat yang sesungguhnya.',
-              tags: ['NetworkX', 'PageRank', 'Real-time Graph', 'Mule Ring Detection'],
-              img: '/img/GNN_explainable.jpeg'
+              tags: ['NetworkX', 'PageRank', 'Real-time Graph', 'Mule Ring Detection']
             },
             {
               icon: <FileText size={26} />,
@@ -1682,33 +1681,54 @@ export default function LandingPage({ onEnter }) {
                   </div>
                   <h3>{f.title}</h3>
                   <p>{f.desc}</p>
-                  {f.img && (
-                    <div style={{
-                      margin: '16px 0',
-                      borderRadius: 14,
-                      overflow: 'hidden',
-                      border: '1px solid rgba(0,0,0,0.1)',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
-                      background: '#ffffff'
-                    }}>
-                      <img
-                        src={f.img}
-                        alt={f.title}
-                        style={{
-                          width: '100%',
-                          height: 'auto',
-                          display: 'block',
-                          objectFit: 'contain'
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
                 <div className="lp-feat-tags">{f.tags.map((t, j) => <span className="lp-feat-tag" key={j}>{t}</span>)}</div>
               </div>
             </Reveal>
           ))}
         </div>
+      </section>
+
+      {/* FULL-WIDTH GNN EXPLAINABLE SHOWCASE */}
+      <section className="lp-section" style={{ paddingTop: 20, paddingBottom: 60 }}>
+        <Reveal>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <span className="lp-section-tag" style={{ background: '#faf5ff', color: '#7c3aed', borderColor: '#e9d5ff' }}>
+              🧠 Skema Forensik GNN
+            </span>
+            <h2 className="lp-section-title" style={{ fontSize: '2.2rem', marginBottom: 12 }}>
+              Deteksi Pola Smurfing &amp; <span className="crimson-it">Pelarian Dana ke Kripto</span>
+            </h2>
+            <p className="lp-section-desc" style={{ maxWidth: 840, margin: '0 auto' }}>
+              Bagaimana arsitektur <strong>Graph Neural Network (GraphSAGE)</strong> memetakan interkoneksi rekening perantara (mule), transaksi terstruktur (structuring), relasi perangkat / Device IP, hingga agregasi transit sebelum dilarikan ke bursa aset kripto.
+            </p>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.15}>
+          <div style={{
+            maxWidth: 1280,
+            margin: '0 auto',
+            background: '#ffffff',
+            borderRadius: 24,
+            border: '1px solid rgba(0, 0, 0, 0.08)',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.08)',
+            overflow: 'hidden',
+            padding: '16px'
+          }}>
+            <img
+              src="/img/GNN_explainable.jpeg"
+              alt="Skema GNN (Graph Neural Network) untuk Deteksi Smurfing &amp; Pelarian Dana Sebelum ke Kripto"
+              style={{
+                width: '100%',
+                height: 'auto',
+                display: 'block',
+                borderRadius: 16,
+                objectFit: 'contain'
+              }}
+            />
+          </div>
+        </Reveal>
       </section>
 
       <div className="lp-divider" />
