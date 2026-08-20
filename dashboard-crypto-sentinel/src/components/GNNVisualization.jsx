@@ -1096,9 +1096,9 @@ export default function GNNVisualization({ addToast }) {
       ---------------------------------------------------------------------- */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: `repeat(${scenario.stages.length}, 1fr)`,
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 170px), 1fr))',
         gap: 8,
-        padding: '0 4px'
+        padding: '0 2px'
       }}>
         {scenario.stages.map((stg, idx) => (
           <div
@@ -1106,11 +1106,12 @@ export default function GNNVisualization({ addToast }) {
             style={{
               padding: '6px 10px',
               borderRadius: 8,
-              background: 'var(--bg-card)',
-              border: `1px dashed ${stg.color}50`,
+              background: isLight ? '#ffffff' : 'var(--bg-card)',
+              border: `1px dashed ${stg.color}60`,
               display: 'flex',
               alignItems: 'center',
-              gap: 8
+              gap: 8,
+              boxShadow: isLight ? '0 2px 6px rgba(0,0,0,0.02)' : 'none'
             }}
           >
             <div style={{
@@ -1133,7 +1134,7 @@ export default function GNNVisualization({ addToast }) {
               <div style={{ fontSize: '0.7rem', fontWeight: 800, color: stg.color, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                 {stg.title}
               </div>
-              <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+              <div style={{ fontSize: '0.62rem', color: isLight ? '#64748b' : 'var(--text-muted)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                 {stg.subtitle}
               </div>
             </div>
@@ -1819,34 +1820,34 @@ export default function GNNVisualization({ addToast }) {
           {/* Detailed Forensic Meta Cards */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
             gap: 12,
             marginTop: 16,
             paddingTop: 16,
             borderTop: '1px solid var(--border-color)'
           }}>
-            <div style={{ background: 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+            <div style={{ background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>SALDO TERAKHIR</div>
               <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
                 {formatCurrency(selectedNode.balance)}
               </div>
             </div>
 
-            <div style={{ background: 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+            <div style={{ background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>PERANGKAT & DEVICE ID</div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#38bdf8', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0284c7', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
                 {selectedNode.deviceId}
               </div>
             </div>
 
-            <div style={{ background: 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+            <div style={{ background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>ALAMAT IP ASAL (GEOLOKASI)</div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f59e0b', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#d97706', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
                 {selectedNode.ip}
               </div>
             </div>
 
-            <div style={{ background: 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+            <div style={{ background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>INDIKASI POLA FORENSIK</div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-primary)', marginTop: 2 }}>
                 {selectedNode.description}
@@ -1918,7 +1919,7 @@ export default function GNNVisualization({ addToast }) {
           </div>
 
           {/* 4 Indicator Groups */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 14 }}>
             {Object.entries(scenario.metrics.subIndicators).map(([key, indicator], groupIdx) => (
               <div key={key} style={{
                 border: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b',
@@ -2024,7 +2025,7 @@ export default function GNNVisualization({ addToast }) {
           {/* Bottom: Model Technical Details */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
             gap: 8,
             marginTop: 14,
             paddingTop: 14,
@@ -2060,33 +2061,33 @@ export default function GNNVisualization({ addToast }) {
       {/* ----------------------------------------------------------------------
           FOOTER EXPLANATION CARD (PENJELASAN POLA GRAF SMURFING PPATK & OJK)
       ---------------------------------------------------------------------- */}
-      <div className="card" style={{ padding: 20, background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-        <h4 style={{ fontSize: '0.92rem', fontWeight: 800, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="card" style={{ padding: 20, background: isLight ? '#ffffff' : 'var(--bg-card)', border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
+        <h4 style={{ fontSize: '0.92rem', fontWeight: 800, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, color: isLight ? '#0f172a' : 'var(--text-primary)' }}>
           <Workflow size={18} color="#818cf8" />
           Penjelasan Pola Graf (Smurfing, Layering &amp; Pelarian Dana ke Kripto)
         </h4>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
           gap: 14,
           fontSize: '0.78rem',
           lineHeight: 1.6,
-          color: 'var(--text-muted)'
+          color: isLight ? '#475569' : 'var(--text-muted)'
         }}>
-          <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-color)' }}>
-            <strong style={{ color: '#38bdf8', display: 'block', marginBottom: 4 }}>1. Fan-Out Tinggi (Penyebaran):</strong>
+          <div style={{ padding: '12px 14px', borderRadius: 10, background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
+            <strong style={{ color: '#0284c7', display: 'block', marginBottom: 4 }}>1. Fan-Out Tinggi (Penyebaran):</strong>
             1 akun sumber utama menyebarkan dana dalam jumlah besar ke banyak rekening perantara sekaligus untuk menghindari threshold pelaporan transaksi tunai/kliring.
           </div>
-          <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-color)' }}>
-            <strong style={{ color: '#10b981', display: 'block', marginBottom: 4 }}>2. Structuring &amp; Smurfing:</strong>
+          <div style={{ padding: '12px 14px', borderRadius: 10, background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
+            <strong style={{ color: '#059669', display: 'block', marginBottom: 4 }}>2. Structuring &amp; Smurfing:</strong>
             Nominal transaksi dipecah menjadi pecahan kecil dan seragam (misal Rp 4,9jt s/d Rp 10jt) secara berurutan dalam waktu singkat (&lt; 5 menit).
           </div>
-          <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-color)' }}>
-            <strong style={{ color: '#f59e0b', display: 'block', marginBottom: 4 }}>3. Layering &amp; Transit Aggregator:</strong>
+          <div style={{ padding: '12px 14px', borderRadius: 10, background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
+            <strong style={{ color: '#d97706', display: 'block', marginBottom: 4 }}>3. Layering &amp; Transit Aggregator:</strong>
             Dana yang telah dipecah dikumpulkan kembali melalui payment gateway / escrow transit untuk memutuskan hubungan langsung dengan rekening sumber.
           </div>
-          <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-color)' }}>
-            <strong style={{ color: '#ef4444', display: 'block', marginBottom: 4 }}>4. Integration ke Bursa Kripto:</strong>
+          <div style={{ padding: '12px 14px', borderRadius: 10, background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
+            <strong style={{ color: '#dc2626', display: 'block', marginBottom: 4 }}>4. Integration ke Bursa Kripto:</strong>
             Dana transit dilarikan ke bursa kripto (Indodax, Binance, Tokocrypto) untuk dikonversi menjadi stablecoin (USDT) dan dipindahkan ke cold storage on-chain.
           </div>
         </div>

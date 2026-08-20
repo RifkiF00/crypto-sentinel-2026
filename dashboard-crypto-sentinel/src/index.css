@@ -1600,16 +1600,24 @@ a:hover {
   border-radius: var(--radius-lg);
   padding: 4px;
   box-shadow: var(--shadow-xs);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   transition: background var(--transition-theme), border-color var(--transition-theme);
+}
+
+.analysis-tab-navigation::-webkit-scrollbar {
+  display: none;
 }
 
 .analysis-tab-btn {
   flex: 1;
-  padding: 10px 18px;
+  min-width: 140px;
+  padding: 10px 16px;
   border: none;
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 600;
   font-family: var(--font-sans);
   border-radius: var(--radius-md);
@@ -1617,6 +1625,7 @@ a:hover {
   transition: all var(--transition-fast);
   position: relative;
   white-space: nowrap;
+  text-align: center;
 }
 
 .analysis-tab-btn:hover {
