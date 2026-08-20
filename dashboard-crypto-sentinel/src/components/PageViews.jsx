@@ -2499,9 +2499,6 @@ export function SettingsView({ adminProfile, setAdminProfile, addToast }) {
   // Local profile states
   const [name, setName] = useState(adminProfile.name);
   const [role, setRole] = useState(adminProfile.role);
-  const [nip, setNip] = useState(adminProfile.nip || 'NIP-19880412-201201-1-003');
-  const [badgeId, setBadgeId] = useState(adminProfile.badgeId || 'SENTINEL-OFFICER-007');
-  const [station, setStation] = useState(adminProfile.station || 'SOC-Room 04 (Gedung Soemitro Jakarta)');
 
   // Local toggles
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -2512,87 +2509,57 @@ export function SettingsView({ adminProfile, setAdminProfile, addToast }) {
     if (!name.trim()) return;
 
     setAdminProfile({
-      ...adminProfile,
       name: name,
       role: role,
-      nip: nip,
-      badgeId: badgeId,
-      station: station,
       avatar: name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
     });
 
-    addToast('👤 Profil Analis Senior Satgas TPPU berhasil diperbarui!', 'success');
+    addToast('👤 Profil Admin Regulator berhasil disimpan!', 'success');
   };
 
   return (
     <div className="settings-view">
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Konfigurasi Profil Analis & Pengaturan Sistem</h2>
-        <p style={{ color: 'var(--text-muted)' }}>Atur kredensial resmi Analis Satgas TPPU OJK/PPATK, preferensi audio alarm, dan konfigurasi API.</p>
+        <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Konfigurasi & Pengaturan Sistem</h2>
+        <p style={{ color: 'var(--text-muted)' }}>Sesuaikan akun regulator OJK Anda, matikan/hidupkan efek notifikasi suara bahaya AML, dan atur integrasi dev.</p>
       </div>
 
       <div className="content-grid">
         {/* Admin Profile Config Card */}
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title"><User /> Profil Analis Operasional (KPA / NIP)</h3>
+            <h3 className="card-title"><User /> Pengaturan Profil Akun</h3>
           </div>
           <div className="card-body">
             <form onSubmit={handleSaveProfile}>
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Nama Lengkap & Gelar Analis</label>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Nama Lengkap Regulator</label>
                 <input
                   type="text"
                   className="header-search"
                   style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Contoh: Capt. Ir. Hendra Wijaya, M.Sc., CAMS"
+                  placeholder="Contoh: Admin Regulator"
                   required
                 />
               </div>
 
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>NIP / Officer ID</label>
-                <input
-                  type="text"
-                  className="header-search"
-                  style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
-                  value={nip}
-                  onChange={(e) => setNip(e.target.value)}
-                  placeholder="Contoh: NIP-19880412-201201-1-003"
-                  required
-                />
-              </div>
-
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Jabatan & Divisi Satgas</label>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Jabatan & Divisi OJK</label>
                 <input
                   type="text"
                   className="header-search"
                   style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  placeholder="Contoh: Analis Senior Satgas TPPU (OJK & PPATK)"
-                  required
-                />
-              </div>
-
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Stasiun Komando Operasional</label>
-                <input
-                  type="text"
-                  className="header-search"
-                  style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none' }}
-                  value={station}
-                  onChange={(e) => setStation(e.target.value)}
-                  placeholder="Contoh: SOC-Room 04 (Gedung Soemitro Jakarta)"
+                  placeholder="Contoh: OJK - Compliance Div."
                   required
                 />
               </div>
 
               <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                <Save size={16} /> Simpan Pengaturan Profil Analis
+                <Save size={16} /> Simpan Pengaturan Akun
               </button>
             </form>
           </div>

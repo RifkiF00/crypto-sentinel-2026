@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Shield, Lock, User, KeyRound, LogIn, Cpu, Eye, EyeOff, ShieldCheck, Sparkles } from 'lucide-react';
+import { X } from 'lucide-react';
 import { ThemeProvider } from './context/ThemeContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -107,16 +107,9 @@ function DashboardLayout({ onBackToLanding }) {
   });
 
   const [adminProfile, setAdminProfile] = useState({
-    name: 'Capt. Ir. Hendra Wijaya, M.Sc., CAMS',
-    role: 'Analis Senior Satgas TPPU (OJK & PPATK)',
-    avatar: 'HW',
-    nip: 'NIP-19880412-201201-1-003',
-    badgeId: 'SENTINEL-OFFICER-007',
-    clearance: 'LEVEL 4 — HIGH COMMAND',
-    certifications: 'CAMS • CFE • CISSP',
-    station: 'SOC-Room 04 (Gedung Soemitro Jakarta)',
-    ipAddress: '10.12.88.45 (Intranet Regulator)',
-    sessionToken: 'SEC-8849-2026-ACTIVE'
+    name: 'Admin Regulator',
+    role: 'OJK - Compliance Div.',
+    avatar: 'AR'
   });
 
   const [toasts, setToasts] = useState([]);
@@ -180,14 +173,7 @@ function DashboardLayout({ onBackToLanding }) {
       />
 
       <main className="main-content">
-        <Header 
-          onMenuToggle={toggleSidebar} 
-          apiOnline={apiOnline} 
-          onBackToLanding={onBackToLanding} 
-          addToast={addToast}
-          adminProfile={adminProfile}
-          setAdminProfile={setAdminProfile}
-        />
+        <Header onMenuToggle={toggleSidebar} apiOnline={apiOnline} onBackToLanding={onBackToLanding} addToast={addToast} />
         
         <div className="page-content">
           <AnimatePresence mode="wait">
@@ -381,313 +367,32 @@ function DashboardLayout({ onBackToLanding }) {
   );
 }
 
-function LoginPage({ onLoginSuccess, onBackToLanding }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!username.trim() || !password.trim()) return;
-
-    setIsAuthenticating(true);
-    setTimeout(() => {
-      setIsAuthenticating(false);
-      onLoginSuccess(username);
-    }, 750);
-  };
-
-  return (
-    <div style={{
-      minHeight: '100vh',
-      width: '100%',
-      background: 'linear-gradient(135deg, #030712 0%, #090d16 50%, #0f172a 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px 16px',
-      position: 'relative',
-      overflow: 'hidden',
-      fontFamily: 'Outfit, sans-serif'
-    }}>
-      {/* Background Animated Cyber Ambient Lights */}
-      <div style={{
-        position: 'absolute',
-        top: '-15%',
-        left: '20%',
-        width: 400,
-        height: 400,
-        background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%)',
-        pointerEvents: 'none'
-      }} />
-      <div style={{
-        position: 'absolute',
-        bottom: '-15%',
-        right: '20%',
-        width: 450,
-        height: 450,
-        background: 'radial-gradient(circle, rgba(37, 99, 235, 0.18), transparent 70%)',
-        pointerEvents: 'none'
-      }} />
-
-      {/* Top Header Bar with Back Link */}
-      <div style={{
-        position: 'absolute',
-        top: 24,
-        left: 32,
-        right: 32,
-        display: 'flex',
-        justify: 'space-between',
-        alignItems: 'center',
-        zIndex: 10
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src="/img/LOGO1.jpeg" alt="Logo" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover' }} />
-          <span style={{ fontSize: '1rem', fontWeight: 800, color: 'white' }}>
-            Crypto<span style={{ color: '#38bdf8' }}>-Sentinel</span>
-          </span>
-        </div>
-        <button
-          onClick={onBackToLanding}
-          style={{
-            background: 'rgba(255, 255, 255, 0.06)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            borderRadius: 9999,
-            padding: '8px 18px',
-            fontSize: '0.8rem',
-            fontWeight: 700,
-            color: '#94a3b8',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            transition: 'all 0.2s ease'
-          }}
-        >
-          ← Kembali ke Landing Page
-        </button>
-      </div>
-
-      {/* Centered Login Card Container */}
-      <motion.div
-        initial={{ opacity: 0, y: 24, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.4 }}
-        style={{
-          maxWidth: 440,
-          width: '100%',
-          padding: '36px 32px',
-          background: 'linear-gradient(165deg, rgba(15, 23, 42, 0.92) 0%, rgba(9, 13, 26, 0.97) 100%)',
-          backdropFilter: 'blur(24px)',
-          border: '1px solid rgba(99, 102, 241, 0.35)',
-          borderRadius: 24,
-          boxShadow: '0 30px 80px rgba(0, 0, 0, 0.9), 0 0 50px rgba(99, 102, 241, 0.2)',
-          color: 'white',
-          position: 'relative',
-          zIndex: 5
-        }}
-      >
-        {/* Official Logo Badge */}
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{
-            width: 76,
-            height: 76,
-            borderRadius: 22,
-            background: 'rgba(15, 23, 42, 0.9)',
-            border: '1.5px solid rgba(99, 102, 241, 0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-            boxShadow: '0 0 30px rgba(99, 102, 241, 0.4)',
-            padding: 7
-          }}>
-            <img
-              src="/img/LOGO1.jpeg"
-              alt="Crypto Sentinel Logo"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 15 }}
-            />
-          </div>
-
-          <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: 2, color: '#38bdf8', textTransform: 'uppercase' }}>
-            // INTELHUB SOC PORTAL
-          </span>
-
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'white', letterSpacing: '-0.3px', margin: '4px 0 4px' }}>
-            Crypto - Sentinel
-          </h2>
-          <p style={{ fontSize: '0.78rem', color: '#818cf8', fontWeight: 600, margin: 0 }}>
-            Portal Otentikasi Analis Satgas TPPU (OJK & PPATK RI)
-          </p>
-        </div>
-
-        {/* Notice Badge */}
-        <div style={{
-          padding: '10px 14px',
-          background: 'rgba(99, 102, 241, 0.1)',
-          border: '1px solid rgba(99, 102, 241, 0.25)',
-          borderRadius: 12,
-          marginBottom: 22,
-          fontSize: '0.74rem',
-          color: '#a5b4fc',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10
-        }}>
-          <Sparkles size={16} style={{ flexShrink: 0, color: '#38bdf8' }} />
-          <span><strong>Mode Sandbox:</strong> Bebas memasukkan username & password apa saja.</span>
-        </div>
-
-        {/* Login Form */}
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#cbd5e1', marginBottom: 6 }}>
-              Username / NIP Analis
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="masukan username"
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px 14px 12px 42px',
-                  fontSize: '0.88rem',
-                  background: 'rgba(15, 23, 42, 0.95)',
-                  border: '1px solid rgba(99, 102, 241, 0.28)',
-                  borderRadius: 12,
-                  color: 'white',
-                  outline: 'none',
-                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.4)'
-                }}
-              />
-              <User size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#818cf8' }} />
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#cbd5e1', marginBottom: 6 }}>
-              Password Sesi
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="masukan password"
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px 42px 12px 42px',
-                  fontSize: '0.88rem',
-                  background: 'rgba(15, 23, 42, 0.95)',
-                  border: '1px solid rgba(99, 102, 241, 0.28)',
-                  borderRadius: 12,
-                  color: 'white',
-                  outline: 'none',
-                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.4)'
-                }}
-              />
-              <KeyRound size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#818cf8' }} />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: 14,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  padding: 2
-                }}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isAuthenticating}
-            className="btn btn-primary"
-            style={{
-              width: '100%',
-              justifyContent: 'center',
-              padding: '14px 20px',
-              fontSize: '0.92rem',
-              fontWeight: 800,
-              background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
-              border: 'none',
-              borderRadius: 12,
-              boxShadow: '0 6px 24px rgba(99, 102, 241, 0.45)',
-              gap: 8,
-              cursor: isAuthenticating ? 'wait' : 'pointer'
-            }}
-          >
-            {isAuthenticating ? (
-              <><Cpu size={18} className="animate-spin" /> Mengautentikasi Sesi...</>
-            ) : (
-              <><LogIn size={18} /> Masuk Ke Dashboard Analisis</>
-            )}
-          </button>
-        </form>
-      </motion.div>
-    </div>
-  );
-}
-
 export default function App() {
-  const [appView, setAppView] = useState('landing'); // 'landing' | 'login' | 'dashboard'
+  const [inDashboard, setInDashboard] = useState(false);
 
   return (
     <ThemeProvider>
       <AnimatePresence mode="wait">
-        {appView === 'landing' && (
+        {!inDashboard ? (
           <motion.div
             key="landing"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.35 }}
-            style={{ width: '100%' }}
-          >
-            <LandingPage onEnter={() => setAppView('login')} />
-          </motion.div>
-        )}
-
-        {appView === 'login' && (
-          <motion.div
-            key="login"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.35 }}
-            style={{ width: '100%' }}
-          >
-            <LoginPage
-              onLoginSuccess={() => setAppView('dashboard')}
-              onBackToLanding={() => setAppView('landing')}
-            />
-          </motion.div>
-        )}
-
-        {appView === 'dashboard' && (
-          <motion.div
-            key="dashboard"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
+            exit={{ opacity: 0, y: -30 }}
             transition={{ duration: 0.4 }}
             style={{ width: '100%' }}
           >
-            <DashboardLayout onBackToLanding={() => setAppView('landing')} />
+            <LandingPage onEnter={() => setInDashboard(true)} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="dashboard"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{ width: '100%' }}
+          >
+            <DashboardLayout onBackToLanding={() => setInDashboard(false)} />
           </motion.div>
         )}
       </AnimatePresence>

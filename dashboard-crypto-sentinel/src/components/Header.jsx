@@ -1,39 +1,11 @@
+import { Bell, Sun, Moon, Filter, Menu, Zap, Home } from 'lucide-react';
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Bell,
-  Sun,
-  Moon,
-  Filter,
-  Menu,
-  Zap,
-  Home,
-  ShieldCheck,
-  UserCheck,
-  Award,
-  KeyRound,
-  Lock,
-  X,
-  FileText,
-  Activity,
-  Building2,
-  BadgeCheck,
-  LogOut,
-  Radio
-} from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { triggerSmurfingSimulation } from '../services/api';
 
-export default function Header({
-  onMenuToggle,
-  apiOnline = false,
-  onBackToLanding,
-  addToast,
-  adminProfile
-}) {
+export default function Header({ onMenuToggle, apiOnline = false, onBackToLanding, addToast }) {
   const { theme, toggleTheme } = useTheme();
   const [isSimulating, setIsSimulating] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const handleSimulateSmurfing = async () => {
     setIsSimulating(true);
@@ -50,19 +22,6 @@ export default function Header({
     }
   };
 
-  const profile = adminProfile || {
-    name: 'Capt. Ir. Hendra Wijaya, M.Sc., CAMS',
-    role: 'Analis Senior Satgas TPPU (OJK & PPATK)',
-    avatar: 'HW',
-    nip: 'NIP-19880412-201201-1-003',
-    badgeId: 'SENTINEL-OFFICER-007',
-    clearance: 'LEVEL 4 — HIGH COMMAND',
-    certifications: 'CAMS • CFE • CISSP',
-    station: 'SOC-Room 04 (Gedung Soemitro Jakarta)',
-    ipAddress: '10.12.88.45 (Intranet Regulator)',
-    sessionToken: 'SEC-8849-2026-ACTIVE'
-  };
-
   return (
     <header className="header" id="main-header">
       <div className="header-left">
@@ -70,38 +29,22 @@ export default function Header({
           <Menu size={20} />
         </button>
         <div className="header-title-group">
-          <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            Dashboard Overview
-            <span style={{
-              fontSize: '0.68rem',
-              fontWeight: 800,
-              padding: '2px 8px',
-              borderRadius: 20,
-              background: 'rgba(99, 102, 241, 0.15)',
-              color: '#818cf8',
-              border: '1px solid rgba(99, 102, 241, 0.3)',
-              fontFamily: 'var(--font-mono)'
-            }}>
-              HQ-COMMAND
-            </span>
-          </h2>
+          <h2>Dashboard Overview</h2>
           <p>Monitor transaksi bank & pencegahan pelarian uang ke crypto</p>
         </div>
       </div>
-
-      <div className="header-right" style={{ gap: 12 }}>
+      <div className="header-right">
         {onBackToLanding && (
           <button
             className="btn btn-ghost btn-sm"
             onClick={onBackToLanding}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}
           >
-            <Home size={15} />
+            <Home size={16} />
             <span>Landing Page</span>
           </button>
         )}
 
-        {/* Smurfing Simulation Button */}
         <button
           className="btn btn-sm"
           onClick={handleSimulateSmurfing}
@@ -112,7 +55,7 @@ export default function Header({
             border: 'none',
             borderRadius: 'var(--radius-md)',
             padding: '6px 14px',
-            fontSize: '0.78rem',
+            fontSize: '0.8rem',
             fontWeight: 700,
             display: 'flex',
             alignItems: 'center',
@@ -125,7 +68,6 @@ export default function Header({
           <span>{isSimulating ? 'Menjalankan...' : '🔥 Simulasikan Smurfing'}</span>
         </button>
 
-        {/* Sentinel Live API Status */}
         <div 
           className="live-indicator animate-pulse" 
           id="live-status"
@@ -146,19 +88,18 @@ export default function Header({
               boxShadow: apiOnline ? '0 0 8px #10b981' : 'none'
             }}
           />
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: apiOnline ? '#10b981' : 'var(--text-muted)' }}>
+          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: apiOnline ? '#10b981' : 'var(--text-muted)' }}>
             {apiOnline ? 'SENTINEL API: ONLINE' : 'SENTINEL: OFFLINE MODE'}
           </span>
         </div>
 
-        {/* Theme Toggle */}
         <button
           className="theme-toggle tooltip"
           data-tooltip={theme === 'light' ? 'Mode Gelap' : 'Mode Terang'}
           onClick={toggleTheme}
           id="btn-theme-toggle"
         >
-          {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
+          {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
         </button>
       </div>
     </header>
