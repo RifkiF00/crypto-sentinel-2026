@@ -46,7 +46,7 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
     <aside className={`sidebar ${isOpen ? 'open' : ''}`} id="sidebar-nav">
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          <img src="/img/LOGO1.jpeg" alt="Crypto - Sentinel Logo" />
+          <img src="/img/Logo3.jpeg" alt="Crypto - Sentinel Logo" />
         </div>
         <div className="sidebar-brand">
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '1.05rem', fontWeight: 800, color: '#2563eb', whiteSpace: 'nowrap', margin: 0, letterSpacing: '-0.3px' }}>
