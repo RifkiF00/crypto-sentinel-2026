@@ -1136,7 +1136,6 @@ export default function GNNVisualization({ addToast }) {
       ---------------------------------------------------------------------- */}
       <div
         ref={containerRef}
-        onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
