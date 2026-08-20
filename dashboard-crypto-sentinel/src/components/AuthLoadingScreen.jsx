@@ -1,33 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Lock, CheckCircle2, Cpu } from 'lucide-react';
+import { Shield, Lock, CheckCircle2, Cpu, Terminal, Activity } from 'lucide-react';
 
 export default function AuthLoadingScreen({ onFinished }) {
   const [progress, setProgress] = useState(0);
-  const [statusText, setStatusText] = useState('Menginisialisasi Security Layer SNAP BI...');
+  const [activeStep, setActiveStep] = useState(0);
+
+  const steps = [
+    { code: 'SEC-01', text: 'Menginisialisasi Protokol SNAP BI & ISO 20022...', status: 'OK' },
+    { code: 'GNN-02', text: 'Memuat Engine In-Memory GraphSAGE Neural Network...', status: 'INITIALIZED' },
+    { code: 'FDS-03', text: 'Sinkronisasi Rule Engine & Node Bank Kuningan...', status: 'SYNCED' },
+    { code: 'AUTH-04', text: 'Sesi Forensik Aman Terverifikasi. Membuka Portal...', status: 'GRANTED' }
+  ];
 
   useEffect(() => {
-    const steps = [
-      { p: 20, t: 'Menginisialisasi Security Layer SNAP BI & ISO 20022...', delay: 250 },
-      { p: 50, t: 'Memuat Engine In-Memory GraphSAGE GNN Network...', delay: 700 },
-      { p: 80, t: 'Sinkronisasi Rule Engine & Data Stream Bank Kuningan...', delay: 1250 },
-      { p: 100, t: 'Otorisasi Aman Terverifikasi. Mengalihkan ke Portal Login...', delay: 1800 }
-    ];
+    // Smooth progress counter
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        const next = prev + 2;
+        if (next >= 25 && next < 55) setActiveStep(1);
+        else if (next >= 55 && next < 85) setActiveStep(2);
+        else if (next >= 85) setActiveStep(3);
+        return next;
+      });
+    }, 32);
 
-    const timeouts = steps.map(s => {
-      return setTimeout(() => {
-        setProgress(s.p);
-        setStatusText(s.t);
-      }, s.delay);
-    });
-
-    const finishTimeout = setTimeout(() => {
+    const finishTimer = setTimeout(() => {
       onFinished();
-    }, 2200);
+    }, 2000);
 
     return () => {
-      timeouts.forEach(t => clearTimeout(t));
-      clearTimeout(finishTimeout);
+      clearInterval(interval);
+      clearTimeout(finishTimer);
     };
   }, [onFinished]);
 
@@ -37,7 +45,7 @@ export default function AuthLoadingScreen({ onFinished }) {
         position: 'fixed',
         inset: 0,
         zIndex: 99999,
-        background: 'radial-gradient(ellipse at center, #0f1e42 0%, #060d21 70%, #020617 100%)',
+        background: '#030712',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -48,134 +56,214 @@ export default function AuthLoadingScreen({ onFinished }) {
         overflow: 'hidden'
       }}
     >
-      {/* Background Animated Grid Lines */}
+      {/* Background Cyber Ambient Lights */}
       <div
         style={{
           position: 'absolute',
-          inset: 0,
-          backgroundImage: 'radial-gradient(rgba(37, 99, 235, 0.12) 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-          opacity: 0.7,
+          top: '30%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 500,
+          height: 500,
+          background: 'radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, rgba(56, 189, 248, 0.05) 45%, transparent 70%)',
+          filter: 'blur(60px)',
           pointerEvents: 'none'
         }}
       />
 
-      {/* Central Glowing Shield Hub */}
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        style={{ position: 'relative', marginBottom: 32 }}
-      >
-        {/* Pulsing Radar Ring */}
+      {/* Cyber Grid Pattern */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+          opacity: 0.8,
+          pointerEvents: 'none'
+        }}
+      />
+
+      {/* Center Holographic Scanning Unit */}
+      <div style={{ position: 'relative', width: 160, height: 160, marginBottom: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Outer Rotating Cyber Dashed Ring */}
         <motion.div
-          animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          animate={{ rotate: 360 }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
           style={{
             position: 'absolute',
-            inset: -20,
+            inset: 0,
             borderRadius: '50%',
-            border: '2px solid rgba(37, 99, 235, 0.4)',
-            pointerEvents: 'none'
+            border: '1.5px dashed rgba(56, 189, 248, 0.35)',
+            borderTopColor: '#38bdf8'
           }}
         />
 
+        {/* Inner Counter-Rotating Ring */}
+        <motion.div
+          animate={{ rotate: -360 }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+          style={{
+            position: 'absolute',
+            inset: 12,
+            borderRadius: '50%',
+            border: '1px solid rgba(37, 99, 235, 0.25)',
+            borderRightColor: '#60a5fa',
+            borderBottomColor: '#2563eb'
+          }}
+        />
+
+        {/* Center 3D Glowing Shield Hologram */}
         <div
           style={{
-            width: 100,
-            height: 100,
-            borderRadius: '28px',
-            background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(15, 23, 42, 0.8))',
-            border: '1.5px solid rgba(59, 130, 246, 0.4)',
-            boxShadow: '0 0 50px rgba(37, 99, 235, 0.35)',
-            backdropFilter: 'blur(16px)',
+            width: 108,
+            height: 108,
+            borderRadius: '24px',
+            overflow: 'hidden',
+            background: 'radial-gradient(circle, #0b1e42 0%, #030712 100%)',
+            border: '1.5px solid rgba(56, 189, 248, 0.5)',
+            boxShadow: '0 0 40px rgba(37, 99, 235, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.2)',
+            position: 'relative',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
           }}
         >
           <img
-            src="/img/Logo3_transparent.png"
-            alt="Crypto-Sentinel"
+            src="/img/heroo.jpeg"
+            alt="Crypto-Sentinel Shield"
             style={{
-              height: 52,
-              width: 'auto',
-              objectFit: 'contain',
-              filter: 'drop-shadow(0 4px 12px rgba(37,99,235,0.6))'
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              transform: 'scale(1.2)'
+            }}
+          />
+
+          {/* Sweeping Laser Scanner */}
+          <motion.div
+            animate={{ top: ['0%', '100%', '0%'] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              height: 3,
+              background: 'linear-gradient(90deg, transparent, #38bdf8, transparent)',
+              boxShadow: '0 0 12px #38bdf8, 0 0 20px #2563eb',
+              pointerEvents: 'none'
             }}
           />
         </div>
-      </motion.div>
+      </div>
 
-      {/* Title & Brand */}
-      <motion.div
-        initial={{ y: 15, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.15, duration: 0.5 }}
-        style={{ textAlign: 'center', marginBottom: 28 }}
-      >
-        <h2 style={{ fontSize: '1.45rem', fontWeight: 800, margin: '0 0 6px 0', letterSpacing: '-0.3px', color: '#f8fafc' }}>
-          CRYPTO-SENTINEL <span style={{ color: '#3b82f6', fontWeight: 900 }}>2026</span>
+      {/* Brand Title */}
+      <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 4px 0', letterSpacing: '-0.3px', color: '#f8fafc' }}>
+          CRYPTO-SENTINEL <span style={{ color: '#38bdf8' }}>2026</span>
         </h2>
-        <div style={{ fontSize: '0.78rem', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 600 }}>
-          Security Gateway · Bank Kuningan
+        <div style={{ fontSize: '0.72rem', color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 700 }}>
+          Bank Security &amp; AML Surveillance Gateway
         </div>
-      </motion.div>
+      </div>
 
-      {/* Progress Bar Container */}
-      <div style={{ width: '100%', maxWidth: 360, marginBottom: 16 }}>
+      {/* Big Digital Percentage */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 12 }}>
+        <span
+          style={{
+            fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+            fontSize: '2.4rem',
+            fontWeight: 900,
+            color: '#f8fafc',
+            lineHeight: 1
+          }}
+        >
+          {progress}
+        </span>
+        <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#38bdf8' }}>%</span>
+      </div>
+
+      {/* Progress Bar */}
+      <div style={{ width: '100%', maxWidth: 380, marginBottom: 20 }}>
         <div
           style={{
             width: '100%',
-            height: 6,
+            height: 4,
             background: 'rgba(255, 255, 255, 0.08)',
             borderRadius: 9999,
             overflow: 'hidden',
-            border: '1px solid rgba(255, 255, 255, 0.05)',
             position: 'relative'
           }}
         >
           <motion.div
             style={{
               height: '100%',
-              background: 'linear-gradient(90deg, #2563eb, #60a5fa, #38bdf8)',
-              borderRadius: 9999,
-              boxShadow: '0 0 16px rgba(59, 130, 246, 0.8)'
+              background: 'linear-gradient(90deg, #2563eb, #38bdf8)',
+              boxShadow: '0 0 14px rgba(56, 189, 248, 0.8)',
+              width: `${progress}%`
             }}
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ ease: 'easeOut', duration: 0.35 }}
           />
         </div>
       </div>
 
-      {/* Status Live Text */}
-      <motion.div
-        key={statusText}
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
+      {/* Live Terminal Telemetry Box */}
+      <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          fontSize: '0.78rem',
-          color: '#cbd5e1',
-          fontWeight: 600,
-          textAlign: 'center'
+          width: '100%',
+          maxWidth: 420,
+          background: 'rgba(15, 23, 42, 0.6)',
+          border: '1px solid rgba(56, 189, 248, 0.2)',
+          borderRadius: 14,
+          padding: '12px 16px',
+          backdropFilter: 'blur(12px)',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)'
         }}
       >
-        <div
-          style={{
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            background: progress === 100 ? '#10b981' : '#3b82f6',
-            boxShadow: `0 0 8px ${progress === 100 ? '#10b981' : '#3b82f6'}`
-          }}
-        />
-        <span>{statusText}</span>
-      </motion.div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 6, borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.68rem', color: '#94a3b8', fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>
+            <Terminal size={12} color="#38bdf8" />
+            <span>CORE_INITIALIZATION_STREAM</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.64rem', color: '#10b981', fontWeight: 700 }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' }} />
+            LIVE
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontFamily: "'JetBrains Mono', monospace", fontSize: '0.68rem' }}>
+          {steps.map((s, i) => {
+            const isDone = i < activeStep || progress === 100;
+            const isCurrent = i === activeStep && progress < 100;
+            return (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  color: isDone ? '#94a3b8' : isCurrent ? '#38bdf8' : '#475569',
+                  opacity: isDone || isCurrent ? 1 : 0.4
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ color: isDone ? '#10b981' : isCurrent ? '#38bdf8' : '#64748b', fontWeight: 800 }}>
+                    {isDone ? '✓' : isCurrent ? '›' : '·'}
+                  </span>
+                  <span>{s.text}</span>
+                </div>
+                <span
+                  style={{
+                    fontSize: '0.62rem',
+                    fontWeight: 700,
+                    color: isDone ? '#10b981' : isCurrent ? '#f59e0b' : '#64748b'
+                  }}
+                >
+                  {isDone ? s.status : isCurrent ? 'RUNNING...' : 'QUEUED'}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
