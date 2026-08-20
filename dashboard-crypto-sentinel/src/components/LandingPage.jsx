@@ -1380,10 +1380,43 @@ export default function LandingPage({ onEnter }) {
             </div>
           </Reveal>
 
-          {/* Right Column: Interactive 3D Cross-Border Banking Flow Globe */}
+          {/* Right Column: Hero Visual with landing2.jpeg */}
           <Reveal delay={0.2} direction="left">
             <div className="lp-hero-visual-box">
-              <GlobalBankingFlowGlobe isLight={true} />
+              <motion.div
+                animate={{ 
+                  y: [0, -12, 0],
+                }}
+                transition={{ 
+                  duration: 4.5, 
+                  repeat: Infinity, 
+                  ease: 'easeInOut' 
+                }}
+                style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}
+              >
+                <div
+                  style={{
+                    borderRadius: '24px',
+                    overflow: 'hidden',
+                    boxShadow: '0 25px 60px rgba(37, 99, 235, 0.22)',
+                    border: '1px solid rgba(37, 99, 235, 0.15)',
+                    background: '#ffffff',
+                    maxWidth: 520,
+                    width: '100%'
+                  }}
+                >
+                  <img
+                    src="/img/landing2.jpeg"
+                    alt="Crypto-Sentinel Banking Surveillance Platform"
+                    style={{
+                      width: '100%',
+                      height: 'auto',
+                      display: 'block',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </div>
+              </motion.div>
             </div>
           </Reveal>
         </div>
