@@ -2059,42 +2059,6 @@ export default function GNNVisualization({ addToast }) {
       )}
 
       {/* ----------------------------------------------------------------------
-          EXPLAINABLE GNN ARCHITECTURE SCHEMA (GNN explainable.jpeg)
-      ---------------------------------------------------------------------- */}
-      <div className="card" style={{ padding: 20, background: isLight ? '#ffffff' : 'var(--bg-card)', border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-          <h4 style={{ fontSize: '0.94rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: isLight ? '#0f172a' : 'var(--text-primary)' }}>
-            <Brain size={18} color="#2563eb" />
-            Skema Arsitektur Explainable GNN (Graph Neural Network)
-          </h4>
-          <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: isLight ? '#e0f2fe' : 'rgba(37, 99, 235, 0.15)', color: '#0284c7', border: '1px solid rgba(37, 99, 235, 0.3)' }}>
-            ✓ Standar Forensik PPATK &amp; OJK
-          </span>
-        </div>
-
-        <div style={{
-          width: '100%',
-          borderRadius: 12,
-          overflow: 'hidden',
-          border: isLight ? '1px solid #cbd5e1' : '1px solid #334155',
-          background: '#ffffff',
-          boxShadow: isLight ? '0 4px 14px rgba(0,0,0,0.04)' : '0 8px 24px rgba(0,0,0,0.4)',
-          marginBottom: 6
-        }}>
-          <img
-            src="/img/GNN_explainable.jpeg"
-            alt="GNN (Graph Neural Network) untuk Deteksi Smurfing &amp; Pelarian Dana Sebelum ke Kripto"
-            style={{
-              width: '100%',
-              height: 'auto',
-              display: 'block',
-              objectFit: 'contain'
-            }}
-          />
-        </div>
-      </div>
-
-      {/* ----------------------------------------------------------------------
           FOOTER EXPLANATION CARD (PENJELASAN POLA GRAF SMURFING PPATK & OJK)
       ---------------------------------------------------------------------- */}
       <div className="card" style={{ padding: 20, background: isLight ? '#ffffff' : 'var(--bg-card)', border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
