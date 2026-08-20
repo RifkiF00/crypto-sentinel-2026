@@ -1645,14 +1645,65 @@ export default function LandingPage({ onEnter }) {
         </Reveal>
         <div className="lp-features-grid">
           {[
-            { icon: <Zap size={26} />, iconBg: '#eff6ff', iconBorder: '#bfdbfe', iconColor: '#2563eb', title: 'Smart Circuit Breaker', desc: 'Memblokir mutasi saldo ke rekening penipu, mule account, dan bursa kripto terlarang secara otomatis — tanpa menunggu persetujuan manual. Saat keputusan BLOCK keluar, upstream freeze langsung terpicu pada semua rekening dalam jaringan mule yang terhubung.', tags: ['Real-time Block', 'Upstream Freeze', 'Whitelist/Blacklist'] },
-            { icon: <Brain size={26} />, iconBg: '#faf5ff', iconBorder: '#e9d5ff', iconColor: '#7c3aed', title: 'Forensic GNN Visualizer', desc: 'Memetakan jaringan relasional antara pengirim, mule account, dan rekening tujuan kripto dalam bentuk graf interaktif real-time. Saat pola smurfing terdeteksi, seluruh jalur aliran dana menyala merah — memperlihatkan kepada analis struktur sindikat yang sesungguhnya.', tags: ['NetworkX', 'PageRank', 'Real-time Graph', 'Mule Ring Detection'] },
-            { icon: <FileText size={26} />, iconBg: '#fff7ed', iconBorder: '#fed7aa', iconColor: '#c2410c', title: 'Auto-Generated LTKM', desc: 'Menghasilkan draft Laporan Transaksi Keuangan Mencurigakan sesuai format PPATK goAML secara otomatis segera setelah BLOCK terdeteksi. Narasi kecurigaan ditulis oleh AI dalam Bahasa Indonesia formal, siap ditandatangani Compliance Officer.', tags: ['PPATK goAML', 'AI Narrative', 'UU TPPU 8/2010', 'PDF Print-ready'] },
+            {
+              icon: <Zap size={26} />,
+              iconBg: '#eff6ff',
+              iconBorder: '#bfdbfe',
+              iconColor: '#2563eb',
+              title: 'Smart Circuit Breaker',
+              desc: 'Memblokir mutasi saldo ke rekening penipu, mule account, dan bursa kripto terlarang secara otomatis — tanpa menunggu persetujuan manual. Saat keputusan BLOCK keluar, upstream freeze langsung terpicu pada semua rekening dalam jaringan mule yang terhubung.',
+              tags: ['Real-time Block', 'Upstream Freeze', 'Whitelist/Blacklist']
+            },
+            {
+              icon: <Brain size={26} />,
+              iconBg: '#faf5ff',
+              iconBorder: '#e9d5ff',
+              iconColor: '#7c3aed',
+              title: 'Forensic GNN Visualizer',
+              desc: 'Memetakan jaringan relasional antara pengirim, mule account, dan rekening tujuan kripto dalam bentuk graf interaktif real-time. Saat pola smurfing terdeteksi, seluruh jalur aliran dana menyala merah — memperlihatkan kepada analis struktur sindikat yang sesungguhnya.',
+              tags: ['NetworkX', 'PageRank', 'Real-time Graph', 'Mule Ring Detection'],
+              img: '/img/GNN_explainable.jpeg'
+            },
+            {
+              icon: <FileText size={26} />,
+              iconBg: '#fff7ed',
+              iconBorder: '#fed7aa',
+              iconColor: '#c2410c',
+              title: 'Auto-Generated LTKM',
+              desc: 'Menghasilkan draft Laporan Transaksi Keuangan Mencurigakan sesuai format PPATK goAML secara otomatis segera setelah BLOCK terdeteksi. Narasi kecurigaan ditulis oleh AI dalam Bahasa Indonesia formal, siap ditandatangani Compliance Officer.',
+              tags: ['PPATK goAML', 'AI Narrative', 'UU TPPU 8/2010', 'PDF Print-ready']
+            },
           ].map((f, i) => (
             <Reveal key={i} delay={i * 0.12}>
-              <div className="lp-feat">
-                <h3>{f.title}</h3>
-                <p>{f.desc}</p>
+              <div className="lp-feat" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div className="lp-feat-icon" style={{ background: f.iconBg, border: `1px solid ${f.iconBorder}`, color: f.iconColor }}>
+                    {f.icon}
+                  </div>
+                  <h3>{f.title}</h3>
+                  <p>{f.desc}</p>
+                  {f.img && (
+                    <div style={{
+                      margin: '16px 0',
+                      borderRadius: 14,
+                      overflow: 'hidden',
+                      border: '1px solid rgba(0,0,0,0.1)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+                      background: '#ffffff'
+                    }}>
+                      <img
+                        src={f.img}
+                        alt={f.title}
+                        style={{
+                          width: '100%',
+                          height: 'auto',
+                          display: 'block',
+                          objectFit: 'contain'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
                 <div className="lp-feat-tags">{f.tags.map((t, j) => <span className="lp-feat-tag" key={j}>{t}</span>)}</div>
               </div>
             </Reveal>
