@@ -30,28 +30,47 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
         minHeight: '100vh',
         width: '100%',
         position: 'relative',
-        backgroundImage: 'url(/img/login.jpeg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center right',
-        backgroundRepeat: 'no-repeat',
+        background: '#03081e',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        padding: '32px clamp(16px, 6vw, 80px)',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
         boxSizing: 'border-box',
-        overflowX: 'hidden'
+        overflow: 'hidden'
       }}
     >
-      {/* Subtle Mobile/Tablet Gradient Overlay to guarantee contrast */}
+      {/* Right Column: High-Res Crisp Visual Image Container */}
       <div
         style={{
           position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(to right, rgba(10, 25, 55, 0.4) 0%, rgba(10, 25, 55, 0.1) 60%, transparent 100%)',
-          pointerEvents: 'none'
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: '68%',
+          minWidth: '500px',
+          overflow: 'hidden',
+          zIndex: 1
         }}
-      />
+      >
+        <img
+          src="/img/login.jpeg"
+          alt="Crypto-Sentinel Banking Protection"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center right',
+            display: 'block'
+          }}
+        />
+        {/* Smooth Left & Top Blending Gradients */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to right, #03081e 0%, rgba(3, 8, 30, 0.6) 18%, rgba(3, 8, 30, 0.0) 45%), linear-gradient(to bottom, rgba(3, 8, 30, 0.3) 0%, transparent 15%, transparent 85%, rgba(3, 8, 30, 0.6) 100%)',
+            pointerEvents: 'none'
+          }}
+        />
+      </div>
 
       {/* Top Floating Back Button */}
       <button
@@ -60,8 +79,8 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
           position: 'absolute',
           top: 24,
           left: 24,
-          background: 'rgba(255, 255, 255, 0.85)',
-          border: '1px solid rgba(255, 255, 255, 0.6)',
+          background: 'rgba(255, 255, 255, 0.9)',
+          border: '1px solid rgba(255, 255, 255, 0.8)',
           color: '#0f172a',
           padding: '8px 18px',
           borderRadius: 9999,
@@ -71,43 +90,55 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
           gap: 8,
           fontSize: '0.82rem',
           fontWeight: 700,
-          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.12)',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
           backdropFilter: 'blur(10px)',
           transition: 'all 0.2s ease',
-          zIndex: 20
+          zIndex: 30
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = '#ffffff';
           e.currentTarget.style.transform = 'translateX(-3px)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.85)';
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
           e.currentTarget.style.transform = 'none';
         }}
       >
         <ArrowLeft size={16} /> Kembali ke Beranda
       </button>
 
-      {/* Pixel-Perfect Glassmorphic Login Card */}
-      <motion.div
-        initial={{ opacity: 0, x: -30 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+      {/* Left Column: Fixed / Fluid Glassmorphic Login Card */}
+      <div
         style={{
-          width: '100%',
-          maxWidth: 440,
-          background: 'rgba(255, 255, 255, 0.92)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          border: '1px solid rgba(255, 255, 255, 0.95)',
-          borderRadius: 28,
-          padding: '36px 32px',
-          boxShadow: '0 25px 60px rgba(10, 25, 60, 0.22), 0 0 30px rgba(255, 255, 255, 0.5)',
           position: 'relative',
           zIndex: 10,
+          width: '100%',
+          maxWidth: '560px',
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px clamp(16px, 4vw, 48px)',
           boxSizing: 'border-box'
         }}
       >
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          style={{
+            width: '100%',
+            maxWidth: 440,
+            background: 'rgba(255, 255, 255, 0.94)',
+            backdropFilter: 'blur(28px)',
+            WebkitBackdropFilter: 'blur(28px)',
+            border: '1px solid rgba(255, 255, 255, 0.95)',
+            borderRadius: 28,
+            padding: '36px 32px',
+            boxShadow: '0 25px 60px rgba(0, 10, 30, 0.35), 0 0 35px rgba(255, 255, 255, 0.4)',
+            boxSizing: 'border-box'
+          }}
+        >
         {/* Brand Logo */}
         <div style={{ marginBottom: 20 }}>
           <img
@@ -417,5 +448,6 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
         </form>
       </motion.div>
     </div>
-  );
+  </div>
+);
 }
