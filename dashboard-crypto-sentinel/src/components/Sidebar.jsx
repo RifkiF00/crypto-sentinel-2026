@@ -44,18 +44,20 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`} id="sidebar-nav">
-      <div className="sidebar-header">
-        <div className="sidebar-logo">
-          <img src="/img/Logo3.jpeg" alt="Crypto - Sentinel Logo" />
-        </div>
-        <div className="sidebar-brand">
-          <h1 style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '1.05rem', fontWeight: 800, color: '#2563eb', whiteSpace: 'nowrap', margin: 0, letterSpacing: '-0.3px' }}>
-            Crypto - Sentinel
-          </h1>
-          <span style={{ color: 'var(--text-muted)', letterSpacing: '0.4px', fontWeight: 700, fontSize: '0.54rem', display: 'block', marginTop: 2, whiteSpace: 'nowrap' }}>
-            DETECT • INFILTRATE • INTELLIGENCE
-          </span>
-        </div>
+      <div className="sidebar-header" style={{ padding: '16px 16px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', minHeight: '68px' }}>
+        <img
+          src="/img/Logo3_transparent.png"
+          alt="Crypto - Sentinel"
+          style={{
+            width: '100%',
+            maxWidth: '210px',
+            height: 'auto',
+            maxHeight: '46px',
+            objectFit: 'contain',
+            objectPosition: 'left center',
+            display: 'block'
+          }}
+        />
       </div>
 
       <nav className="sidebar-nav">
