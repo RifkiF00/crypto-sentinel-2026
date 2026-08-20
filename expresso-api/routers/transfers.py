@@ -841,34 +841,80 @@ async def api_simulate_smurfing():
     print("="*70)
     
     results = []
-    for idx, rec in enumerate(recipients, 1):
-        sentinel_res = await analyze_via_sentinel(
-            sender_account=sender,
-            receiver_account=rec,
-            amount=amount,
-            ip_address="182.16.2.90",
-            purpose_code="TRANSFER",
-            description="Pecahan transfer smurfing beruntun",
-            old_balance=500000000,
-            latitude=-6.9744,
-            longitude=108.4832
-        )
-        dec = sentinel_res.get("decision", "ALLOW")
-        risk = sentinel_res.get("risk_score", 0.0)
-        reasons = sentinel_res.get("reasons", [])
-        
-        if dec == "BLOCK":
-            print(f"[{idx}/{len(recipients)}] Tx {sender} -> {rec} | Nominal: Rp {amount:,.0f}")
-            print(f"    └─► 🔴 STATUS FDS: [BLOCK] | Risk Score: {risk}% | Action: Rollback DB & Freeze Mule Account")
-            print(f"    └─► Alasan: {', '.join(reasons)}")
-        elif dec == "REVIEW":
-            print(f"[{idx}/{len(recipients)}] Tx {sender} -> {rec} | Nominal: Rp {amount:,.0f}")
-            print(f"    └─► 🟡 STATUS FDS: [REVIEW] | Risk Score: {risk}% | Action: Tangguhkan Saldo & Push Yellow Alert")
-        else:
-            print(f"[{idx}/{len(recipients)}] Tx {sender} -> {rec} | Nominal: Rp {amount:,.0f}")
-            print(f"    └─► 🟢 STATUS FDS: [ALLOW] | Risk Score: {risk}% | Action: Commit Mutasi DB (200 OK)")
+    with Session(engine) as db:
+        for idx, rec in enumerate(recipients, 1):
+            tx_id = "TXN-" + datetime.now(timezone.utc).strftime("%Y%m%d") + "-" + str(uuid.uuid4())[:6].upper()
             
-        results.append(sentinel_res)
-        
+            sentinel_res = await analyze_via_sentinel(
+                sender_account=sender,
+                receiver_account=rec,
+                amount=amount,
+                ip_address="182.16.2.90",
+                purpose_code="TRANSFER",
+                description=f"Pecahan transfer smurfing #{idx}",
+                old_balance=500000000,
+                latitude=-6.9744,
+                longitude=108.4832
+            )
+            dec = sentinel_res.get("decision", "ALLOW")
+            risk = sentinel_res.get("risk_score", 0.0)
+            reasons = sentinel_res.get("reasons", [])
+            
+            tx_status = "FAILED" if dec == "BLOCK" else "REVIEW" if dec == "REVIEW" else "SUCCESS"
+            
+            tx = Transaction(
+                transaction_id=tx_id,
+                sender_account=sender,
+                receiver_account=rec,
+                amount=amount,
+                purpose_code="TRANSFER",
+                description=f"Pecahan transfer smurfing #{idx}",
+                destination_type="CRYPTO" if rec.startswith("0x") or rec.startswith("9012") else "DOMESTIC",
+                ip_address="182.16.2.90",
+                country_code="ID",
+                latitude=-6.9744,
+                longitude=108.4832,
+                timestamp=datetime.now(timezone.utc),
+                sentinel_score=risk,
+                sentinel_decision=dec,
+                status=tx_status
+            )
+            db.add(tx)
+            
+            if dec == "BLOCK":
+                alert = SentinelAlert(
+                    transaction_id=tx_id,
+                    risk_score=risk,
+                    indicators_json=reasons,
+                    shap_values_json={"risk_level": "HIGH"},
+                    resolved=False
+                )
+                db.add(alert)
+                db.flush()
+                
+                str_id = "STR-" + datetime.now(timezone.utc).strftime("%Y%m%d") + "-" + str(uuid.uuid4())[:6].upper()
+                str_draft = STRDraft(
+                    str_id=str_id,
+                    alert_id=alert.alert_id,
+                    summary_text=f"Terdeteksi Pola Smurfing / Structuring: Akun Rifki Firmansyah mengirim Rp{amount:,} ke {rec}.",
+                    risk_factors=reasons,
+                    status="DRAFT",
+                    analyst_id="SENTINEL-AUTO-BREAKER"
+                )
+                db.add(str_draft)
+                
+                print(f"[{idx}/{len(recipients)}] Tx {sender} -> {rec} | Nominal: Rp {amount:,.0f}")
+                print(f"    └─► 🔴 STATUS FDS: [BLOCK] | Risk Score: {risk}% | Action: Rollback DB & Freeze Mule Account")
+                print(f"    └─► Alasan: {', '.join(reasons)}")
+            elif dec == "REVIEW":
+                print(f"[{idx}/{len(recipients)}] Tx {sender} -> {rec} | Nominal: Rp {amount:,.0f}")
+                print(f"    └─► 🟡 STATUS FDS: [REVIEW] | Risk Score: {risk}% | Action: Tangguhkan Saldo & Push Yellow Alert")
+            else:
+                print(f"[{idx}/{len(recipients)}] Tx {sender} -> {rec} | Nominal: Rp {amount:,.0f}")
+                print(f"    └─► 🟢 STATUS FDS: [ALLOW] | Risk Score: {risk}% | Action: Commit Mutasi DB (200 OK)")
+            
+            db.commit()
+            results.append({"transaction_id": tx_id, "receiver": rec, "decision": dec, "risk_score": risk, "reasons": reasons})
+            
     print("="*70 + "\n")
     return {"status": "SUCCESS", "message": f"Berhasil mensimulasikan {len(recipients)} pecahan transaksi smurfing beruntun!", "details": results}
