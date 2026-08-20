@@ -1023,6 +1023,42 @@ Nasabah input transfer di Flutter App
 
 ---
 
+### E.1 Rincian Struktur Tarif & Skema Transfer BPR Bank Kuningan (Deep Research)
+
+> [!NOTE]
+> **Dasar Penentuan Tarif Transaksi BPR (Real-World Banking Operations):**
+> Biaya transfer keluar pada BPR merupakan akumulasi dari biaya jaringan switching/Bank APEX ditambah margin pendapatan non-bunga (*fee-based income*) BPR.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  MOCKUP METODE TRANSFER ANTARBANK BPR BANK KUNINGAN                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. [●] Transfer Real-Time Online (RTOL via APEX bjb)                       │
+│         Biaya Rp 7.500 • Real-Time 24/7 (Jaringan PRIMA / ATM Bersama)      │
+│         ⚡ [Instan • Dana Langsung Sampai di Bank Tujuan]                    │
+│                                                                             │
+│  2. [○] Transfer Kliring SKNBI (via bank bjb)                               │
+│         Biaya Rp 2.900 • Diproses pada Jam Kerja (Sistem Batch BI)          │
+│         🕒 [Ekonomis • Waktu Proses 1–2 Jam]                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+*Catatan: Transfer Sesama Rekening Bank Kuningan tetap GRATIS (Rp 0) Pindah Buku Real-Time (Core Banking SIBAKU).
+```
+
+#### Rincian Komposisi Biaya (Transparansi untuk Presentasi Juri):
+
+| Metode Transfer | Biaya Riil Nasabah | Rincian Alokasi Biaya | Karakteristik Waktu |
+|---|---|---|---|
+| **Transfer Online (RTOL via APEX bjb)** | **Rp 7.500** | • **Rp 6.500**: Biaya Jaringan Switching PRIMA/Bersama via bjb<br>• **Rp 1.000**: Administrasi & Fee-based Income Bank Kuningan | **Real-Time 24/7 (Instan)** |
+| **Kliring SKNBI (via bank bjb)** | **Rp 2.900** | • **Rp 2.900**: Tarif Resmi SKNBI Bank Indonesia | **Jam Kerja (Sistem Batch Kliring BI)** |
+| **Sesama Bank Kuningan** | **Rp 0 (Gratis)** | • Internal Pindah Buku Core Banking SIBAKU | **Real-Time Internal** |
+
+> **Argumen Penting untuk Pitching:** Sindikat penipuan & judi online selalu memanfaatkan jalur **Transfer Real-Time Online (Rp 7.500)** untuk melarikan dana seketika sebelum terdeteksi. Di sinilah **Crypto-Sentinel** bekerja sebagai *pre-authorization circuit breaker* (<18ms) sebelum instruksi kliring/switching keluar dieksekusi.
+
+---
+
 ### F. Koreksi Narasi: PENDING/REVIEW bukan Blokir Permanen
 
 Status `PENDING` atau `REVIEW` di sistem kita berarti:
@@ -1033,7 +1069,7 @@ Status `PENDING` atau `REVIEW` di sistem kita berarti:
 
 ---
 
-*Update section ini: 20 Agustus 2026 20:45 WIB — Rifki Firmansyah (AI Architect & Team Lead)*
+*Update section ini: 20 Agustus 2026 21:15 WIB — Rifki Firmansyah (AI Architect & Team Lead)*
 
 ---
 
