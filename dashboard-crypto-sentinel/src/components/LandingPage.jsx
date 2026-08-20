@@ -1284,20 +1284,23 @@ export default function LandingPage({ onEnter }) {
         }
 
         .lp-doc-tabs {
-          display: grid; grid-template-columns: repeat(3, 1fr);
-          gap: 12px; margin-bottom: 32px;
+          display: grid; grid-template-columns: repeat(2, 1fr);
+          gap: 16px; margin-bottom: 32px;
         }
 
         .lp-doc-tab {
-          padding: 18px; border-radius: 14px;
+          padding: 20px 24px; border-radius: 16px;
           border: 1.5px solid; cursor: pointer;
           transition: all 0.3s ease; text-align: left;
+          display: flex; flex-direction: column;
+          justify-content: center; min-height: 86px;
+          box-sizing: border-box;
         }
 
-        .lp-doc-tab h4 { font-size: 0.92rem; font-weight: 700; margin-bottom: 5px; }
+        .lp-doc-tab h4 { font-size: 0.94rem; font-weight: 700; margin: 0 0 6px 0; }
 
         .lp-doc-tab p {
-          font-size: 0.77rem; color: #888888;
+          font-size: 0.78rem; color: #888888;
           line-height: 1.45;
           font-family: 'Plus Jakarta Sans', sans-serif; margin: 0;
         }
@@ -1839,8 +1842,8 @@ export default function LandingPage({ onEnter }) {
           <div className="lp-docs">
             <div className="lp-doc-tabs">
               {[
-                { key: 'tp', label: '1. Target Pengguna', desc: '4 aktor utama: Compliance Officer, Risk Manager, Regulator, Nasabah', accent: '#1e3a8a' },
-                { key: 'flow', label: '2. Flowchart & Rich Picture', desc: 'Alur sistem end-to-end dan logika keputusan FDS', accent: '#d97706' },
+                { key: 'tp', label: '1. Target Pengguna', desc: '4 aktor utama: Compliance Officer, Risk Manager, Regulator (OJK & PPATK), Nasabah', accent: '#1e3a8a' },
+                { key: 'flow', label: '2. Flowchart & Rich Picture', desc: 'Arsitektur ekosistem end-to-end SNAP BI dan alur logika keputusan FDS', accent: '#d97706' },
               ].map(tab => (
                 <div key={tab.key} className="lp-doc-tab" onClick={() => setActiveDocTab(tab.key)} style={{ background: activeDocTab === tab.key ? tab.accent + '0f' : '#fafaf8', borderColor: activeDocTab === tab.key ? tab.accent : 'rgba(0,0,0,0.08)' }}>
                   <h4 style={{ color: activeDocTab === tab.key ? tab.accent : '#333333' }}>{tab.label}</h4>
