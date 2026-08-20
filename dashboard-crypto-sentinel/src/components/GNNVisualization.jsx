@@ -1,617 +1,1538 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain,
   Cpu,
   Target,
   Activity,
   Zap,
-  Terminal,
   Play,
-  BarChart3,
   GitBranch,
-  Crosshair,
-  Layers
+  Layers,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  RotateCcw,
+  Move,
+  ShieldAlert,
+  ShieldCheck,
+  Coins,
+  Building2,
+  Smartphone,
+  Radio,
+  Eye,
+  Info,
+  Lock,
+  FileCheck2,
+  CheckCircle2,
+  Sparkles,
+  Filter,
+  Search,
+  Share2,
+  X,
+  ChevronRight,
+  ExternalLink,
+  SlidersHorizontal,
+  Workflow
 } from 'lucide-react';
-import { gnnGraphData, gnnModelMetrics, formatCurrency } from '../data/mockData';
-import { checkHealth, fetchGnnGraph, simulateBackendDemo, gnnInference } from '../services/api';
+import { formatCurrency } from '../data/mockData';
 
-// Node shape renderers for SVG
-function NodeShape({ node, isHovered, isHighlighted, onMouseEnter, onMouseLeave, onClick }) {
-  const size = node.type === 'exchange' ? 36 : node.type === 'wallet' ? 30 : node.type === 'mule' ? 32 : 30;
-  const colors = {
-    bank: { fill: '#3b82f6', stroke: '#2563eb', bg: 'rgba(59,130,246,0.15)' },
-    mule: { fill: '#ef4444', stroke: '#dc2626', bg: 'rgba(239,68,68,0.15)' },
-    wallet: { fill: '#a855f7', stroke: '#9333ea', bg: 'rgba(168,85,247,0.15)' },
-    exchange: { fill: '#f97316', stroke: '#ea580c', bg: 'rgba(249,115,22,0.15)' }
-  };
-  const c = colors[node.type];
-  const isActive = isHovered || isHighlighted;
-  const opacity = isHighlighted === false ? 0.2 : 1;
+// ============================================================================
+// 1. DATA SKENARIO FRAUD & TOPOLOGI PERBANKAN (GNN AML GRAPH)
+// ============================================================================
 
-  // Truncate labels to avoid text clutter and overlap
-  const displayLabel = node.label.length > 13 ? node.label.substring(0, 11) + '...' : node.label;
+const SCENARIOS = {
+  smurfing_crypto: {
+    id: 'smurfing_crypto',
+    name: 'Skenario 1: Pola Smurfing & Pelarian Dana ke Kripto (High Risk)',
+    riskScore: 92,
+    riskLevel: 'HIGH',
+    classification: 'SMURFING + PELARIAN KRIPTO',
+    summary: 'Terdeteksi 1 akun sumber memecah dana ke 6 rekening perantara (mule), diagregasi ke tujuan antara (transit), lalu dilarikan ke 4 bursa kripto & cold wallet dalam rentang waktu < 15 menit.',
+    metrics: {
+      criminalActivities: 87,
+      familiarBehavior: 76,
+      suspiciousPatterns: 38,
+      historicalData: 19,
+      pageRank: '0.0482 (Top 1%)',
+      betweenness: '0.842 (High Hub)',
+      communityId: 'CLUSTER-SMURF-99',
+      hopDistance: '3-Hop Direct Chain'
+    },
+    stages: [
+      { id: 'stage1', title: '1. AKUN SUMBER', subtitle: 'Dana Awal Masuk', color: '#38bdf8' },
+      { id: 'stage2', title: '2. POLA SMURFING', subtitle: 'Layer 1: Akun Mule', color: '#10b981' },
+      { id: 'stage3', title: '3. AGREGASI TRANSIT', subtitle: 'Layer 2: Tujuan Antara', color: '#f59e0b' },
+      { id: 'stage4', title: '4. TUJUAN AKHIR (KRIPTO)', subtitle: 'Pelarian Dana Kripto', color: '#ef4444' }
+    ],
+    nodes: [
+      // 1. Akun Sumber (Source Account)
+      {
+        id: 'A1',
+        stage: 1,
+        code: 'A',
+        type: 'source',
+        label: 'Rifki Firmansyah',
+        account: '0123456789',
+        bank: 'BPR Bank Kuningan',
+        balance: 150000000,
+        riskScore: 92,
+        riskLevel: 'high',
+        role: 'Akun Sumber (Originator)',
+        ip: '182.16.2.90 (Kuningan)',
+        deviceId: 'DEV-ANDROID-S24-ULTRA',
+        nik: '3171092802092102',
+        x: 120,
+        y: 280,
+        description: 'Rekening penerima dana awal Rp 150.000.000, melakukan fan-out transfer kilat dalam 5 menit.'
+      },
+      // 2. Akun Perantara (Mule Accounts - Layer 1)
+      {
+        id: 'B1',
+        stage: 2,
+        code: 'B1',
+        type: 'mule',
+        label: 'Budi Santoso',
+        account: '8012000005',
+        bank: 'BCA',
+        balance: 10000000,
+        riskScore: 88,
+        riskLevel: 'high',
+        role: 'Akun Perantara (Mule 1)',
+        ip: '192.168.1.10 (Proxy)',
+        deviceId: 'DEV-XIAOMI-13',
+        nik: '3208012304950001',
+        x: 380,
+        y: 120,
+        description: 'Menerima transfer pecahan Rp 10.000.000, langsung diteruskan ke transit M1.'
+      },
+      {
+        id: 'B2',
+        stage: 2,
+        code: 'B2',
+        type: 'mule',
+        label: 'Ahmad Faisal',
+        account: '1370000000001',
+        bank: 'Bank Mandiri',
+        balance: 10000000,
+        riskScore: 89,
+        riskLevel: 'high',
+        role: 'Akun Perantara (Mule 2)',
+        ip: '192.168.1.10 (Proxy)',
+        deviceId: 'DEV-XIAOMI-13',
+        nik: '3208012304950002',
+        x: 380,
+        y: 220,
+        description: 'Menerima Rp 10.000.000, alamat IP sama persis dengan Mule B1.'
+      },
+      {
+        id: 'B3',
+        stage: 2,
+        code: 'B3',
+        type: 'mule',
+        label: 'Desta Erlangga',
+        account: '0912000002',
+        bank: 'BNI',
+        balance: 10000000,
+        riskScore: 86,
+        riskLevel: 'high',
+        role: 'Akun Perantara (Mule 3)',
+        ip: '192.168.1.11 (Shared)',
+        deviceId: 'DEV-SAMSUNG-A54',
+        nik: '3208012304950003',
+        x: 380,
+        y: 320,
+        description: 'Menerima Rp 10.000.000, split transfer ke transit M2.'
+      },
+      {
+        id: 'B4',
+        stage: 2,
+        code: 'B4',
+        type: 'mule',
+        label: 'Siti Rahma',
+        account: '888801000000003',
+        bank: 'BRI',
+        balance: 10000000,
+        riskScore: 85,
+        riskLevel: 'high',
+        role: 'Akun Perantara (Mule 4)',
+        ip: '192.168.1.11 (Shared)',
+        deviceId: 'DEV-SAMSUNG-A54',
+        nik: '3208012304950004',
+        x: 380,
+        y: 420,
+        description: 'Akun dormant 45 hari mendadak aktif menerima & mentransfer dana.'
+      },
+      {
+        id: 'B5',
+        stage: 2,
+        code: 'B5',
+        type: 'mule',
+        label: 'Hendri Gunawan',
+        account: '705400000004',
+        bank: 'CIMB Niaga',
+        balance: 10000000,
+        riskScore: 87,
+        riskLevel: 'high',
+        role: 'Akun Perantara (Mule 5)',
+        ip: '192.168.1.12 (Shared)',
+        deviceId: 'DEV-VIVO-Y20',
+        nik: '3208012304950005',
+        x: 380,
+        y: 520,
+        description: 'Menerima transfer beruntun pada jam anomali 02:40 WIB.'
+      },
 
-  // Custom bobbing parameters so nodes float asynchronously
-  const bobbingDuration = 3.5 + (node.id.charCodeAt(node.id.length - 1) % 4) * 0.5;
-  const bobbingDelay = (node.id.charCodeAt(0) % 5) * 0.3;
+      // 3. Tujuan Antara (Transit / Merchant - Layer 2)
+      {
+        id: 'M1',
+        stage: 3,
+        code: 'M1',
+        type: 'transit',
+        label: 'Payment Gateway Transit A',
+        account: 'VA-9088219001',
+        bank: 'BCA Virtual Account',
+        balance: 29800000,
+        riskScore: 91,
+        riskLevel: 'high',
+        role: 'Merchant Transit Layer 2',
+        ip: '103.152.88.1 (Gateway)',
+        deviceId: 'SERVER-GATEWAY-01',
+        nik: 'COMPANY-REG-991',
+        x: 650,
+        y: 160,
+        description: 'Mengumpulkan pecahan dari B1 & B2, meneruskannya ke Indodax.'
+      },
+      {
+        id: 'M2',
+        stage: 3,
+        code: 'M2',
+        type: 'transit',
+        label: 'P2P Escrow Merchant B',
+        account: 'VA-9088219002',
+        bank: 'Mandiri Merchant',
+        balance: 29400000,
+        riskScore: 93,
+        riskLevel: 'high',
+        role: 'P2P Escrow Transit',
+        ip: '103.152.88.2 (Gateway)',
+        deviceId: 'SERVER-GATEWAY-02',
+        nik: 'COMPANY-REG-992',
+        x: 650,
+        y: 300,
+        description: 'Mengumpulkan dana dari B3 & B4, meneruskannya ke Binance Exchange.'
+      },
+      {
+        id: 'M3',
+        stage: 3,
+        code: 'M3',
+        type: 'transit',
+        label: 'Aggregator Transit C',
+        account: 'VA-9088219003',
+        bank: 'BNI Corporate',
+        balance: 29700000,
+        riskScore: 90,
+        riskLevel: 'high',
+        role: 'Transit Pool Account',
+        ip: '103.152.88.3 (Gateway)',
+        deviceId: 'SERVER-GATEWAY-03',
+        nik: 'COMPANY-REG-993',
+        x: 650,
+        y: 440,
+        description: 'Mengumpulkan dana dari B5, meneruskannya ke Tokocrypto & Cold Wallet.'
+      },
 
-  return (
-    <g
-      transform={`translate(${node.x}, ${node.y})`}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      onClick={onClick}
-      style={{ cursor: 'pointer', opacity, transition: 'opacity 0.3s' }}
-    >
-      <motion.g
-        animate={{ y: [-4, 4, -4] }}
-        transition={{
-          duration: bobbingDuration,
-          delay: bobbingDelay,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      >
-        {/* Pulse ring for high-risk nodes */}
-        {node.riskScore >= 80 && (
-          <circle r={size + 10} fill="none" stroke={c.fill} strokeWidth="2" opacity="0.4">
-            <animate attributeName="r" values={`${size + 6};${size + 16};${size + 6}`} dur="1.8s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.5;0;0.5" dur="1.8s" repeatCount="indefinite" />
-          </circle>
-        )}
+      // 4. Tujuan Akhir (Kripto Exchange & Wallets)
+      {
+        id: 'C1',
+        stage: 4,
+        code: 'C1',
+        type: 'crypto',
+        label: 'PT Indodax Nasional Indonesia',
+        account: '9012666666 (Deposit Vault)',
+        bank: 'BCA Escrow Indodax',
+        balance: 45000000,
+        riskScore: 95,
+        riskLevel: 'high',
+        role: 'Bursa Kripto Resmi (Bappebti)',
+        ip: 'Exchange API Gateway',
+        deviceId: 'VA-INDODAX-HOTWALLET',
+        nik: 'BAP协同-INDODAX',
+        x: 920,
+        y: 130,
+        description: 'Tujuan akhir deposit kripto rupiah untuk pembelian USDT/Bitcoin.'
+      },
+      {
+        id: 'C2',
+        stage: 4,
+        code: 'C2',
+        type: 'crypto',
+        label: 'PT Binance Exchange Indonesia',
+        account: '9012123456 (Offshore Channel)',
+        bank: 'CIMB Escrow Binance',
+        balance: 44100000,
+        riskScore: 98,
+        riskLevel: 'high',
+        role: 'Bursa Kripto Internasional',
+        ip: 'Offshore Proxy Routing',
+        deviceId: 'BINANCE-PEER-SET',
+        nik: 'OFFSHORE-EXCHANGE',
+        x: 920,
+        y: 250,
+        description: 'Outflow lintas batas negara tanpa pelaporan resmi transaksi devisa.'
+      },
+      {
+        id: 'C3',
+        stage: 4,
+        code: 'C3',
+        type: 'crypto',
+        label: 'PT Tokocrypto Indonesia',
+        account: '9012999999 (Fiat Gateway)',
+        bank: 'Mandiri Escrow Tokocrypto',
+        balance: 30000000,
+        riskScore: 94,
+        riskLevel: 'high',
+        role: 'Bursa Kripto Domestik',
+        ip: 'Gateway Jakarta',
+        deviceId: 'TOKOCRYPTO-VA',
+        nik: 'BAP协同-TOKOCRYPTO',
+        x: 920,
+        y: 370,
+        description: 'Tujuan konversi rupiah ke stablecoin USDT secara instan.'
+      },
+      {
+        id: 'C4',
+        stage: 4,
+        code: 'C4',
+        type: 'crypto',
+        label: 'Cold Wallet (Tether Unhosted)',
+        account: '0x71c5991823ab...e49f',
+        bank: 'Ethereum Blockchain (ERC-20)',
+        balance: 15000000,
+        riskScore: 99,
+        riskLevel: 'high',
+        role: 'Unhosted Self-Custody Wallet',
+        ip: 'Tornado Cash / Mixer Linkage',
+        deviceId: 'HARDWARE-LEDGER-X',
+        nik: 'ANONYMOUS-ONCHAIN',
+        x: 920,
+        y: 490,
+        description: 'Alamat dompet mandiri on-chain yang terhubung dengan pola layering lanjutan.'
+      },
 
-        {/* Glow */}
-        {isActive && (
-          <circle r={size + 8} fill={c.bg} stroke={c.fill} strokeWidth="1.5" strokeDasharray="4 2" opacity="0.6">
-            <animate attributeName="stroke-dashoffset" from="12" to="0" dur="1s" repeatCount="indefinite" />
-          </circle>
-        )}
+      // 5. Perangkat / Device & IP Linkage (Bawah)
+      {
+        id: 'D1',
+        stage: 5,
+        code: 'D1',
+        type: 'device',
+        label: 'IP: 192.168.1.10',
+        account: 'Perangkat Bersama (Mule B1 & B2)',
+        bank: 'ISP Indihome Kuningan',
+        balance: 0,
+        riskScore: 90,
+        riskLevel: 'high',
+        role: 'Shared IP Infrastructure',
+        ip: '192.168.1.10',
+        deviceId: 'MAC-A4:B2:99:11:00',
+        nik: 'INFRA-DEVICE-LINK',
+        x: 300,
+        y: 650,
+        description: 'Alamat IP yang sama digunakan secara bersamaan oleh akun B1 dan B2.'
+      },
+      {
+        id: 'D2',
+        stage: 5,
+        code: 'D2',
+        type: 'device',
+        label: 'IP: 192.168.1.11',
+        account: 'Perangkat Bersama (Mule B3 & B4)',
+        bank: 'ISP Telkomsel Flash',
+        balance: 0,
+        riskScore: 89,
+        riskLevel: 'high',
+        role: 'Shared IP Infrastructure',
+        ip: '192.168.1.11',
+        deviceId: 'MAC-C8:11:44:88:12',
+        nik: 'INFRA-DEVICE-LINK',
+        x: 520,
+        y: 650,
+        description: 'Perangkat mobile yang sama mengoperasikan mutasi transfer akun B3 dan B4.'
+      },
+      {
+        id: 'D3',
+        stage: 5,
+        code: 'D3',
+        type: 'device',
+        label: 'VPN: 182.16.2.90',
+        account: 'Datacenter Originator',
+        bank: 'Datacenter Proxy Gateway',
+        balance: 0,
+        riskScore: 94,
+        riskLevel: 'high',
+        role: 'Anonymizer VPN Proxy',
+        ip: '182.16.2.90',
+        deviceId: 'PROXY-CIRCUIT-99',
+        nik: 'VPN-DATACENTER-ANOMALY',
+        x: 740,
+        y: 650,
+        description: 'Asal IP transaksi dari VPN datacenter yang menyamarkan lokasi fisik pelaku.'
+      }
+    ],
+    edges: [
+      // Stage 1 -> Stage 2 (Smurfing Fan-out)
+      { from: 'A1', to: 'B1', amount: 10000000, time: '09:01 WIB', type: 'transfer', flow: 'smurfing', risk: 'high' },
+      { from: 'A1', to: 'B2', amount: 10000000, time: '09:02 WIB', type: 'transfer', flow: 'smurfing', risk: 'high' },
+      { from: 'A1', to: 'B3', amount: 10000000, time: '09:03 WIB', type: 'transfer', flow: 'smurfing', risk: 'high' },
+      { from: 'A1', to: 'B4', amount: 10000000, time: '09:04 WIB', type: 'transfer', flow: 'smurfing', risk: 'high' },
+      { from: 'A1', to: 'B5', amount: 10000000, time: '09:05 WIB', type: 'transfer', flow: 'smurfing', risk: 'high' },
 
-        {/* Shape based on type */}
-        {node.type === 'bank' && (
-          <circle r={size} fill={c.bg} stroke={c.fill} strokeWidth={isActive ? 3.0 : 1.8} filter={isActive ? "url(#node-glow)" : "none"} />
-        )}
-        {node.type === 'mule' && (
-          <polygon
-            points={`0,${-size} ${size},0 0,${size} ${-size},0`}
-            fill={c.bg} stroke={c.fill} strokeWidth={isActive ? 3.0 : 1.8}
-            filter={isActive ? "url(#node-glow)" : "none"}
-          />
-        )}
-        {node.type === 'wallet' && (
-          <polygon
-            points={hexPoints(size)}
-            fill={c.bg} stroke={c.fill} strokeWidth={isActive ? 3.0 : 1.8}
-            filter={isActive ? "url(#node-glow)" : "none"}
-          />
-        )}
-        {node.type === 'exchange' && (
-          <rect
-            x={-size} y={-size} width={size * 2} height={size * 2}
-            rx="8" fill={c.bg} stroke={c.fill} strokeWidth={isActive ? 3.0 : 1.8}
-            filter={isActive ? "url(#node-glow)" : "none"}
-          />
-        )}
+      // Stage 2 -> Stage 3 (Transit Aggregation)
+      { from: 'B1', to: 'M1', amount: 5000000, time: '09:06 WIB', type: 'transfer', flow: 'transit', risk: 'high' },
+      { from: 'B1', to: 'M1', amount: 4800000, time: '09:07 WIB', type: 'transfer', flow: 'transit', risk: 'high' },
+      { from: 'B2', to: 'M1', amount: 5000000, time: '09:08 WIB', type: 'transfer', flow: 'transit', risk: 'high' },
+      { from: 'B2', to: 'M2', amount: 4900000, time: '09:09 WIB', type: 'transfer', flow: 'transit', risk: 'high' },
+      { from: 'B3', to: 'M2', amount: 5100000, time: '09:10 WIB', type: 'transfer', flow: 'transit', risk: 'high' },
+      { from: 'B3', to: 'M2', amount: 4700000, time: '09:11 WIB', type: 'transfer', flow: 'transit', risk: 'high' },
+      { from: 'B4', to: 'M2', amount: 5200000, time: '09:12 WIB', type: 'transfer', flow: 'transit', risk: 'high' },
+      { from: 'B4', to: 'M3', amount: 4600000, time: '09:13 WIB', type: 'transfer', flow: 'transit', risk: 'high' },
+      { from: 'B5', to: 'M3', amount: 5000000, time: '09:14 WIB', type: 'transfer', flow: 'transit', risk: 'high' },
+      { from: 'B5', to: 'M3', amount: 4900000, time: '09:15 WIB', type: 'transfer', flow: 'transit', risk: 'high' },
 
-        {/* Label Capsule Background Card */}
-        <rect
-          x={-60}
-          y={size + 6}
-          width={120}
-          height={18}
-          rx="5"
-          fill="rgba(15, 23, 42, 0.85)"
-          stroke={isActive ? c.fill : "rgba(255,255,255,0.08)"}
-          strokeWidth="1.2"
-        />
+      // Stage 3 -> Stage 4 (Crypto Outflow)
+      { from: 'M1', to: 'C1', amount: 14700000, time: '09:16 WIB', type: 'crypto', flow: 'crypto_outflow', risk: 'critical' },
+      { from: 'M2', to: 'C2', amount: 15000000, time: '09:17 WIB', type: 'crypto', flow: 'crypto_outflow', risk: 'critical' },
+      { from: 'M3', to: 'C3', amount: 14500000, time: '09:18 WIB', type: 'crypto', flow: 'crypto_outflow', risk: 'critical' },
+      { from: 'M3', to: 'C4', amount: 15000000, time: '09:19 WIB', type: 'crypto', flow: 'crypto_outflow', risk: 'critical' },
 
-        {/* Label */}
-        <text
-          y={size + 18}
-          textAnchor="middle"
-          fill="white"
-          fontSize="10"
-          fontWeight="700"
-          fontFamily="var(--font-sans)"
-        >
-          {displayLabel}
-        </text>
-
-        {/* Risk score badge */}
-        <g transform={`translate(${size - 4}, ${-size + 4})`}>
-          <circle r="11" fill={node.riskScore >= 80 ? '#ef4444' : node.riskScore >= 50 ? '#f59e0b' : '#10b981'} stroke="white" strokeWidth="1.5" />
-          <text textAnchor="middle" y="3.5" fill="white" fontSize="9" fontWeight="800" fontFamily="var(--font-mono)">
-            {node.riskScore}
-          </text>
-        </g>
-      </motion.g>
-    </g>
-  );
-}
-
-function hexPoints(size) {
-  const points = [];
-  for (let i = 0; i < 6; i++) {
-    const angle = (Math.PI / 3) * i - Math.PI / 6;
-    points.push(`${Math.cos(angle) * size},${Math.sin(angle) * size}`);
+      // Stage 5 (Device & IP Linkage)
+      { from: 'B1', to: 'D1', amount: 0, time: 'Shared IP', type: 'device', flow: 'device_link', risk: 'medium' },
+      { from: 'B2', to: 'D1', amount: 0, time: 'Shared IP', type: 'device', flow: 'device_link', risk: 'medium' },
+      { from: 'B3', to: 'D2', amount: 0, time: 'Shared Device', type: 'device', flow: 'device_link', risk: 'medium' },
+      { from: 'B4', to: 'D2', amount: 0, time: 'Shared Device', type: 'device', flow: 'device_link', risk: 'medium' },
+      { from: 'A1', to: 'D3', amount: 0, time: 'VPN Datacenter', type: 'device', flow: 'device_link', risk: 'high' },
+      { from: 'B5', to: 'D3', amount: 0, time: 'VPN Datacenter', type: 'device', flow: 'device_link', risk: 'high' }
+    ]
+  },
+  mule_ring: {
+    id: 'mule_ring',
+    name: 'Skenario 2: Sindikat Rekening Penampung Berantai (Circular Mule Ring)',
+    riskScore: 86,
+    riskLevel: 'HIGH',
+    classification: 'CIRCULAR LAYERING MULE RING',
+    summary: 'Pola perputaran dana tertutup antar 4 rekening penampung dengan tujuan menyamarkan jejak audit sebelum ditransfer keluar ekosistem perbankan.',
+    metrics: {
+      criminalActivities: 79,
+      familiarBehavior: 62,
+      suspiciousPatterns: 54,
+      historicalData: 28,
+      pageRank: '0.0391 (Top 5%)',
+      betweenness: '0.710 (Circular Loop)',
+      communityId: 'CLUSTER-RING-04',
+      hopDistance: 'Circular 4-Node Ring'
+    },
+    stages: [
+      { id: 'stage1', title: '1. AKUN REKRUTAN', subtitle: 'Penerima Awal', color: '#38bdf8' },
+      { id: 'stage2', title: '2. RING LAYER 1', subtitle: 'Perputaran Dana', color: '#f59e0b' },
+      { id: 'stage3', title: '3. RING LAYER 2', subtitle: 'Pencucian Loop', color: '#f59e0b' },
+      { id: 'stage4', title: '4. CASH OUT BURSA', subtitle: 'Tarik Tunai / Kripto', color: '#ef4444' }
+    ],
+    nodes: [
+      { id: 'R1', stage: 1, code: 'R1', type: 'source', label: 'Rekening Rekrutan A', account: '1122334455', bank: 'Bank Kuningan', balance: 80000000, riskScore: 84, riskLevel: 'high', role: 'Inflow Account', ip: '36.85.12.1', deviceId: 'DEV-OPPO-A15', nik: '3208012304950011', x: 140, y: 300, description: 'Rekening penerima aliran dana judi online awal.' },
+      { id: 'R2', stage: 2, code: 'R2', type: 'mule', label: 'Mule Ring Node 1', account: '4521880292', bank: 'BCA', balance: 75000000, riskScore: 88, riskLevel: 'high', role: 'Ring Member 1', ip: '36.85.12.1', deviceId: 'DEV-OPPO-A15', nik: '3208012304950012', x: 420, y: 180, description: 'Menerima dana dan memutar sebagian ke Ring Node 2.' },
+      { id: 'R3', stage: 2, code: 'R3', type: 'mule', label: 'Mule Ring Node 2', account: '7819002231', bank: 'Mandiri', balance: 72000000, riskScore: 89, riskLevel: 'high', role: 'Ring Member 2', ip: '36.85.12.2', deviceId: 'DEV-OPPO-A15', nik: '3208012304950013', x: 420, y: 420, description: 'Menerima dari R2 dan melempar kembali ke R4.' },
+      { id: 'R4', stage: 3, code: 'R4', type: 'transit', label: 'Mule Aggregator Pool', account: '9901238472', bank: 'BNI', balance: 69000000, riskScore: 92, riskLevel: 'high', role: 'Ring Exit Gate', ip: '103.44.12.9', deviceId: 'DEV-SERVER-01', nik: '3208012304950014', x: 680, y: 300, description: 'Titik temu aliran dana sebelum eksekusi transfer ke exchange kripto.' },
+      { id: 'R5', stage: 4, code: 'R5', type: 'crypto', label: 'PT Indodax Indonesia', account: '9012666666', bank: 'BCA Escrow', balance: 65000000, riskScore: 96, riskLevel: 'high', role: 'Crypto Liquidation', ip: 'API Gateway', deviceId: 'INDODAX-HOT', nik: 'BAP协同-INDODAX', x: 920, y: 300, description: 'Likuidasi akhir dana ring menjadi aset kripto.' }
+    ],
+    edges: [
+      { from: 'R1', to: 'R2', amount: 40000000, time: '14:02 WIB', type: 'transfer', flow: 'smurfing', risk: 'high' },
+      { from: 'R1', to: 'R3', amount: 40000000, time: '14:03 WIB', type: 'transfer', flow: 'smurfing', risk: 'high' },
+      { from: 'R2', to: 'R3', amount: 20000000, time: '14:08 WIB', type: 'transfer', flow: 'transit', risk: 'high' },
+      { from: 'R3', to: 'R4', amount: 35000000, time: '14:15 WIB', type: 'transfer', flow: 'transit', risk: 'high' },
+      { from: 'R2', to: 'R4', amount: 34000000, time: '14:16 WIB', type: 'transfer', flow: 'transit', risk: 'high' },
+      { from: 'R4', to: 'R5', amount: 65000000, time: '14:25 WIB', type: 'crypto', flow: 'crypto_outflow', risk: 'critical' }
+    ]
+  },
+  normal_payroll: {
+    id: 'normal_payroll',
+    name: 'Skenario 3: Transaksi Normal Payroll & Operasional BPR (Low Risk)',
+    riskScore: 12,
+    riskLevel: 'LOW',
+    classification: 'NORMAL BPR DISBURSEMENT (ALLOW)',
+    summary: 'Distribusi gaji ASN / Guru Pemda Kuningan melalui rekening giro BPR Bank Kuningan. Tidak ditemukan pola fan-out anomali ataupun koneksi ke bursa kripto.',
+    metrics: {
+      criminalActivities: 6,
+      familiarBehavior: 94,
+      suspiciousPatterns: 4,
+      historicalData: 88,
+      pageRank: '0.0012 (Standard)',
+      betweenness: '0.045 (Regular Tree)',
+      communityId: 'CLUSTER-PAYROLL-KNG',
+      hopDistance: '1-Hop Star Tree'
+    },
+    stages: [
+      { id: 'stage1', title: '1. KAS DAERAH', subtitle: 'Giro Setda Kuningan', color: '#38bdf8' },
+      { id: 'stage2', title: '2. REKENING NASABAH', subtitle: 'Guru & Tenaga Pendidik', color: '#10b981' },
+      { id: 'stage3', title: '3. BANK PENERIMA', subtitle: 'Sesama Bank Kuningan', color: '#38bdf8' },
+      { id: 'stage4', title: '4. STATUS', subtitle: 'Transaksi Terverifikasi', color: '#10b981' }
+    ],
+    nodes: [
+      { id: 'N1', stage: 1, code: 'KAS', type: 'source', label: 'Kasda BPKAD Kuningan', account: '001002003004', bank: 'Bank Kuningan', balance: 850000000, riskScore: 5, riskLevel: 'low', role: 'Official Govt Account', ip: '10.12.1.5 (Intranet)', deviceId: 'SETDA-FINANCE-01', nik: 'PEMDA-KUNINGAN-01', x: 150, y: 300, description: 'Rekening resmi pencairan gaji rutin Pemkab Kuningan.' },
+      { id: 'N2', stage: 2, code: 'G1', type: 'mule', label: 'Drs. H. Maman Suherman', account: '0123991823', bank: 'Bank Kuningan', balance: 8500000, riskScore: 8, riskLevel: 'low', role: 'ASN Guru SMPN 1', ip: '180.252.12.1', deviceId: 'GURU-PHONE-01', nik: '3208010101700001', x: 480, y: 160, description: 'Penerima transfer gaji pokok bulan Agustus.' },
+      { id: 'N3', stage: 2, code: 'G2', type: 'mule', label: 'Hj. Neneng Rohaeti, M.Pd', account: '0123991824', bank: 'Bank Kuningan', balance: 9200000, riskScore: 7, riskLevel: 'low', role: 'Kepala Sekolah SDN', ip: '180.252.12.2', deviceId: 'GURU-PHONE-02', nik: '3208010101720002', x: 480, y: 300, description: 'Penerima tunjangan sertifikasi guru.' },
+      { id: 'N4', stage: 2, code: 'G3', type: 'mule', label: 'Asep Saepudin, S.Kom', account: '0123991825', bank: 'Bank Kuningan', balance: 6500000, riskScore: 10, riskLevel: 'low', role: 'Staf TU Disdikbud', ip: '180.252.12.3', deviceId: 'GURU-PHONE-03', nik: '3208010101850003', x: 480, y: 440, description: 'Penerima gaji staf operasional sekolah.' },
+      { id: 'N5', stage: 4, code: 'OK', type: 'crypto', label: 'Kliring SKNBI / APEX', account: 'APEX-BJB-KNG', bank: 'Bank bjb (APEX BPR)', balance: 0, riskScore: 5, riskLevel: 'low', role: 'Settlement Engine', ip: 'Core Banking API', deviceId: 'CORE-BKG-01', nik: 'BI-FAST-SETTLE', x: 850, y: 300, description: 'Penyelesaian kliring resmi kluster BPR Jawa Barat.' }
+    ],
+    edges: [
+      { from: 'N1', to: 'N2', amount: 8500000, time: '07:30 WIB', type: 'transfer', flow: 'payroll', risk: 'low' },
+      { from: 'N1', to: 'N3', amount: 9200000, time: '07:30 WIB', type: 'transfer', flow: 'payroll', risk: 'low' },
+      { from: 'N1', to: 'N4', amount: 6500000, time: '07:30 WIB', type: 'transfer', flow: 'payroll', risk: 'low' },
+      { from: 'N2', to: 'N5', amount: 8500000, time: '07:35 WIB', type: 'transfer', flow: 'payroll', risk: 'low' },
+      { from: 'N3', to: 'N5', amount: 9200000, time: '07:35 WIB', type: 'transfer', flow: 'payroll', risk: 'low' },
+      { from: 'N4', to: 'N5', amount: 6500000, time: '07:35 WIB', type: 'transfer', flow: 'payroll', risk: 'low' }
+    ]
   }
-  return points.join(' ');
-}
+};
 
-// Edge renderer
-function Edge({ edge, sourceNode, targetNode, isHighlighted }) {
-  const colors = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' };
-  const color = colors[edge.riskLevel];
-  const thickness = edge.riskLevel === 'high' ? 3.8 : edge.riskLevel === 'medium' ? 2.6 : 1.8;
-  const opacity = isHighlighted === false ? 0.08 : isHighlighted === true ? 0.95 : 0.5;
-
-  // Shorten paths to start/stop exactly at node boundaries to show arrowheads beautifully
-  const dx = targetNode.x - sourceNode.x;
-  const dy = targetNode.y - sourceNode.y;
-  const len = Math.sqrt(dx * dx + dy * dy) || 1;
-
-  const sourceSize = sourceNode.type === 'exchange' ? 36 : sourceNode.type === 'wallet' ? 30 : sourceNode.type === 'mule' ? 32 : 30;
-  const targetSize = targetNode.type === 'exchange' ? 36 : targetNode.type === 'wallet' ? 30 : targetNode.type === 'mule' ? 32 : 30;
-
-  const startX = sourceNode.x + (dx / len) * (sourceSize + 4);
-  const startY = sourceNode.y + (dy / len) * (sourceSize + 4);
-  const endX = targetNode.x - (dx / len) * (targetSize + 10);
-  const endY = targetNode.y - (dy / len) * (targetSize + 10);
-
-  // Curved path calculation
-  const cx = startX + (endX - startX) * 0.5;
-  const cy = startY + (endY - startY) * 0.5 - (Math.abs(dy) < 80 ? 15 : 0);
-
-  return (
-    <g style={{ opacity, transition: 'opacity 0.3s' }}>
-      <path
-        d={`M${startX},${startY} Q${cx},${cy} ${endX},${endY}`}
-        stroke={color}
-        strokeWidth={thickness}
-        fill="none"
-        strokeDasharray="6 4"
-        markerEnd={`url(#arrowhead-${edge.riskLevel})`}
-        filter={`url(#edge-glow-${edge.riskLevel})`}
-      >
-        <animate
-          attributeName="stroke-dashoffset"
-          from="20"
-          to="0"
-          dur={edge.riskLevel === 'high' ? "1.2s" : "2s"}
-          repeatCount="indefinite"
-        />
-      </path>
-    </g>
-  );
-}
+// ============================================================================
+// 2. KOMPONEN UTAMA GNN VISUALIZATION (MAPS STYLE + DRAGGABLE + PINCH ZOOM)
+// ============================================================================
 
 export default function GNNVisualization({ addToast }) {
-  const [graphData, setGraphData] = useState(gnnGraphData);
-  const [hoveredNode, setHoveredNode] = useState(null);
+  // Scenario State
+  const [selectedScenarioKey, setSelectedScenarioKey] = useState('smurfing_crypto');
+  const scenario = SCENARIOS[selectedScenarioKey];
+
+  // Map Navigation State (Pan & Zoom)
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+
+  // Flexible Draggable Node Positions State
+  const [nodePositions, setNodePositions] = useState({});
+  const [draggedNodeId, setDraggedNodeId] = useState(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // Filter & Layer Controls
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'crypto' | 'mule' | 'device'
   const [selectedNode, setSelectedNode] = useState(null);
-  const [isInferring, setIsInferring] = useState(false);
-  const [terminalOutput, setTerminalOutput] = useState([]);
-  const [tooltipData, setTooltipData] = useState(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState(null);
+  const [isAnimationPlaying, setIsAnimationPlaying] = useState(true);
+  const [isAutoLayout, setIsAutoLayout] = useState(true);
+  const [showMetricsDrawer, setShowMetricsDrawer] = useState(true);
+  const [showSummaryDrawer, setShowSummaryDrawer] = useState(true);
+
+  const containerRef = useRef(null);
   const svgRef = useRef(null);
 
-  // Load GNN Graph from backend on mount
+  // Initialize node positions based on scenario
   useEffect(() => {
-    async function loadGraph() {
-      try {
-        const online = await checkHealth();
-        if (online) {
-          const dynamicGraph = await fetchGnnGraph();
-          if (dynamicGraph && dynamicGraph.nodes && dynamicGraph.nodes.length > 0) {
-            setGraphData(dynamicGraph);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load GNN graph from API:", err);
-      }
-    }
-    loadGraph();
-  }, []);
-
-  const activeNodeId = selectedNode || hoveredNode;
-
-  // Compute connected edges and nodes for highlighting
-  const { highlightedNodes, highlightedEdges } = useMemo(() => {
-    if (!activeNodeId) return { highlightedNodes: null, highlightedEdges: null };
-    const connEdges = new Set();
-    const connNodes = new Set([activeNodeId]);
-    graphData.edges.forEach((edge, i) => {
-      if (edge.source === activeNodeId || edge.target === activeNodeId) {
-        connEdges.add(i);
-        connNodes.add(edge.source);
-        connNodes.add(edge.target);
-      }
+    const initialPos = {};
+    scenario.nodes.forEach(node => {
+      initialPos[node.id] = { x: node.x, y: node.y };
     });
-    return { highlightedNodes: connNodes, highlightedEdges: connEdges };
-  }, [activeNodeId, graphData]);
+    setNodePositions(initialPos);
+    setSelectedNode(scenario.nodes[0]); // Select source node by default
+    setPan({ x: 0, y: 0 });
+    setZoom(0.95);
+  }, [selectedScenarioKey]);
 
-  const handleNodeHover = useCallback((nodeId, node) => {
-    setHoveredNode(nodeId);
-    if (node) {
-      setTooltipData({
-        x: node.x,
-        y: node.y,
-        label: node.label,
-        type: node.type,
-        riskScore: node.riskScore,
-        bank: node.bank
-      });
-    }
-  }, []);
+  // Reset positions to default layout
+  const handleResetLayout = () => {
+    const initialPos = {};
+    scenario.nodes.forEach(node => {
+      initialPos[node.id] = { x: node.x, y: node.y };
+    });
+    setNodePositions(initialPos);
+    setPan({ x: 0, y: 0 });
+    setZoom(0.95);
+    if (addToast) addToast('Posisi node dan peta graf berhasil direset ke standar.', 'info');
+  };
 
-  const handleNodeLeave = useCallback(() => {
-    setHoveredNode(null);
-    setTooltipData(null);
-  }, []);
+  // Zoom Controls
+  const handleZoomIn = () => setZoom(z => Math.min(2.5, Number((z + 0.15).toFixed(2))));
+  const handleZoomOut = () => setZoom(z => Math.max(0.4, Number((z - 0.15).toFixed(2))));
+  const handleFitView = () => {
+    setZoom(0.85);
+    setPan({ x: 40, y: 20 });
+  };
 
-  // GNN Inference simulation
-  const runInference = async () => {
-    setIsInferring(true);
-    setTerminalOutput([]);
+  // Wheel Zoom with Focal Point
+  const handleWheel = (e) => {
+    e.preventDefault();
+    const zoomDelta = e.deltaY < 0 ? 0.08 : -0.08;
+    setZoom(z => {
+      const nextZoom = Math.min(2.5, Math.max(0.4, Number((z + zoomDelta).toFixed(2))));
+      return nextZoom;
+    });
+  };
 
-    try {
-      setTerminalOutput(prev => [...prev, { time: new Date().toLocaleTimeString(), text: '[API-GNN-ENGINE] Menghubungi Crypto-Sentinel API Server...' }]);
-
-      // Call actual GNN inference from API
-      const inferenceResult = await gnnInference();
-
-      // Build dynamic steps from API response
-      const steps = [
-        { text: `[API-DATA-LOADER] Memuat ${inferenceResult.graph_stats.total_nodes} nodes, ${inferenceResult.graph_stats.total_edges} edges dari transaction logs...`, delay: 500 },
-        { text: '[API-GNN-PREPROCESS] Menghitung PageRank & Graph Centrality metrics...', delay: 1000 },
-        { text: '[API-GNN-LAYER] Message Passing — Agregasi fitur tetangga (k=3)...', delay: 1500 },
-        { text: '[API-ATTENTION] Menghitung attention weights pada edges...', delay: 2000 },
-        { text: '[API-ANOMALY] Memprediksi anomali dengan Graph Neural Network...', delay: 2500 }
-      ];
-
-      // Add detected anomalies from API
-      if (inferenceResult.anomalies && inferenceResult.anomalies.length > 0) {
-        inferenceResult.anomalies.forEach((anomaly, idx) => {
-          steps.push({
-            text: `[API-RESULT] ⚠️ ANOMALI TERDETEKSI: ${anomaly.account_name} (${anomaly.role}) - Skor: ${anomaly.anomaly_score}%`,
-            delay: 3000 + (idx * 300)
-          });
-        });
-      } else {
-        steps.push({
-          text: '[API-RESULT] ℹ️ Tidak ada anomali terdeteksi atau data transaksi masih minimal.',
-          delay: 3000
-        });
-      }
-
-      steps.push({
-        text: '[API-COMPLETE] GNN Anomaly Detection selesai! Graph forensik disinkronisasi.',
-        delay: 3000 + (Math.max(inferenceResult.anomalies?.length || 0, 1) * 300) + 500
-      });
-
-      // Display terminal output with dynamic timing
-      steps.forEach(step => {
-        setTimeout(() => {
-          setTerminalOutput(prev => [...prev, { time: new Date().toLocaleTimeString(), text: step.text }]);
-        }, step.delay);
-      });
-
-      // Mark as complete
-      setTimeout(() => {
-        setIsInferring(false);
-        const anomalyCount = inferenceResult.anomalies?.length || 0;
-        addToast?.(
-          anomalyCount > 0
-            ? `🧠 GNN Inference selesai! ${anomalyCount} anomali terdeteksi.`
-            : '🧠 GNN Inference selesai! Sistem ready.',
-          anomalyCount > 0 ? 'warning' : 'success'
-        );
-      }, steps[steps.length - 1].delay + 500);
-
-    } catch (error) {
-      console.error("GNN inference failed:", error);
-      setIsInferring(false);
-      addToast?.('❌ GNN Inference gagal. ' + (error.message || 'Error jaringan.'), 'error');
+  // Pan Canvas Mouse Events
+  const handleMouseDown = (e) => {
+    // If clicked directly on canvas background (not on a node)
+    if (e.target.tagName === 'svg' || e.target.classList.contains('canvas-bg')) {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
     }
   };
 
-  const typeLabels = {
-    bank: { label: 'Rekening Bank', shape: 'circle', color: '#3b82f6' },
-    mule: { label: 'Rekening Mule', shape: 'diamond', color: '#ef4444' },
-    wallet: { label: 'Crypto Wallet', shape: 'hexagon', color: '#a855f7' },
-    exchange: { label: 'Exchange', shape: 'square', color: '#f97316' }
+  const handleMouseMove = (e) => {
+    if (isPanning) {
+      setPan({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      });
+    } else if (draggedNodeId) {
+      // Dragging a specific node
+      const rect = containerRef.current.getBoundingClientRect();
+      const rawX = (e.clientX - rect.left - pan.x) / zoom;
+      const rawY = (e.clientY - rect.top - pan.y) / zoom;
+
+      setNodePositions(prev => ({
+        ...prev,
+        [draggedNodeId]: {
+          x: Math.round(rawX - dragOffset.x),
+          y: Math.round(rawY - dragOffset.y)
+        }
+      }));
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+    setDraggedNodeId(null);
+  };
+
+  // Node Drag Start
+  const handleNodeMouseDown = (e, nodeId) => {
+    e.stopPropagation();
+    setDraggedNodeId(nodeId);
+    const nodePos = nodePositions[nodeId] || { x: 0, y: 0 };
+    const rect = containerRef.current.getBoundingClientRect();
+    const rawX = (e.clientX - rect.left - pan.x) / zoom;
+    const rawY = (e.clientY - rect.top - pan.y) / zoom;
+
+    setDragOffset({
+      x: rawX - nodePos.x,
+      y: rawY - nodePos.y
+    });
+
+    const nodeObj = scenario.nodes.find(n => n.id === nodeId);
+    if (nodeObj) setSelectedNode(nodeObj);
+  };
+
+  // Filter Nodes & Edges
+  const filteredNodes = useMemo(() => {
+    if (activeFilter === 'all') return scenario.nodes;
+    if (activeFilter === 'crypto') return scenario.nodes.filter(n => n.type === 'crypto' || n.type === 'transit' || n.id === 'A1');
+    if (activeFilter === 'mule') return scenario.nodes.filter(n => n.type === 'mule' || n.type === 'source');
+    if (activeFilter === 'device') return scenario.nodes.filter(n => n.type === 'device' || n.type === 'mule' || n.type === 'source');
+    return scenario.nodes;
+  }, [scenario, activeFilter]);
+
+  const filteredEdges = useMemo(() => {
+    const visibleNodeIds = new Set(filteredNodes.map(n => n.id));
+    return scenario.edges.filter(edge => {
+      const isVisible = visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to);
+      if (!isVisible) return false;
+      if (activeFilter === 'crypto') return edge.type === 'crypto' || edge.type === 'transfer';
+      if (activeFilter === 'device') return edge.type === 'device';
+      return true;
+    });
+  }, [scenario, filteredNodes, activeFilter]);
+
+  // Color helper based on node type
+  const getNodeColor = (type, riskScore) => {
+    if (type === 'source') return { border: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', text: '#38bdf8', glow: 'rgba(56, 189, 248, 0.4)' };
+    if (type === 'mule') return { border: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', text: '#10b981', glow: 'rgba(16, 185, 129, 0.4)' };
+    if (type === 'transit') return { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', text: '#f59e0b', glow: 'rgba(245, 158, 11, 0.4)' };
+    if (type === 'crypto') return { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: '#ef4444', glow: 'rgba(239, 68, 68, 0.5)' };
+    if (type === 'device') return { border: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)', text: '#cbd5e1', glow: 'rgba(148, 163, 184, 0.3)' };
+    return { border: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)', text: '#818cf8', glow: 'rgba(99, 102, 241, 0.4)' };
+  };
+
+  // Edge line color and animation style
+  const getEdgeStyle = (edge) => {
+    if (edge.type === 'crypto' || edge.flow === 'crypto_outflow') {
+      return { stroke: '#ef4444', dash: '6 4', width: 3, glow: 'rgba(239, 68, 68, 0.6)', pulseColor: '#f87171' };
+    }
+    if (edge.type === 'device' || edge.flow === 'device_link') {
+      return { stroke: '#06b6d4', dash: '3 3', width: 1.8, glow: 'rgba(6, 182, 212, 0.4)', pulseColor: '#22d3ee' };
+    }
+    if (edge.flow === 'transit') {
+      return { stroke: '#f59e0b', dash: '5 3', width: 2.4, glow: 'rgba(245, 158, 11, 0.5)', pulseColor: '#fbbf24' };
+    }
+    if (edge.flow === 'payroll') {
+      return { stroke: '#10b981', dash: 'none', width: 2.2, glow: 'rgba(16, 185, 129, 0.4)', pulseColor: '#34d399' };
+    }
+    // Default transfer / smurfing
+    return { stroke: '#38bdf8', dash: '6 3', width: 2.4, glow: 'rgba(56, 189, 248, 0.5)', pulseColor: '#7dd3fc' };
   };
 
   return (
-    <div className="gnn-view">
-      {/* Model Metrics */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        {[
-          { label: 'Akurasi Model', value: `${gnnModelMetrics.accuracy}%`, icon: <Target size={20} />, color: 'var(--status-success)', bg: 'var(--status-success-bg)' },
-          { label: 'Presisi', value: `${gnnModelMetrics.precision}%`, icon: <Crosshair size={20} />, color: 'var(--accent-primary)', bg: 'var(--accent-primary-subtle)' },
-          { label: 'Recall', value: `${gnnModelMetrics.recall}%`, icon: <Activity size={20} />, color: 'var(--status-warning)', bg: 'var(--status-warning-bg)' },
-          { label: 'Anomali Terdeteksi', value: gnnModelMetrics.anomaliesDetected, icon: <Zap size={20} />, color: 'var(--status-danger)', bg: 'var(--status-danger-bg)' }
-        ].map((metric, i) => (
-          <motion.div
-            key={i}
-            className="card"
-            style={{ padding: 18 }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: metric.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: metric.color }}>
-                {metric.icon}
-              </div>
-              <div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>{metric.label}</p>
-                <p style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: metric.color }}>{metric.value}</p>
-              </div>
+    <div className="gnn-professional-monitor" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* ----------------------------------------------------------------------
+          HEADER TOOLBAR & SCENARIO SWITCHER
+      ---------------------------------------------------------------------- */}
+      <div className="card" style={{ padding: '16px 20px', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%)',
+              border: '1.5px solid rgba(99, 102, 241, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#818cf8'
+            }}>
+              <Brain size={24} />
             </div>
-          </motion.div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
+                  GNN Forensic Topology & Smurfing Flow Monitor
+                </h2>
+                <span className="badge badge-blocked" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
+                  SOC LEVEL 4
+                </span>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                Pemetaan Topologi Graf Relasional Otomatis untuk Analis AML, Satgas TPPU OJK & PPATK RI
+              </p>
+            </div>
+          </div>
+
+          {/* Scenario Selector Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Pilih Skenario:</span>
+            <div style={{ display: 'flex', gap: 6, background: 'var(--bg-card-subtle)', padding: 4, borderRadius: 10, border: '1px solid var(--border-color)' }}>
+              {Object.keys(SCENARIOS).map(key => {
+                const sc = SCENARIOS[key];
+                const isSelected = selectedScenarioKey === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setSelectedScenarioKey(key);
+                      if (addToast) addToast(`Beralih ke ${sc.name}`, 'info');
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '0.76rem',
+                      fontWeight: isSelected ? 800 : 600,
+                      borderRadius: 8,
+                      border: isSelected ? '1px solid rgba(99, 102, 241, 0.5)' : 'none',
+                      background: isSelected ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(129, 140, 248, 0.15) 100%)' : 'transparent',
+                      color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <span style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: sc.riskLevel === 'HIGH' ? '#ef4444' : '#10b981'
+                    }} />
+                    {key === 'smurfing_crypto' ? '🔥 Smurfing Kripto' : key === 'mule_ring' ? '⭕ Mule Ring Loop' : '✅ Payroll BPR'}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Layer Filter Chips & Canvas Controls Toolbar */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: 14,
+          paddingTop: 14,
+          borderTop: '1px solid var(--border-color)',
+          flexWrap: 'wrap',
+          gap: 12
+        }}>
+          {/* Layer Filters */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Filter size={14} /> Filter Layer:
+            </span>
+            <button
+              className={`btn btn-sm ${activeFilter === 'all' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setActiveFilter('all')}
+              style={{ fontSize: '0.74rem', height: 28, padding: '0 10px', borderRadius: 6 }}
+            >
+              Semua Stage ({scenario.nodes.length} Node)
+            </button>
+            <button
+              className={`btn btn-sm ${activeFilter === 'crypto' ? 'btn-danger' : 'btn-ghost'}`}
+              onClick={() => setActiveFilter('crypto')}
+              style={{ fontSize: '0.74rem', height: 28, padding: '0 10px', borderRadius: 6, color: activeFilter === 'crypto' ? 'white' : '#ef4444' }}
+            >
+              🚨 Jalur Pelarian Kripto (Red Path)
+            </button>
+            <button
+              className={`btn btn-sm ${activeFilter === 'mule' ? 'btn-secondary' : 'btn-ghost'}`}
+              onClick={() => setActiveFilter('mule')}
+              style={{ fontSize: '0.74rem', height: 28, padding: '0 10px', borderRadius: 6 }}
+            >
+              👥 Mule Layering Network
+            </button>
+            <button
+              className={`btn btn-sm ${activeFilter === 'device' ? 'btn-secondary' : 'btn-ghost'}`}
+              onClick={() => setActiveFilter('device')}
+              style={{ fontSize: '0.74rem', height: 28, padding: '0 10px', borderRadius: 6 }}
+            >
+              📱 Device & IP Linkage
+            </button>
+          </div>
+
+          {/* Interactive Navigation Tools */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              background: 'var(--bg-card-subtle)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 8,
+              padding: '2px 6px'
+            }}>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleZoomOut}
+                title="Zoom Out"
+                style={{ padding: 4, height: 26, width: 26 }}
+              >
+                <ZoomOut size={15} />
+              </button>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, minWidth: 42, textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
+                {Math.round(zoom * 100)}%
+              </span>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleZoomIn}
+                title="Zoom In"
+                style={{ padding: 4, height: 26, width: 26 }}
+              >
+                <ZoomIn size={15} />
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleFitView}
+                title="Fit View"
+                style={{ padding: 4, height: 26, width: 26 }}
+              >
+                <Maximize2 size={15} />
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleResetLayout}
+                title="Reset Posisi Node"
+                style={{ padding: 4, height: 26, width: 26 }}
+              >
+                <RotateCcw size={15} />
+              </button>
+            </div>
+
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={() => setIsAnimationPlaying(!isAnimationPlaying)}
+              style={{ fontSize: '0.74rem', height: 28, gap: 6 }}
+            >
+              <Activity size={14} className={isAnimationPlaying ? 'text-success animate-pulse' : 'text-muted'} />
+              <span>{isAnimationPlaying ? 'Aliran Aktif' : 'Aliran Pause'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ----------------------------------------------------------------------
+          STAGE PIPELINE LABELS HEADER (Sesuai Diagram Referensi)
+      ---------------------------------------------------------------------- */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${scenario.stages.length}, 1fr)`,
+        gap: 12,
+        padding: '0 8px'
+      }}>
+        {scenario.stages.map((stg, idx) => (
+          <div
+            key={stg.id}
+            style={{
+              padding: '10px 14px',
+              borderRadius: 12,
+              background: 'var(--bg-card)',
+              border: `1.5px dashed ${stg.color}40`,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10
+            }}
+          >
+            <div style={{
+              width: 28,
+              height: 28,
+              borderRadius: '50%',
+              background: `${stg.color}20`,
+              border: `1.5px solid ${stg.color}`,
+              color: stg.color,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 900,
+              fontSize: '0.75rem'
+            }}>
+              {idx + 1}
+            </div>
+            <div>
+              <div style={{ fontSize: '0.76rem', fontWeight: 800, color: stg.color }}>{stg.title}</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{stg.subtitle}</div>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* GNN Graph + Controls */}
-      <div className="content-grid-wide">
-        {/* Graph Panel */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <div className="card">
-            <div className="card-header">
-              <h3 className="card-title"><GitBranch size={18} /> Graph Neural Network — Peta Jaringan Transaksi</h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="gnn-swipe-hint" style={{ fontSize: '0.7rem', color: '#38bdf8', background: 'rgba(56,189,248,0.1)', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>
-                  👈 Usap/Geser Grafis
-                </span>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                  {graphData.nodes.length} nodes • {graphData.edges.length} edges
-                </span>
+      {/* ----------------------------------------------------------------------
+          MAIN INTERACTIVE CANVAS (INFINITE MAPS VIEWPORT + DRAGGABLE NODES)
+      ---------------------------------------------------------------------- */}
+      <div
+        ref={containerRef}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: 620,
+          background: 'radial-gradient(ellipse at center, rgba(15, 23, 42, 0.98) 0%, rgba(9, 13, 26, 1) 100%)',
+          borderRadius: 20,
+          border: '1px solid var(--border-color)',
+          overflow: 'hidden',
+          cursor: isPanning ? 'grabbing' : 'grab',
+          boxShadow: 'inset 0 0 40px rgba(0,0,0,0.8), 0 12px 36px rgba(0,0,0,0.4)'
+        }}
+      >
+        {/* Subtle Cyber Blueprint Background Grid */}
+        <div
+          className="canvas-bg"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `
+              linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(99, 102, 241, 0.05) 1px, transparent 1px)
+            `,
+            backgroundSize: `${30 * zoom}px ${30 * zoom}px`,
+            backgroundPosition: `${pan.x}px ${pan.y}px`,
+            pointerEvents: 'none'
+          }}
+        />
+
+        {/* ------------------------------------------------------------------
+            FLOATING WIDGET 1: CRIMINAL ACTIVITIES CARD (Sesuai Screenshot 1)
+        ------------------------------------------------------------------ */}
+        <motion.div
+          drag
+          dragConstraints={containerRef}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          style={{
+            position: 'absolute',
+            left: 20,
+            bottom: 20,
+            zIndex: 10,
+            width: 290,
+            background: 'rgba(15, 23, 42, 0.88)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            borderRadius: 16,
+            padding: '16px 18px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.6), 0 0 25px rgba(239, 68, 68, 0.15)',
+            color: 'white',
+            cursor: 'default'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <ShieldAlert size={18} color="#ef4444" />
+              <span style={{ fontWeight: 800, fontSize: '0.92rem' }}>Criminal activities</span>
+            </div>
+            <span style={{
+              background: '#ef4444',
+              color: 'white',
+              fontSize: '0.78rem',
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: 6
+            }}>
+              {scenario.metrics.criminalActivities}%
+            </span>
+          </div>
+
+          {/* Metric Bars */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 4, color: '#cbd5e1' }}>
+                <span>Familiar Behavior</span>
+                <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.familiarBehavior}%</span>
+              </div>
+              <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ width: `${scenario.metrics.familiarBehavior}%`, height: '100%', background: '#38bdf8', borderRadius: 3 }} />
               </div>
             </div>
-            <div className="card-body" style={{ padding: 0 }}>
-              <div className="gnn-graph-container" style={{ position: 'relative' }}>
-                <svg
-                  ref={svgRef}
-                  width="100%"
-                  height="auto"
-                  viewBox="0 0 660 460"
-                  preserveAspectRatio="xMidYMid meet"
-                  style={{ background: 'var(--bg-input)', width: '100%', height: 'auto', display: 'block', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)' }}
-                >
-                  {/* Defs */}
-                  <defs>
-                    <marker id="arrowhead-high" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-                      <polygon points="0 0, 8 3, 0 6" fill="#ef4444" />
-                    </marker>
-                    <marker id="arrowhead-medium" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-                      <polygon points="0 0, 8 3, 0 6" fill="#f59e0b" />
-                    </marker>
-                    <marker id="arrowhead-low" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-                      <polygon points="0 0, 8 3, 0 6" fill="#10b981" />
-                    </marker>
-                    {/* Grid pattern */}
-                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--border-color)" strokeWidth="0.5" />
-                    </pattern>
-                    {/* Glow filters for edges */}
-                    <filter id="edge-glow-high" x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#ef4444" floodOpacity="0.6"/>
-                    </filter>
-                    <filter id="edge-glow-medium" x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#f59e0b" floodOpacity="0.6"/>
-                    </filter>
-                    <filter id="edge-glow-low" x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#10b981" floodOpacity="0.6"/>
-                    </filter>
-                    {/* Glow filter for nodes */}
-                    <filter id="node-glow" x="-30%" y="-30%" width="160%" height="160%">
-                      <feGaussianBlur stdDeviation="4" result="blur" />
-                      <feComponentTransfer in="blur" result="glow">
-                        <feFuncA type="linear" slope="0.8" />
-                      </feComponentTransfer>
-                      <feMerge>
-                        <feMergeNode in="glow" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-                  </defs>
 
-                  {/* Grid background */}
-                  <rect width="100%" height="100%" fill="url(#grid)" opacity="0.5" />
-
-                  {/* Column labels */}
-                  <text x="65" y="28" textAnchor="middle" fill="var(--text-muted)" fontSize="10" fontWeight="700">SUMBER DANA</text>
-                  <text x="230" y="28" textAnchor="middle" fill="var(--text-muted)" fontSize="10" fontWeight="700">REKENING MULE</text>
-                  <text x="410" y="28" textAnchor="middle" fill="var(--text-muted)" fontSize="10" fontWeight="700">CRYPTO WALLET</text>
-                  <text x="585" y="28" textAnchor="middle" fill="var(--text-muted)" fontSize="10" fontWeight="700">EXCHANGE</text>
-
-                  {/* Column separators */}
-                  <line x1="145" y1="35" x2="145" y2="450" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
-                  <line x1="320" y1="35" x2="320" y2="450" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
-                  <line x1="495" y1="35" x2="495" y2="450" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
-                  <line x1="630" y1="40" x2="630" y2="700" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
-
-                  {/* Edges */}
-                  {graphData.edges.map((edge, i) => {
-                    const sourceNode = graphData.nodes.find(n => n.id === edge.source);
-                    const targetNode = graphData.nodes.find(n => n.id === edge.target);
-                    if (!sourceNode || !targetNode) return null;
-
-                    const isHighlighted = highlightedEdges
-                      ? highlightedEdges.has(i) ? true : false
-                      : null;
-
-                    return (
-                      <Edge
-                        key={i}
-                        edge={edge}
-                        sourceNode={sourceNode}
-                        targetNode={targetNode}
-                        isHighlighted={isHighlighted}
-                      />
-                    );
-                  })}
-
-                  {/* Nodes */}
-                  {graphData.nodes.map(node => {
-                    const isHovered = hoveredNode === node.id;
-                    const isHighlighted = highlightedNodes
-                      ? highlightedNodes.has(node.id) ? true : false
-                      : null;
-
-                    return (
-                      <NodeShape
-                        key={node.id}
-                        node={node}
-                        isHovered={isHovered}
-                        isHighlighted={isHighlighted}
-                        onMouseEnter={() => handleNodeHover(node.id, node)}
-                        onMouseLeave={handleNodeLeave}
-                        onClick={() => setSelectedNode(selectedNode === node.id ? null : node.id)}
-                      />
-                    );
-                  })}
-                </svg>
-
-                {/* Tooltip */}
-                {tooltipData && (
-                  <div className="gnn-tooltip" style={{
-                    position: 'absolute',
-                    left: `calc(${(tooltipData.x / 820) * 100}% + 20px)`,
-                    top: `calc(${(tooltipData.y / 720) * 100}% - 10px)`,
-                    transform: tooltipData.x > 600 ? 'translateX(-120%)' : 'none'
-                  }}>
-                    <div style={{ fontWeight: 700, marginBottom: 4 }}>{tooltipData.label}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                      <span>Tipe: {typeLabels[tooltipData.type]?.label}</span>
-                      {tooltipData.bank && <span> • {tooltipData.bank}</span>}
-                    </div>
-                    <div style={{ fontSize: '0.72rem', marginTop: 4 }}>
-                      Skor Risiko: <strong style={{
-                        color: tooltipData.riskScore >= 80 ? '#ef4444' : tooltipData.riskScore >= 50 ? '#f59e0b' : '#10b981'
-                      }}>{tooltipData.riskScore}%</strong>
-                    </div>
-                  </div>
-                )}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 4, color: '#cbd5e1' }}>
+                <span>Suspicious patterns</span>
+                <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.suspiciousPatterns}%</span>
               </div>
+              <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ width: `${scenario.metrics.suspiciousPatterns}%`, height: '100%', background: '#f59e0b', borderRadius: 3 }} />
+              </div>
+            </div>
 
-              {/* Legend */}
-              <div className="gnn-legend">
-                <div className="gnn-legend-title">
-                  <Layers size={14} /> LEGENDA
-                </div>
-                <div className="gnn-legend-items">
-                  <div className="gnn-legend-section">
-                    <span className="gnn-legend-subtitle">Tipe Node</span>
-                    {Object.entries(typeLabels).map(([key, val]) => (
-                      <div key={key} className="gnn-legend-item">
-                        <span className="gnn-legend-dot" style={{ background: val.color }} />
-                        <span>{val.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="gnn-legend-section">
-                    <span className="gnn-legend-subtitle">Risiko Edge</span>
-                    <div className="gnn-legend-item"><span className="gnn-legend-line" style={{ background: '#ef4444' }} /><span>Tinggi</span></div>
-                    <div className="gnn-legend-item"><span className="gnn-legend-line" style={{ background: '#f59e0b' }} /><span>Sedang</span></div>
-                    <div className="gnn-legend-item"><span className="gnn-legend-line" style={{ background: '#10b981' }} /><span>Rendah</span></div>
-                  </div>
-                </div>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 4, color: '#cbd5e1' }}>
+                <span>Historical data</span>
+                <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.historicalData}%</span>
+              </div>
+              <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ width: `${scenario.metrics.historicalData}%`, height: '100%', background: '#10b981', borderRadius: 3 }} />
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Control Panel + Console */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          {/* Model Info */}
-          <div className="card" style={{ marginBottom: 20, border: '1px solid var(--border-accent)', background: 'var(--gradient-card)' }}>
-            <div className="card-header">
-              <h3 className="card-title" style={{ color: 'var(--accent-primary)' }}><Brain size={18} /> GNN Model Config</h3>
+        {/* ------------------------------------------------------------------
+            FLOATING WIDGET 2: RISK SCORE & GNN CLASSIFICATION (Sesuai Screenshot 2)
+        ------------------------------------------------------------------ */}
+        <motion.div
+          drag
+          dragConstraints={containerRef}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          style={{
+            position: 'absolute',
+            right: 20,
+            top: 20,
+            zIndex: 10,
+            width: 310,
+            background: 'rgba(15, 23, 42, 0.9)',
+            backdropFilter: 'blur(16px)',
+            border: `1.5px solid ${scenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.45)' : 'rgba(16, 185, 129, 0.45)'}`,
+            borderRadius: 16,
+            padding: '16px 18px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+            color: 'white',
+            cursor: 'default'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: 1, color: 'var(--text-muted)' }}>
+              GNN RISK SCORE
+            </span>
+            <span style={{
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              padding: '2px 6px',
+              borderRadius: 4,
+              background: scenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+              color: scenario.riskLevel === 'HIGH' ? '#ef4444' : '#10b981',
+              border: `1px solid ${scenario.riskLevel === 'HIGH' ? '#ef4444' : '#10b981'}`
+            }}>
+              {scenario.riskLevel === 'HIGH' ? 'RISIKO TINGGI' : 'RISIKO RENDAH'}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, margin: '6px 0 10px' }}>
+            <span style={{
+              fontSize: '2.4rem',
+              fontWeight: 900,
+              fontFamily: 'var(--font-mono)',
+              color: scenario.riskLevel === 'HIGH' ? '#ef4444' : '#10b981',
+              lineHeight: 1
+            }}>
+              {scenario.riskScore}
+            </span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-muted)' }}>/ 100</span>
+          </div>
+
+          <div style={{
+            fontSize: '0.74rem',
+            padding: '8px 10px',
+            borderRadius: 8,
+            background: scenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+            color: scenario.riskLevel === 'HIGH' ? '#fca5a5' : '#86efac',
+            fontWeight: 800,
+            marginBottom: 10
+          }}>
+            KLASIFIKASI: {scenario.classification}
+          </div>
+
+          <ul style={{ margin: 0, paddingLeft: 16, fontSize: '0.72rem', color: '#cbd5e1', lineHeight: 1.6 }}>
+            <li>Banyak akun perantara (fan-out tinggi)</li>
+            <li>Nominal seragam / mirip (structuring & smurfing)</li>
+            <li>Waktu transaksi berurutan sangat singkat (&lt; 5 mnt)</li>
+            <li>Alur dana bermuara pada deposit exchange kripto</li>
+          </ul>
+        </motion.div>
+
+        {/* ------------------------------------------------------------------
+            FLOATING WIDGET 3: LEGENDA & POLA ALIRAN (Kiri Atas)
+        ------------------------------------------------------------------ */}
+        <div style={{
+          position: 'absolute',
+          left: 20,
+          top: 20,
+          zIndex: 10,
+          background: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 14,
+          padding: '12px 14px',
+          fontSize: '0.72rem',
+          color: 'var(--text-primary)',
+          boxShadow: '0 12px 28px rgba(0,0,0,0.5)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6
+        }}>
+          <div style={{ fontWeight: 800, color: '#818cf8', fontSize: '0.74rem', marginBottom: 2 }}>LEGENDA NODE & ALIRAN</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#38bdf8' }} />
+            <span>Akun Sumber (Originator)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981' }} />
+            <span>Akun Mule / Perantara (Layer 1)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b' }} />
+            <span>Merchant / Transit (Layer 2)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
+            <span>Bursa Kripto / Cold Wallet</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#94a3b8' }} />
+            <span>Perangkat / Shared IP</span>
+          </div>
+          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 6, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444' }}>
+              <span style={{ width: 14, height: 2, background: '#ef4444' }} />
+              <span>Garis Merah: Outflow ke Kripto</span>
             </div>
-            <div className="card-body">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16, fontSize: '0.8rem' }}>
-                <div style={{ padding: 10, background: 'var(--bg-input)', borderRadius: 8 }}>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Embedding Dim</span>
-                  <p style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{gnnModelMetrics.embeddingDimension}d</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#06b6d4' }}>
+              <span style={{ width: 14, height: 2, borderTop: '2px dotted #06b6d4' }} />
+              <span>Garis Cyan: Relasi IP / Device</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ------------------------------------------------------------------
+            SVG GRAPH RENDERER WITH PAN & ZOOM TRANSFORM
+        ------------------------------------------------------------------ */}
+        <svg
+          ref={svgRef}
+          width="100%"
+          height="100%"
+          style={{ width: '100%', height: '100%' }}
+        >
+          {/* SVG Definitions for Gradients, Glows and Arrowheads */}
+          <defs>
+            <filter id="glow-red" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="glow-blue" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,1 L7,4 L0,7 Z" fill="#38bdf8" />
+            </marker>
+            <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,1 L7,4 L0,7 Z" fill="#f59e0b" />
+            </marker>
+            <marker id="arrow-red" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+              <path d="M0,1 L8,4.5 L0,8 Z" fill="#ef4444" />
+            </marker>
+            <marker id="arrow-cyan" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,1 L5,3 L0,5 Z" fill="#06b6d4" />
+            </marker>
+            <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,1 L7,4 L0,7 Z" fill="#10b981" />
+            </marker>
+          </defs>
+
+          {/* Transform Group for Pan & Zoom */}
+          <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
+            {/* --------------------------------------------------------------
+                1. RENDER EDGES (TRANSAKSI & DEVICE LINKAGE)
+            -------------------------------------------------------------- */}
+            {filteredEdges.map((edge, idx) => {
+              const srcPos = nodePositions[edge.from] || { x: 0, y: 0 };
+              const tgtPos = nodePositions[edge.to] || { x: 0, y: 0 };
+              const edgeStyle = getEdgeStyle(edge);
+
+              // Calculate curve
+              const dx = tgtPos.x - srcPos.x;
+              const dy = tgtPos.y - srcPos.y;
+              const midX = srcPos.x + dx * 0.5;
+              const midY = srcPos.y + dy * 0.5 + (Math.abs(dx) > 150 ? (dy > 0 ? 10 : -10) : 0);
+
+              const isHighlighted = hoveredNodeId === edge.from || hoveredNodeId === edge.to;
+              const markerId = edge.type === 'crypto' ? 'url(#arrow-red)' : edge.type === 'device' ? 'url(#arrow-cyan)' : edge.flow === 'transit' ? 'url(#arrow-amber)' : edge.flow === 'payroll' ? 'url(#arrow-green)' : 'url(#arrow-blue)';
+
+              return (
+                <g key={`edge-${edge.from}-${edge.to}-${idx}`}>
+                  {/* Outer Glow Line */}
+                  <path
+                    d={`M ${srcPos.x} ${srcPos.y} Q ${midX} ${midY} ${tgtPos.x} ${tgtPos.y}`}
+                    stroke={edgeStyle.glow}
+                    strokeWidth={edgeStyle.width + 4}
+                    fill="none"
+                    opacity={isHighlighted ? 0.8 : 0.3}
+                  />
+
+                  {/* Main Dashed Flow Line */}
+                  <path
+                    d={`M ${srcPos.x} ${srcPos.y} Q ${midX} ${midY} ${tgtPos.x} ${tgtPos.y}`}
+                    stroke={edgeStyle.stroke}
+                    strokeWidth={isHighlighted ? edgeStyle.width + 1.5 : edgeStyle.width}
+                    strokeDasharray={edgeStyle.dash}
+                    fill="none"
+                    markerEnd={markerId}
+                    opacity={isHighlighted ? 1 : 0.85}
+                  >
+                    {isAnimationPlaying && edge.type !== 'device' && (
+                      <animate
+                        attributeName="stroke-dashoffset"
+                        from="40"
+                        to="0"
+                        dur={edge.type === 'crypto' ? '0.8s' : '1.4s'}
+                        repeatCount="indefinite"
+                      />
+                    )}
+                  </path>
+
+                  {/* Edge Label (Nominal & Time) */}
+                  {edge.amount > 0 && (
+                    <g transform={`translate(${midX}, ${midY})`}>
+                      <rect
+                        x="-48"
+                        y="-10"
+                        width="96"
+                        height="20"
+                        rx="5"
+                        fill="rgba(15, 23, 42, 0.9)"
+                        stroke={edgeStyle.stroke}
+                        strokeWidth="1"
+                        opacity="0.9"
+                      />
+                      <text
+                        x="0"
+                        y="3"
+                        textAnchor="middle"
+                        fill="white"
+                        fontSize="8.5"
+                        fontWeight="700"
+                        fontFamily="var(--font-mono)"
+                      >
+                        {formatCurrency(edge.amount).replace(',00', '')}
+                      </text>
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+
+            {/* --------------------------------------------------------------
+                2. RENDER NODES (DRAGGABLE ENTITIES)
+            -------------------------------------------------------------- */}
+            {filteredNodes.map((node) => {
+              const pos = nodePositions[node.id] || { x: node.x, y: node.y };
+              const isSelected = selectedNode?.id === node.id;
+              const isHovered = hoveredNodeId === node.id;
+              const col = getNodeColor(node.type, node.riskScore);
+              const nodeRadius = node.type === 'source' ? 26 : node.type === 'crypto' ? 24 : node.type === 'transit' ? 22 : 20;
+
+              return (
+                <g
+                  key={node.id}
+                  transform={`translate(${pos.x}, ${pos.y})`}
+                  onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
+                  onMouseEnter={() => setHoveredNodeId(node.id)}
+                  onMouseLeave={() => setHoveredNodeId(null)}
+                  onClick={() => setSelectedNode(node)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {/* Pulse wave for high-risk or selected node */}
+                  {(node.riskScore >= 85 || isSelected) && (
+                    <circle r={nodeRadius + 8} fill="none" stroke={col.border} strokeWidth="1.5" opacity="0.6">
+                      <animate attributeName="r" values={`${nodeRadius + 4};${nodeRadius + 16};${nodeRadius + 4}`} dur="2s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.6;0;0.6" dur="2s" repeatCount="indefinite" />
+                    </circle>
+                  )}
+
+                  {/* Node Background Body */}
+                  <circle
+                    r={nodeRadius}
+                    fill={col.bg}
+                    stroke={col.border}
+                    strokeWidth={isSelected ? 3.5 : 2.2}
+                    filter={isSelected ? 'url(#glow-red)' : 'none'}
+                  />
+
+                  {/* Node Icon or Code */}
+                  <text
+                    x="0"
+                    y="4"
+                    textAnchor="middle"
+                    fill={col.text}
+                    fontSize={nodeRadius * 0.62}
+                    fontWeight="900"
+                    fontFamily="var(--font-mono)"
+                    pointerEvents="none"
+                  >
+                    {node.code}
+                  </text>
+
+                  {/* Label Text below node */}
+                  <g transform={`translate(0, ${nodeRadius + 14})`}>
+                    <rect
+                      x="-65"
+                      y="-8"
+                      width="130"
+                      height="16"
+                      rx="4"
+                      fill="rgba(15, 23, 42, 0.85)"
+                      stroke="rgba(255,255,255,0.1)"
+                      strokeWidth="0.8"
+                    />
+                    <text
+                      x="0"
+                      y="3.5"
+                      textAnchor="middle"
+                      fill="white"
+                      fontSize="9.5"
+                      fontWeight="700"
+                      pointerEvents="none"
+                    >
+                      {node.label.length > 17 ? node.label.substring(0, 15) + '...' : node.label}
+                    </text>
+                  </g>
+
+                  {/* Secondary info (Bank & Account) */}
+                  <text
+                    x="0"
+                    y={nodeRadius + 30}
+                    textAnchor="middle"
+                    fill="var(--text-muted)"
+                    fontSize="8"
+                    fontWeight="600"
+                    fontFamily="var(--font-mono)"
+                    pointerEvents="none"
+                  >
+                    {node.bank} ({node.account ? node.account.substring(0, 10) : ''})
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        </svg>
+
+        {/* ------------------------------------------------------------------
+            CANVAS HINT BAR (Bawah Tengah)
+        ------------------------------------------------------------------ */}
+        <div style={{
+          position: 'absolute',
+          bottom: 16,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 8,
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 20,
+          padding: '6px 16px',
+          fontSize: '0.72rem',
+          color: 'var(--text-muted)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          pointerEvents: 'none'
+        }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Move size={12} color="#38bdf8" /> Geser & Tarik Node untuk Merapikan Posisi
+          </span>
+          <span>•</span>
+          <span>Scroll Mouse untuk Zoom In/Out Maps</span>
+        </div>
+      </div>
+
+      {/* ----------------------------------------------------------------------
+          FORENSIC AML NODE INSPECTOR (DRAWER DETAIL SAAT NODE DIKLIK)
+      ---------------------------------------------------------------------- */}
+      {selectedNode && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="card"
+          style={{
+            padding: 20,
+            background: 'var(--bg-card)',
+            border: `1.5px solid ${selectedNode.riskScore >= 80 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(99, 102, 241, 0.4)'}`,
+            boxShadow: '0 8px 30px rgba(0,0,0,0.3)'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{
+                width: 52,
+                height: 52,
+                borderRadius: 16,
+                background: selectedNode.riskScore >= 80 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                border: `2px solid ${selectedNode.riskScore >= 80 ? '#ef4444' : '#38bdf8'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: selectedNode.riskScore >= 80 ? '#ef4444' : '#38bdf8',
+                fontWeight: 900,
+                fontSize: '1.2rem'
+              }}>
+                {selectedNode.code}
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>{selectedNode.label}</h3>
+                  <span style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    background: selectedNode.riskScore >= 80 ? '#ef4444' : '#10b981',
+                    color: 'white'
+                  }}>
+                    {selectedNode.role}
+                  </span>
                 </div>
-                <div style={{ padding: 10, background: 'var(--bg-input)', borderRadius: 8 }}>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Message Passes</span>
-                  <p style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{gnnModelMetrics.messagePasses} layers</p>
-                </div>
-                <div style={{ padding: 10, background: 'var(--bg-input)', borderRadius: 8 }}>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Training Epochs</span>
-                  <p style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{gnnModelMetrics.trainingEpochs}</p>
-                </div>
-                <div style={{ padding: 10, background: 'var(--bg-input)', borderRadius: 8 }}>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>F1 Score</span>
-                  <p style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--status-success)' }}>{gnnModelMetrics.f1Score}%</p>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 3 }}>
+                  {selectedNode.bank} • No. Rekening: <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{selectedNode.account}</strong> • NIK: <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{selectedNode.nik}</strong>
                 </div>
               </div>
+            </div>
 
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-                <p>Nodes diproses: <strong style={{ color: 'var(--text-primary)' }}>{gnnModelMetrics.nodesAnalyzed.toLocaleString()}</strong></p>
-                <p>Edges diproses: <strong style={{ color: 'var(--text-primary)' }}>{gnnModelMetrics.edgesProcessed.toLocaleString()}</strong></p>
-                <p>Terakhir diperbarui: <strong style={{ color: 'var(--text-primary)' }}>{gnnModelMetrics.lastUpdated}</strong></p>
+            {/* Risk Badge and Quick Actions */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>SKOR ANOMALI GNN</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: selectedNode.riskScore >= 80 ? '#ef4444' : '#10b981', fontFamily: 'var(--font-mono)' }}>
+                  {selectedNode.riskScore}%
+                </div>
               </div>
-
               <button
-                className="btn btn-primary"
-                style={{ width: '100%', justifyContent: 'center' }}
-                onClick={runInference}
-                disabled={isInferring}
+                className="btn btn-sm btn-primary"
+                onClick={() => {
+                  if (addToast) addToast(`Perintah Circuit Breaker dikirim: Akun ${selectedNode.account} dibekukan otomatis.`, 'warning');
+                }}
+                style={{ fontSize: '0.78rem', height: 36, gap: 6, background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', border: 'none' }}
               >
-                {isInferring ? (
-                  <><Cpu size={16} className="animate-spin" style={{ animationDuration: '2s' }} /> Menjalankan GNN Inference...</>
-                ) : (
-                  <><Play size={16} /> Jalankan GNN Inference</>
-                )}
+                <Lock size={14} /> Bekukan Akun Ini
               </button>
             </div>
           </div>
 
-          {/* Terminal Console */}
-          <div className="card" style={{ background: '#020617', borderColor: '#1e293b' }}>
-            <div className="card-header" style={{ borderBottomColor: '#1e293b', background: '#0b0f19' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Terminal size={16} style={{ color: '#a78bfa' }} />
-                <h3 className="card-title" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#a78bfa' }}>GNN_INFERENCE_CONSOLE.log</h3>
+          {/* Detailed Forensic Meta Cards */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: 12,
+            marginTop: 16,
+            paddingTop: 16,
+            borderTop: '1px solid var(--border-color)'
+          }}>
+            <div style={{ background: 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>SALDO TERAKHIR</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+                {formatCurrency(selectedNode.balance)}
               </div>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: isInferring ? '#10b981' : '#64748b', display: 'inline-block' }} />
             </div>
-            <div className="card-body" style={{ padding: 12, maxHeight: 280, overflowY: 'auto' }}>
-              {terminalOutput.length === 0 ? (
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#64748b', textAlign: 'center', padding: 20 }}>
-                  <Brain size={24} style={{ marginInline: 'auto', marginBottom: 8, display: 'block', opacity: 0.5 }} />
-                  Klik "Jalankan GNN Inference" untuk memulai analisis jaringan transaksi.
-                </div>
-              ) : (
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {terminalOutput.map((log, i) => (
-                    <div key={i} style={{ lineBreak: 'anywhere' }}>
-                      <span style={{ color: '#64748b' }}>[{log.time}]</span>{' '}
-                      <span style={{
-                        color: log.text.includes('ANOMALI') || log.text.includes('MULE')
-                          ? '#ef4444'
-                          : log.text.includes('COMPLETE')
-                            ? '#10b981'
-                            : log.text.includes('RESULT')
-                              ? '#f59e0b'
-                              : '#a78bfa'
-                      }}>
-                        {log.text}
-                      </span>
-                    </div>
-                  ))}
-                  {isInferring && (
-                    <span className="animate-pulse" style={{ color: '#a78bfa' }}>▋</span>
-                  )}
-                </div>
-              )}
+
+            <div style={{ background: 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>PERANGKAT & DEVICE ID</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#38bdf8', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+                {selectedNode.deviceId}
+              </div>
+            </div>
+
+            <div style={{ background: 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>ALAMAT IP ASAL (GEOLOKASI)</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f59e0b', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+                {selectedNode.ip}
+              </div>
+            </div>
+
+            <div style={{ background: 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>INDIKASI POLA FORENSIK</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-primary)', marginTop: 2 }}>
+                {selectedNode.description}
+              </div>
             </div>
           </div>
         </motion.div>
+      )}
+
+      {/* ----------------------------------------------------------------------
+          FOOTER EXPLANATION CARD (PENJELASAN POLA GRAF SMURFING PPATK & OJK)
+      ---------------------------------------------------------------------- */}
+      <div className="card" style={{ padding: 20, background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+        <h4 style={{ fontSize: '0.92rem', fontWeight: 800, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Workflow size={18} color="#818cf8" />
+          Penjelasan Pola Graf (Smurfing, Layering & Pelarian Dana ke Kripto)
+        </h4>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 14,
+          fontSize: '0.78rem',
+          lineHeight: 1.6,
+          color: 'var(--text-muted)'
+        }}>
+          <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-color)' }}>
+            <strong style={{ color: '#38bdf8', display: 'block', marginBottom: 4 }}>1. Fan-Out Tinggi (Penyebaran):</strong>
+            1 akun sumber utama menyebarkan dana dalam jumlah besar ke banyak rekening perantara sekaligus untuk menghindari threshold pelaporan transaksi tunai/kliring.
+          </div>
+          <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-color)' }}>
+            <strong style={{ color: '#10b981', display: 'block', marginBottom: 4 }}>2. Structuring & Smurfing:</strong>
+            Nominal transaksi dipecah menjadi pecahan kecil dan seragam (misal Rp 4,9jt s/d Rp 10jt) secara berurutan dalam waktu singkat (&lt; 5 menit).
+          </div>
+          <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-color)' }}>
+            <strong style={{ color: '#f59e0b', display: 'block', marginBottom: 4 }}>3. Layering & Transit Aggregator:</strong>
+            Dana yang telah dipecah dikumpulkan kembali melalui payment gateway / escrow transit untuk memutuskan hubungan langsung dengan rekening sumber.
+          </div>
+          <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-color)' }}>
+            <strong style={{ color: '#ef4444', display: 'block', marginBottom: 4 }}>4. Integration ke Bursa Kripto:</strong>
+            Dana transit dilarikan ke bursa kripto (Indodax, Binance, Tokocrypto) untuk dikonversi menjadi stablecoin (USDT) dan dipindahkan ke cold storage on-chain.
+          </div>
+        </div>
       </div>
     </div>
   );
