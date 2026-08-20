@@ -1,9 +1,16 @@
 import os
+import sys
 import hmac
 import hashlib
 import time
 import requests
 from datetime import datetime, timezone
+
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -86,13 +93,13 @@ def run_simulation():
         risk_score   = res.get("risk_score", 0) if isinstance(res, dict) else 95.0
         
         if status == 200 and sentinel_dec == "ALLOW":
-            print(f"    🟢 STATUS: [ALLOW] | Risk Score: {risk_score}% | Action: Commit Mutasi DB (200 OK)")
+            print(f"    [OK] STATUS: [ALLOW] | Risk Score: {risk_score}% | Action: Commit Mutasi DB (200 OK)")
         elif status == 200 and sentinel_dec == "REVIEW":
-            print(f"    🟡 STATUS: [REVIEW] | Risk Score: {risk_score}% | Action: Saldo Ditangguhkan & Push Alert Kuning")
+            print(f"    [WARN] STATUS: [REVIEW] | Risk Score: {risk_score}% | Action: Saldo Ditangguhkan & Push Alert Kuning")
         else:
             detail = res.get("detail", "High Risk Anomaly & Crypto Exchange Outflow Detected") if isinstance(res, dict) else str(res)
-            print(f"    🔴 STATUS: [BLOCK] | Risk Score: {risk_score if risk_score > 0 else 96.0}% | Action: ROLLBACK DB & CIRCUIT BREAKER (18ms)")
-            print(f"       └─► Alasan: {detail}")
+            print(f"    [BLOCKED] STATUS: [BLOCK] | Risk Score: {risk_score if risk_score > 0 else 96.0}% | Action: ROLLBACK DB & CIRCUIT BREAKER (18ms)")
+            print(f"       └── Alasan: {detail}")
             
         time.sleep(1.0)
         

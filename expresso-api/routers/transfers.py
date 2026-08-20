@@ -140,7 +140,19 @@ async def bri_transfer(
         if not sender:
             raise HTTPException(status_code=404, detail="Akun pengirim tidak ditemukan")
         if not receiver:
-            raise HTTPException(status_code=404, detail="Akun penerima tidak ditemukan")
+            # If destination is external bank or crypto wallet, create temporary entity in session
+            receiver = Account(
+                account_id=receiver_account,
+                national_id="9999999999999999",
+                owner_name=f"External / Crypto Entity ({receiver_account[:12]})",
+                balance=0,
+                risk_profile="HIGH" if receiver_account.startswith("9012") or receiver_account.startswith("0x") else "MEDIUM",
+                is_active=True,
+                is_blocked=False
+            )
+            db.add(receiver)
+            db.flush()
+
         if sender.is_blocked:
             if sender_account in ["1234567890", "0123456789"]:
                 sender.is_blocked = False
@@ -250,6 +262,8 @@ async def bri_transfer(
             return {
                 "status":             "REVIEW",
                 "sentinel_decision":  "REVIEW",
+                "risk_score":         sentinel_score,
+                "reasons":            reasons,
                 "transaction_id":     tx_id,
                 "ip_address_detected": ip_address,
                 "message":            "Demi keamanan Anda, transaksi ini sedang ditinjau oleh sistem FDS. Transaksi Anda akan diproses dalam waktu maksimal 10 menit. Terima kasih.",
@@ -286,6 +300,8 @@ async def bri_transfer(
 
             return {
                 "status":             "SUCCESS",
+                "sentinel_decision":  "ALLOW",
+                "risk_score":         sentinel_score,
                 "transaction_id":     tx_id,
                 "ip_address_detected": ip_address,
                 "transfer_info": {
