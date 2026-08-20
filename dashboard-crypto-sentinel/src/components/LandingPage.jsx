@@ -418,51 +418,11 @@ export default function LandingPage({ onEnter }) {
           box-shadow: 0 8px 24px rgba(30,58,138,0.4);
         }
 
-        /* ---- FULL-WIDTH HERO SHOWCASE BANNER (100% RESPONSIVE NO CROP) ---- */
-        .lp-full-banner-section {
-          width: 100%;
-          padding: 88px 48px 16px;
-          display: flex;
-          justify-content: center;
-        }
-
-        .lp-full-banner-container {
-          max-width: 1340px;
-          width: 100%;
-          margin: 0 auto;
-        }
-
-        .lp-banner-frame {
-          width: 100%;
-          border-radius: 24px;
-          overflow: hidden;
-          box-shadow: 0 20px 50px rgba(30, 58, 138, 0.16);
-          border: 1px solid rgba(37, 99, 235, 0.16);
-          background: #ffffff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: transform 0.4s ease, box-shadow 0.4s ease;
-        }
-
-        .lp-banner-frame:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 30px 70px rgba(30, 58, 138, 0.22);
-        }
-
-        .lp-banner-img {
-          width: 100%;
-          height: auto;
-          display: block;
-          object-fit: contain;
-          max-height: 85vh;
-        }
-
         /* ---- HERO MATCHING MOCKUP IMAGE ---- */
         .lp-hero-wrapper {
           max-width: 1340px;
           margin: 0 auto;
-          padding: 20px 48px 40px;
+          padding: 118px 48px 40px;
           position: relative;
         }
 
@@ -1303,8 +1263,7 @@ export default function LandingPage({ onEnter }) {
         /* ---- RESPONSIVE MEDIA QUERIES ---- */
         @media (max-width: 1024px) {
           .lp-nav-container { padding: 0 24px; }
-          .lp-full-banner-section { padding: 84px 20px 10px; }
-          .lp-hero-wrapper { padding: 16px 24px 30px; }
+          .lp-hero-wrapper { padding: 95px 24px 30px; }
           .lp-hero-grid { grid-template-columns: 1fr; gap: 40px; }
           .lp-hero-title { font-size: 2.8rem; }
           .lp-hero-shield-img { max-width: 100%; transform: none; }
@@ -1322,10 +1281,7 @@ export default function LandingPage({ onEnter }) {
           .lp-nav-links { display: none; }
           .lp-nav-name { font-size: 1.05rem; }
           .lp-nav-cta { padding: 8px 16px !important; font-size: 0.78rem !important; }
-          .lp-full-banner-section { padding: 72px 12px 8px; }
-          .lp-banner-frame { border-radius: 14px; }
-          .lp-banner-img { width: 100%; height: auto; object-fit: contain; }
-          .lp-hero-wrapper { padding: 12px 16px 30px; }
+          .lp-hero-wrapper { padding: 80px 16px 30px; }
           .lp-hero-title { font-size: 2.1rem; line-height: 1.2; }
           .lp-hero-sub { font-size: 0.9rem; }
           .lp-hero-btns { flex-direction: column; width: 100%; gap: 10px; }
@@ -1366,23 +1322,8 @@ export default function LandingPage({ onEnter }) {
         </div>
       </nav>
 
-      {/* FULL-WIDTH HERO SHOWCASE BANNER (100% RESPONSIVE NO CROP) */}
-      <section className="lp-full-banner-section" id="beranda">
-        <div className="lp-full-banner-container">
-          <Reveal>
-            <div className="lp-banner-frame">
-              <img
-                src="/img/landing.jpeg"
-                alt="Crypto-Sentinel 2026 Enterprise Security Platform"
-                className="lp-banner-img"
-              />
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* HERO CONTENT GRID SECTION */}
-      <section className="lp-hero-wrapper" style={{ paddingTop: '24px' }}>
+      {/* HERO SECTION MATCHING MOCKUP IMAGE */}
+      <section className="lp-hero-wrapper" id="beranda">
         <div className="lp-hero-grid">
           <Reveal>
             <div>
@@ -1438,7 +1379,7 @@ export default function LandingPage({ onEnter }) {
             </div>
           </Reveal>
 
-          {/* Right Column: Animated 3D Shield */}
+          {/* Right Column: Animated heroo.jpeg with Smooth Floating Motion */}
           <Reveal delay={0.2} direction="left">
             <div className="lp-hero-visual-box">
               <motion.div
