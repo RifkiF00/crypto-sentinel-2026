@@ -5,7 +5,6 @@ import {
   ChevronDown, Radio, CheckCircle, Play, Check, Clock, Lock,
   Send, Server, Cpu, Activity, RefreshCw
 } from 'lucide-react';
-import GlobalBankingFlowGlobe from './GlobalBankingFlowGlobe';
 
 // ---- Scroll reveal wrapper ----
 const Reveal = ({ children, delay = 0, direction = 'up', className = '' }) => {
@@ -61,36 +60,26 @@ function AnimatedNum({ target, suffix = '', prefix = '' }) {
 // ---- Mini Animated Charts for Stat Cards ----
 function MiniThroughputWaveChart() {
   return (
-    <div style={{ width: '100%', height: 46, marginTop: 10, position: 'relative', overflow: 'hidden' }}>
-      <svg viewBox="0 0 200 46" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+    <div style={{ width: '100%', height: 44, marginTop: 8, position: 'relative', overflow: 'hidden' }}>
+      <svg viewBox="0 0 200 44" style={{ width: '100%', height: '100%' }}>
         <defs>
           <linearGradient id="waveBlueGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2563eb" stopOpacity="0.32" />
+            <stop offset="0%" stopColor="#2563eb" stopOpacity="0.35" />
             <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
           </linearGradient>
         </defs>
         <path
-          d="M 0 38 Q 30 32, 60 35 T 110 20 T 160 12 T 200 4 L 200 46 L 0 46 Z"
+          d="M 0 36 Q 30 30, 60 33 T 110 18 T 160 10 T 200 4 L 200 44 L 0 44 Z"
           fill="url(#waveBlueGrad)"
         />
-        <motion.path
-          d="M 0 38 Q 30 32, 60 35 T 110 20 T 160 12 T 200 4"
+        <path
+          d="M 0 36 Q 30 30, 60 33 T 110 18 T 160 10 T 200 4"
           fill="none"
           stroke="#2563eb"
           strokeWidth="2.5"
           strokeLinecap="round"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 2.2, ease: "easeInOut", repeat: Infinity, repeatDelay: 2 }}
         />
-        <motion.circle
-          cx="200"
-          cy="4"
-          r="4"
-          fill="#2563eb"
-          animate={{ r: [3, 5.5, 3], opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        />
+        <circle cx="200" cy="4" r="4" fill="#2563eb" />
       </svg>
     </div>
   );
@@ -103,17 +92,12 @@ function MiniAccuracyModelBars() {
     { name: 'Rule Engine OJK', score: 97.10, color: '#f59e0b' }
   ];
   return (
-    <div style={{ width: '100%', marginTop: 8, display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+    <div style={{ width: '100%', marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
       {models.map((m, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.64rem', color: '#64748b' }}>
           <span style={{ width: 88, textAlign: 'left', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
-          <div style={{ flex: 1, height: 4.5, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden' }}>
-            <motion.div
-              style={{ height: '100%', background: m.color, borderRadius: 3 }}
-              initial={{ width: 0 }}
-              animate={{ width: `${m.score}%` }}
-              transition={{ duration: 1.2, delay: i * 0.15 }}
-            />
+          <div style={{ flex: 1, height: 5, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${m.score}%`, background: m.color, borderRadius: 3, transition: 'width 1s ease' }} />
           </div>
           <span style={{ fontFamily: 'monospace', fontWeight: 700, color: m.color, width: 42, textAlign: 'right' }}>{m.score}%</span>
         </div>
@@ -124,20 +108,17 @@ function MiniAccuracyModelBars() {
 
 function MiniLatencyPipelineSpectrum() {
   const steps = [
-    { name: 'Rule Engine', ms: 3.8, color: '#0284c7', pct: 24 },
-    { name: 'Random Forest', ms: 6.5, color: '#8b5cf6', pct: 41 },
-    { name: 'GraphSAGE GNN', ms: 5.7, color: '#f59e0b', pct: 35 },
+    { name: 'Rule Engine', ms: 3.8, color: '#0284c7', pct: '24%' },
+    { name: 'Random Forest', ms: 6.5, color: '#8b5cf6', pct: '41%' },
+    { name: 'GraphSAGE GNN', ms: 5.7, color: '#f59e0b', pct: '35%' },
   ];
   return (
     <div style={{ width: '100%', marginTop: 8 }}>
       <div style={{ display: 'flex', height: 7, borderRadius: 4, overflow: 'hidden', background: '#f1f5f9', marginBottom: 5 }}>
         {steps.map((st, i) => (
-          <motion.div
+          <div
             key={i}
-            style={{ height: '100%', background: st.color }}
-            initial={{ width: 0 }}
-            animate={{ width: `${st.pct}%` }}
-            transition={{ duration: 1.0, delay: i * 0.2 }}
+            style={{ height: '100%', width: st.pct, background: st.color }}
             title={`${st.name}: ${st.ms}ms`}
           />
         ))}
@@ -156,26 +137,19 @@ function MiniLatencyPipelineSpectrum() {
 
 function MiniGraphClusterChart() {
   return (
-    <div style={{ width: '100%', height: 46, marginTop: 8, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <svg viewBox="0 0 200 46" style={{ width: '100%', height: '100%' }}>
-        <line x1="25" y1="23" x2="75" y2="12" stroke="#dc2626" strokeWidth="1.2" strokeDasharray="3,3" opacity="0.6" />
-        <line x1="25" y1="23" x2="75" y2="34" stroke="#f59e0b" strokeWidth="1.2" strokeDasharray="3,3" opacity="0.6" />
-        <line x1="75" y1="12" x2="135" y2="23" stroke="#16a34a" strokeWidth="1.2" opacity="0.6" />
-        <line x1="75" y1="34" x2="135" y2="23" stroke="#16a34a" strokeWidth="1.2" opacity="0.6" />
-        <line x1="135" y1="23" x2="185" y2="23" stroke="#2563eb" strokeWidth="1.5" opacity="0.8" />
+    <div style={{ width: '100%', height: 44, marginTop: 8, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <svg viewBox="0 0 200 44" style={{ width: '100%', height: '100%' }}>
+        <line x1="25" y1="22" x2="75" y2="12" stroke="#dc2626" strokeWidth="1.2" strokeDasharray="3,3" opacity="0.6" />
+        <line x1="25" y1="22" x2="75" y2="32" stroke="#f59e0b" strokeWidth="1.2" strokeDasharray="3,3" opacity="0.6" />
+        <line x1="75" y1="12" x2="135" y2="22" stroke="#16a34a" strokeWidth="1.2" opacity="0.6" />
+        <line x1="75" y1="32" x2="135" y2="22" stroke="#16a34a" strokeWidth="1.2" opacity="0.6" />
+        <line x1="135" y1="22" x2="185" y2="22" stroke="#2563eb" strokeWidth="1.5" opacity="0.8" />
 
-        <motion.circle cx="25" cy="23" r="5" fill="#dc2626" animate={{ r: [4, 6.5, 4] }} transition={{ duration: 1.8, repeat: Infinity }} />
+        <circle cx="25" cy="22" r="5" fill="#dc2626" />
         <circle cx="75" cy="12" r="4" fill="#f59e0b" />
-        <circle cx="75" cy="34" r="4" fill="#f59e0b" />
-        <circle cx="135" cy="23" r="5.5" fill="#16a34a" />
-        <circle cx="185" cy="23" r="4" fill="#2563eb" />
-
-        <motion.circle
-          r="3"
-          fill="#ef4444"
-          animate={{ cx: [25, 75, 135, 185], cy: [23, 12, 23, 23], opacity: [1, 1, 1, 0] }}
-          transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-        />
+        <circle cx="75" cy="32" r="4" fill="#f59e0b" />
+        <circle cx="135" cy="22" r="5.5" fill="#16a34a" />
+        <circle cx="185" cy="22" r="4" fill="#2563eb" />
       </svg>
     </div>
   );
