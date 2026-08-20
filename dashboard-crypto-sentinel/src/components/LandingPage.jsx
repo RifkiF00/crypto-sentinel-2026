@@ -1402,9 +1402,16 @@ export default function LandingPage({ onEnter }) {
                   }}
                 >
                   <img
-                    src="/img/heroo.jpeg"
-                    alt="Crypto-Sentinel 3D Shield"
+                    src="/img/landing.jpeg"
+                    alt="Crypto-Sentinel Platform Banner"
                     className="lp-hero-shield-img"
+                    style={{
+                      width: '100%',
+                      maxWidth: '620px',
+                      borderRadius: '20px',
+                      boxShadow: '0 20px 45px rgba(37, 99, 235, 0.22)',
+                      objectFit: 'cover'
+                    }}
                   />
                 </div>
               </motion.div>
