@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
   AlertTriangle,
@@ -15,7 +15,17 @@ import {
   TrendingUp,
   ArrowDownRight,
   ArrowUpRight,
-  X
+  X,
+  CreditCard,
+  MapPin,
+  Briefcase,
+  Globe,
+  Smartphone,
+  FileText,
+  ShieldAlert,
+  CheckCircle2,
+  Send,
+  Download
 } from 'lucide-react';
 import { muleAccountsData, formatCurrency } from '../data/mockData';
 
@@ -24,12 +34,16 @@ export default function MuleAccountAnalysis({ addToast }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMule, setSelectedMule] = useState(null);
   const [hoveredFlowNode, setHoveredFlowNode] = useState(null);
+  const [showLtkmModal, setShowLtkmModal] = useState(false);
+  const [ltkmDrafting, setLtkmDrafting] = useState(false);
 
   const filteredAccounts = useMemo(() => {
     return muleAccounts.filter(m =>
       m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (m.alias && m.alias.toLowerCase().includes(searchTerm.toLowerCase())) ||
       m.account.includes(searchTerm) ||
-      m.id.toLowerCase().includes(searchTerm.toLowerCase())
+      m.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (m.nik && m.nik.includes(searchTerm))
     );
   }, [muleAccounts, searchTerm]);
 
@@ -46,20 +60,29 @@ export default function MuleAccountAnalysis({ addToast }) {
         const isFrozen = m.status === 'frozen';
         addToast?.(isFrozen
           ? `🔓 Rekening ${m.name} (${m.account}) dicairkan kembali.`
-          : `🧊 Rekening Mule ${m.name} (${m.account}) DIBEKUKAN oleh OJK!`, isFrozen ? 'warning' : 'error');
+          : `🧊 Rekening Mule ${m.name} (${m.account}) DIBEKUKAN oleh OJK/PPATK!`, isFrozen ? 'warning' : 'error');
         return { ...m, status: isFrozen ? 'monitored' : 'frozen' };
       }
       return m;
     }));
   };
 
+  const handleSendLtkm = () => {
+    setLtkmDrafting(true);
+    setTimeout(() => {
+      setLtkmDrafting(false);
+      setShowLtkmModal(false);
+      addToast?.(`📄 Laporan LTKM PPATK resmi diterbitkan untuk NIK ${selectedMule?.nik || selectedMule?.id}!`, 'success');
+    }, 1500);
+  };
+
   // Flow diagram data
   const flowLayers = [
-    { label: 'Sumber Dana', color: '#3b82f6', icon: '🏦', items: ['Rekening Sumber A', 'Rekening Sumber B', 'Rekening Sumber C'] },
-    { label: 'Mule Layer 1', color: '#ef4444', icon: '🔴', items: ['Rekening Mule L1-A', 'Rekening Mule L1-B'] },
-    { label: 'Mule Layer 2', color: '#f59e0b', icon: '🟡', items: ['Rekening Mule L2-A', 'Rekening Mule L2-B'] },
-    { label: 'Crypto Wallet', color: '#a855f7', icon: '💜', items: ['0x1a2b…', '0x9abc…', '0x3456…'] },
-    { label: 'Exchange', color: '#f97316', icon: '🔶', items: ['Binance', 'Indodax'] }
+    { label: 'Sumber Dana (Korban)', color: '#3b82f6', icon: '🏦', items: ['PT Mitra Sejahtera', 'Perusahaan Maju Mandiri', 'Suryadi Kusumah'] },
+    { label: 'Mule Layer 1 (Penampung Utama)', color: '#ef4444', icon: '🔴', items: ['Bambang Haryanto (BCA)', 'Siti Rahmawati (CIMB)'] },
+    { label: 'Mule Layer 2 (Layering & Relay)', color: '#f59e0b', icon: '🟡', items: ['Dewi Kartika (Mandiri)', 'Rahmat Hidayat (BRI)'] },
+    { label: 'Crypto Off-Ramp Wallet', color: '#a855f7', icon: '💜', items: ['0x1a2b… (Indodax)', '0x9abc… (TokoCrypto)', '0x3456… (Pintu)'] },
+    { label: 'Exchange Destinasi', color: '#f97316', icon: '🔶', items: ['Binance (Global)', 'Indodax (Lokal)'] }
   ];
 
   const roleColor = (role) => {
@@ -130,8 +153,8 @@ export default function MuleAccountAnalysis({ addToast }) {
       {/* Mule Flow Diagram */}
       <motion.div className="card" style={{ marginBottom: 24 }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="card-header">
-          <h3 className="card-title"><ArrowRightLeft size={18} /> Diagram Alur Rekening Mule</h3>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Visualisasi aliran dana dari sumber → mule → crypto</span>
+          <h3 className="card-title"><ArrowRightLeft size={18} /> Diagram Topologi Aliran Dana Mule Account</h3>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Alur pengalihan uang dari Korban Bank → Mule Layering → Crypto Wallet → Off-Ramp Exchange</span>
         </div>
         <div className="card-body">
           <div className="mule-flow-container">
@@ -180,6 +203,7 @@ export default function MuleAccountAnalysis({ addToast }) {
 
       {/* Table + Detail Split */}
       <div className="content-grid-wide" style={{ width: '100%', minWidth: 0 }}>
+        
         {/* Mule accounts table */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -193,7 +217,7 @@ export default function MuleAccountAnalysis({ addToast }) {
                 <Search />
                 <input
                   type="text"
-                  placeholder="Cari nama, rekening, atau ID..."
+                  placeholder="Cari nama nasabah, NIK, No. Rekening, atau ID Mule..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   style={{ width: '100%' }}
@@ -209,17 +233,16 @@ export default function MuleAccountAnalysis({ addToast }) {
 
           <div className="card" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
             <div className="card-body" style={{ padding: 0, width: '100%', minWidth: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y' }}>
-              <div className="table-container" style={{ maxHeight: 420, overflowY: 'auto', overflowX: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y', width: '100%', display: 'block' }}>
-                <table className="data-table" style={{ minWidth: 680, width: '100%' }}>
+              <div className="table-container" style={{ maxHeight: 440, overflowY: 'auto', overflowX: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y', width: '100%', display: 'block' }}>
+                <table className="data-table" style={{ minWidth: 700, width: '100%' }}>
                   <thead>
                     <tr>
-                      <th>ID & Nama</th>
-                      <th>Rekening & Bank</th>
+                      <th>Identitas Nasabah (KYC)</th>
+                      <th>Rekening & Cabang</th>
                       <th>Peran Jaringan</th>
                       <th>Skor Risiko</th>
                       <th>Inflow / Outflow</th>
-                      <th>Koneksi</th>
-                      <th>Status</th>
+                      <th>Status LTKM PPATK</th>
                       <th>Aksi</th>
                     </tr>
                   </thead>
@@ -227,19 +250,26 @@ export default function MuleAccountAnalysis({ addToast }) {
                     {filteredAccounts.map((mule) => {
                       const rc = roleColor(mule.role);
                       const sc = statusConfig[mule.status];
+                      const isSelected = selectedMule?.id === mule.id;
+
                       return (
                         <tr
                           key={mule.id}
-                          style={{ cursor: 'pointer', opacity: mule.status === 'frozen' ? 0.65 : 1 }}
+                          style={{
+                            cursor: 'pointer',
+                            opacity: mule.status === 'frozen' ? 0.75 : 1,
+                            background: isSelected ? 'rgba(99, 102, 241, 0.12)' : 'transparent'
+                          }}
                           onClick={() => setSelectedMule(mule)}
                         >
                           <td>
-                            <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{mule.name}</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{mule.id}</div>
+                            <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.88rem' }}>{mule.name}</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{mule.alias || 'Perorangan'}</div>
+                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>NIK: {mule.nik}</div>
                           </td>
                           <td>
-                            <div style={{ fontWeight: 600 }}>{mule.bank}</div>
-                            <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{mule.account}</div>
+                            <div style={{ fontWeight: 700, color: 'var(--accent-primary)' }}>{mule.bank} • {mule.account}</div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{mule.branch}</div>
                           </td>
                           <td>
                             <span style={{
@@ -261,40 +291,30 @@ export default function MuleAccountAnalysis({ addToast }) {
                                 />
                               </div>
                               <span className="risk-value" style={{
-                                color: mule.riskScore >= 80 ? 'var(--status-danger)' : 'var(--status-warning)'
-                              }}>{mule.riskScore}</span>
+                                color: mule.riskScore >= 80 ? 'var(--status-danger)' : 'var(--status-warning)',
+                                fontWeight: 800
+                              }}>{mule.riskScore}%</span>
                             </div>
                           </td>
                           <td>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}>
-                              <span style={{ color: 'var(--status-success)' }}>
+                              <span style={{ color: 'var(--status-success)', fontWeight: 700 }}>
                                 <ArrowDownRight size={12} style={{ display: 'inline', verticalAlign: 'middle' }} /> {formatCurrency(mule.totalInflow)}
                               </span>
-                              <span style={{ color: 'var(--status-danger)' }}>
+                              <span style={{ color: 'var(--status-danger)', fontWeight: 700 }}>
                                 <ArrowUpRight size={12} style={{ display: 'inline', verticalAlign: 'middle' }} /> {formatCurrency(mule.totalOutflow)}
                               </span>
                             </div>
                           </td>
                           <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: '0.9rem' }}>{mule.connectedAccounts}</span>
-                              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>akun</span>
+                            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: mule.strStatus?.includes('Diterbitkan') ? 'var(--status-success)' : 'var(--text-muted)' }}>
+                              {mule.strStatus || 'Review FDS'}
                             </div>
-                          </td>
-                          <td>
-                            <span style={{
-                              padding: '3px 10px',
-                              borderRadius: 'var(--radius-full)',
-                              fontSize: '0.68rem',
-                              fontWeight: 700,
-                              background: sc.bg,
-                              color: sc.color
-                            }}>{sc.icon} {sc.label}</span>
                           </td>
                           <td>
                             <button
                               className={`btn btn-sm ${mule.status === 'frozen' ? 'btn-ghost' : 'btn-danger'}`}
-                              style={{ padding: '4px 10px', fontSize: '0.7rem' }}
+                              style={{ padding: '4px 10px', fontSize: '0.7rem', fontWeight: 700 }}
                               onClick={(e) => { e.stopPropagation(); handleFreeze(mule.id); }}
                             >
                               {mule.status === 'frozen' ? <Eye size={13} /> : <Snowflake size={13} />}
@@ -311,100 +331,226 @@ export default function MuleAccountAnalysis({ addToast }) {
           </div>
         </motion.div>
 
-        {/* Detail Panel */}
+        {/* Real Field AML Profile Inspector Panel */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           {selectedMule ? (
-            <div className="card" style={{ padding: 20, borderColor: 'var(--border-accent)', background: 'var(--bg-glass)' }}>
+            <div className="card" style={{ padding: 20, borderColor: 'var(--border-accent)', background: 'var(--bg-glass)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+              
+              {/* Header Profile */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid var(--border-color)', paddingBottom: 12 }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Detail Rekening Mule</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <ShieldAlert size={18} style={{ color: 'var(--status-danger)' }} />
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 800 }}>Profil Forensik Nasabah Mule</h3>
+                </div>
                 <button className="modal-close" onClick={() => setSelectedMule(null)}><X size={16} /></button>
               </div>
 
+              {/* Avatar + Basic Data */}
               <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, padding: 12, background: 'rgba(99, 102, 241, 0.08)', borderRadius: 10, border: '1px solid rgba(99, 102, 241, 0.2)' }}>
                   <div style={{
-                    width: 50, height: 50, borderRadius: '50%',
+                    width: 52, height: 52, borderRadius: '50%',
                     background: 'var(--gradient-danger)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontWeight: 700, fontSize: '1.1rem'
+                    color: 'white', fontWeight: 800, fontSize: '1.2rem',
+                    boxShadow: '0 0 16px rgba(239, 68, 68, 0.4)'
                   }}>
                     {selectedMule.name.split(' ').map(n => n[0]).join('')}
                   </div>
                   <div>
-                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{selectedMule.name}</h4>
-                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{selectedMule.bank} • {selectedMule.account}</p>
+                    <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white' }}>{selectedMule.name}</h4>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>{selectedMule.alias || 'Nasabah Perorangan'}</p>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--accent-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                      ID: {selectedMule.id} • {selectedMule.bank} ({selectedMule.account})
+                    </span>
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-                  <div style={{ padding: 12, background: 'var(--bg-input)', borderRadius: 8 }}>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Skor Risiko</span>
+                {/* Score & Financial Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+                  <div style={{ padding: 10, background: 'var(--bg-input)', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Skor Risiko FDS</span>
                     <p style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--status-danger)', fontFamily: 'var(--font-mono)' }}>{selectedMule.riskScore}%</p>
                   </div>
-                  <div style={{ padding: 12, background: 'var(--bg-input)', borderRadius: 8 }}>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Peran</span>
-                    <p style={{ fontSize: '1rem', fontWeight: 700, color: roleColor(selectedMule.role).color }}>{selectedMule.role}</p>
+                  <div style={{ padding: 10, background: 'var(--bg-input)', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Peran Jaringan</span>
+                    <p style={{ fontSize: '0.92rem', fontWeight: 800, color: roleColor(selectedMule.role).color, marginTop: 4 }}>{selectedMule.role}</p>
                   </div>
-                  <div style={{ padding: 12, background: 'var(--bg-input)', borderRadius: 8 }}>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Total Inflow</span>
-                    <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--status-success)', fontFamily: 'var(--font-mono)' }}>{formatCurrency(selectedMule.totalInflow)}</p>
+                  <div style={{ padding: 10, background: 'var(--bg-input)', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Total Inflow</span>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--status-success)', fontFamily: 'var(--font-mono)' }}>{formatCurrency(selectedMule.totalInflow)}</p>
                   </div>
-                  <div style={{ padding: 12, background: 'var(--bg-input)', borderRadius: 8 }}>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Total Outflow</span>
-                    <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--status-danger)', fontFamily: 'var(--font-mono)' }}>{formatCurrency(selectedMule.totalOutflow)}</p>
+                  <div style={{ padding: 10, background: 'var(--bg-input)', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Total Outflow</span>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--status-danger)', fontFamily: 'var(--font-mono)' }}>{formatCurrency(selectedMule.totalOutflow)}</p>
                   </div>
                 </div>
 
-                <div style={{ padding: 12, background: 'var(--bg-input)', borderRadius: 8, marginBottom: 16 }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Wallet Crypto Terhubung</span>
+                {/* Identitas KYC (Legal & Official Banking Info) */}
+                <div style={{ padding: 12, background: 'var(--bg-input)', borderRadius: 8, marginBottom: 14, border: '1px solid var(--border-color)' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <CreditCard size={14} /> IDENTITAS LEGAL NASABAH (KYC)
+                  </span>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.74rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>NIK (E-KTP):</span>
+                      <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedMule.nik || '3174052108870003'}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>NPWP:</span>
+                      <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedMule.npwp || '09.234.567.8-015.000'}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Pekerjaan/Skenario:</span>
+                      <strong>{selectedMule.job || 'Wiraswasta / Nominee'}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Cabang Pembuka:</span>
+                      <strong>{selectedMule.branch || 'KC Jakarta Sudirman'}</strong>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4, pt: 4, borderTop: '1px stroke var(--border-color)' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Alamat KTP Domisili:</span>
+                      <strong style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{selectedMule.address || 'Jl. Jend. Sudirman No. 45, Jakarta Selatan'}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Indikator Forensik TPPU & Cyber Risk */}
+                <div style={{ padding: 12, background: 'var(--bg-input)', borderRadius: 8, marginBottom: 14, border: '1px solid var(--border-color)' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <Globe size={14} /> INDIKATOR FORENSIK ALIRAN DANA
+                  </span>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.74rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Waktu Endap (Holding):</span>
+                      <strong style={{ color: '#ef4444', fontFamily: 'var(--font-mono)' }}>{selectedMule.holdingTime || '3.5 menit'}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>IP & Geolokasi:</span>
+                      <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedMule.ipAddress || '182.253.12.89 (VPN)'}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Device Fingerprint:</span>
+                      <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedMule.deviceId || 'DEV-88392-ANDROID14'}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Linked Crypto Wallets */}
+                <div style={{ padding: 12, background: 'var(--bg-input)', borderRadius: 8, marginBottom: 16, border: '1px solid var(--border-color)' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <Wallet size={14} /> TERHUBUNG CRYPTO WALLET / EXCHANGE
+                  </span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {selectedMule.linkedCryptoWallets.map((w, i) => (
+                    {selectedMule.linkedCryptoWallets?.map((w, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Wallet size={14} style={{ color: 'var(--accent-purple)' }} />
-                        <code style={{ fontSize: '0.78rem', fontFamily: 'var(--font-mono)', color: 'var(--accent-purple)' }}>{w}</code>
+                        <Wallet size={13} style={{ color: 'var(--accent-purple)' }} />
+                        <code style={{ fontSize: '0.76rem', fontFamily: 'var(--font-mono)', color: 'var(--accent-purple)' }}>{w}</code>
                       </div>
                     ))}
                   </div>
                 </div>
-
-                <div style={{ display: 'flex', gap: 8, fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-                  <span>📅 Terdeteksi: <strong style={{ color: 'var(--text-primary)' }}>{selectedMule.detectedDate}</strong></span>
-                  <span>•</span>
-                  <span>{selectedMule.txCount} transaksi</span>
-                  <span>•</span>
-                  <span>{selectedMule.connectedAccounts} koneksi</span>
-                </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
                 <button
                   className="btn btn-primary"
-                  style={{ background: 'var(--gradient-danger)', justifyContent: 'center' }}
-                  onClick={() => { handleFreeze(selectedMule.id); setSelectedMule(null); }}
+                  style={{ background: selectedMule.status === 'frozen' ? 'var(--bg-input)' : 'var(--gradient-danger)', justifyContent: 'center', fontWeight: 700 }}
+                  onClick={() => handleFreeze(selectedMule.id)}
                 >
-                  🧊 {selectedMule.status === 'frozen' ? 'Cairkan Rekening' : 'Bekukan Rekening Mule'}
+                  🧊 {selectedMule.status === 'frozen' ? 'Cairkan Pembekuan Rekening' : 'Bekukan Rekening Mule (Sesuai Aturan OJK)'}
                 </button>
+                
                 <button
-                  className="btn btn-ghost"
-                  style={{ justifyContent: 'center' }}
-                  onClick={() => {
-                    addToast?.(`📂 Investigasi mendalam dimulai untuk ${selectedMule.name}`, 'warning');
-                    setSelectedMule(null);
-                  }}
+                  className="btn btn-secondary"
+                  style={{ justifyContent: 'center', fontWeight: 700, gap: 6 }}
+                  onClick={() => setShowLtkmModal(true)}
                 >
-                  📂 Kirim Tim Investigasi AML
+                  <FileText size={15} /> Buat Draf Laporan LTKM Ke PPATK
                 </button>
               </div>
             </div>
           ) : (
-            <div className="card" style={{ padding: 30, borderStyle: 'dashed', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <Users size={36} style={{ marginInline: 'auto', marginBottom: 12, color: 'var(--text-muted)' }} />
-              <h4>Inspeksi Rekening Mule</h4>
-              <p style={{ fontSize: '0.78rem', marginTop: 4 }}>Pilih salah satu rekening mule dari tabel untuk melihat detail lengkap dan mengambil tindakan pembekuan.</p>
+            <div className="card" style={{ padding: 36, borderStyle: 'dashed', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <Users size={40} style={{ marginInline: 'auto', marginBottom: 12, color: 'var(--text-muted)' }} />
+              <h4 style={{ fontWeight: 800, color: 'var(--text-primary)' }}>Inspeksi Profil Rekening Mule</h4>
+              <p style={{ fontSize: '0.78rem', marginTop: 6, lineHeight: 1.5 }}>
+                Pilih salah satu nama nasabah dari tabel di samping untuk memeriksa identitas KYC resmi (NIK, NPWP, Alamat KTP), bukti indikator forensik TPPU, dan tindakan hukum pembekuan OJK/PPATK.
+              </p>
             </div>
           )}
         </motion.div>
       </div>
+
+      {/* LTKM PPATK Official Report Drafting Modal */}
+      <AnimatePresence>
+        {showLtkmModal && selectedMule && (
+          <div className="modal-backdrop" onClick={() => setShowLtkmModal(false)} style={{ zIndex: 9999 }}>
+            <motion.div
+              className="modal"
+              style={{ maxWidth: 540, padding: 24 }}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid var(--border-color)', paddingBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <FileText size={20} style={{ color: 'var(--accent-primary)' }} />
+                  <div>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 800 }}>Draf LTKM Resmi (PPATK System)</h3>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Laporan Transaksi Keuangan Mencurigakan — UU TPPU No. 8/2010</p>
+                  </div>
+                </div>
+                <button className="modal-close" onClick={() => setShowLtkmModal(false)}><X size={16} /></button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: '0.78rem', marginBottom: 20 }}>
+                <div style={{ padding: 10, background: 'var(--bg-input)', borderRadius: 8 }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>Terlaporkan / Subjek:</span>
+                  <p style={{ fontWeight: 800, fontSize: '0.9rem', color: 'white' }}>{selectedMule.name} ({selectedMule.alias})</p>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>NIK: {selectedMule.nik || '3174052108870003'} • NPWP: {selectedMule.npwp || '09.234.567.8-015.000'}</p>
+                </div>
+
+                <div style={{ padding: 10, background: 'var(--bg-input)', borderRadius: 8 }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>Rekening & Bank:</span>
+                  <p style={{ fontWeight: 700 }}>{selectedMule.bank} — {selectedMule.account} ({selectedMule.branch})</p>
+                </div>
+
+                <div style={{ padding: 10, background: 'var(--bg-input)', borderRadius: 8 }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>Kategori Transaksi Mencurigakan:</span>
+                  <p style={{ fontWeight: 700, color: '#ef4444' }}>Dugaan Rekening Mule & Smurfing Off-Ramp Crypto ({formatCurrency(selectedMule.totalInflow)})</p>
+                </div>
+
+                <div style={{ padding: 10, background: 'var(--bg-input)', borderRadius: 8 }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>Indikator Bukti Forensik:</span>
+                  <ul style={{ paddingLeft: 16, marginTop: 4, color: 'var(--text-secondary)' }}>
+                    <li>Waktu terendap dana ultra-singkat ({selectedMule.holdingTime})</li>
+                    <li>IP Address mencurigakan / Proxy ({selectedMule.ipAddress})</li>
+                    <li>Terhubung langsung ke Crypto Wallets ({selectedMule.linkedCryptoWallets?.join(', ')})</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button className="btn btn-ghost" onClick={() => setShowLtkmModal(false)}>Batal</button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSendLtkm}
+                  disabled={ltkmDrafting}
+                  style={{ gap: 6, fontWeight: 700 }}
+                >
+                  {ltkmDrafting ? <Send size={15} className="animate-spin" /> : <Send size={15} />}
+                  {ltkmDrafting ? 'Mengirim Draf LTKM...' : 'Kirim LTKM Ke Portal PPATK'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
