@@ -7,14 +7,22 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bank_kuningan/core/constants/strings.dart';
 import 'package:bank_kuningan/main.dart';
 
 void main() {
   testWidgets('Bank Kuningan app smoke test', (WidgetTester tester) async {
+    // Set screen size for testing
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     // Build our app and trigger a frame.
     await tester.pumpWidget(const BankKuninganApp());
+    await tester.pumpAndSettle();
 
     // Verify that login screen renders
-    expect(find.text('Masuk ke Bank Kuningan'), findsOneWidget);
+    expect(find.text(AppStrings.loginButton), findsOneWidget);
   });
 }

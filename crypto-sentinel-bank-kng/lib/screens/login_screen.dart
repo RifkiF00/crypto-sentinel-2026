@@ -268,11 +268,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   size: 26,
                                 ),
                                 const SizedBox(width: 12),
-                                Text(
-                                  AppStrings.biometricLogin,
-                                  style: AppTextStyles.textTheme.labelLarge?.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w700,
+                                Flexible(
+                                  child: Text(
+                                    AppStrings.biometricLogin,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTextStyles.textTheme.labelLarge?.copyWith(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
                               ],
