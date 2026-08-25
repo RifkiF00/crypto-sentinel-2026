@@ -89,7 +89,8 @@ async def bri_transfer(
     receiver_account: str = Form(..., description="Rekening Penerima (misal: 9876543210)"),
     amount: int = Form(..., description="Nominal Transfer"),
     latitude: float = Form(-6.2, description="Latitude (Nanti diisi otomatis oleh Frontend)"),
-    longitude: float = Form(106.8, description="Longitude (Nanti diisi otomatis oleh Frontend)")
+    longitude: float = Form(106.8, description="Longitude (Nanti diisi otomatis oleh Frontend)"),
+    method: str = Form(None, description="Metode Transfer: RTOL, SKNBI, SESAMA_BJB (opsional)")
 ):
     import hmac
     import hashlib
@@ -105,11 +106,28 @@ async def bri_transfer(
             detail="SNAP BI Security Error: Missing required headers (X-Partner-Id, X-Signature, X-Timestamp)"
         )
 
-    secret_key = b"KNG_SECRET_2026"
-    message = f"{partner_id}|{timestamp}|{sender_account}|{receiver_account}|{amount}".encode()
-    expected_sig = hmac.new(secret_key, message, hashlib.sha256).hexdigest()
+    # Multi-partner secret key registry — daftarkan semua partner yang diizinkan
+    PARTNER_SECRETS = {
+        "KNG-PARTNER-Billy": b"KNG_SECRET_2026",
+        "BJB-PARTNER-Billy": b"BJB_SECRET_DIGDAYA_2026",
+    }
 
-    if not hmac.compare_digest(signature, expected_sig):
+    secret_key = PARTNER_SECRETS.get(partner_id)
+    if not secret_key:
+        raise HTTPException(
+            status_code=401,
+            detail=f"SNAP BI Security Error: Unknown partner ID '{partner_id}'"
+        )
+
+    # Coba validasi signature — KNG pakai formula tanpa method, BJB pakai formula dengan method
+    message_kng = f"{partner_id}|{timestamp}|{sender_account}|{receiver_account}|{amount}".encode()
+    message_bjb = f"{partner_id}|{timestamp}|{sender_account}|{receiver_account}|{amount}|{method or ''}".encode()
+
+    expected_kng = hmac.new(secret_key, message_kng, hashlib.sha256).hexdigest()
+    expected_bjb = hmac.new(secret_key, message_bjb, hashlib.sha256).hexdigest()
+
+    sig_valid = hmac.compare_digest(signature, expected_kng) or hmac.compare_digest(signature, expected_bjb)
+    if not sig_valid:
         raise HTTPException(
             status_code=401,
             detail="SNAP BI Security Error: Invalid digital signature (X-Signature verification failed)"
