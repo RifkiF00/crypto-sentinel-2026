@@ -42,8 +42,9 @@ class BankKuninganApiService {
           'sender_account': senderAccount,
           'receiver_account': receiverAccount,
           'amount': amount.toString(),
+          'method': method,          // ← diteruskan ke server
           'latitude': '-6.9744',
-          'longitude': '108.4832', // Koordinat Kab. Kuningan
+          'longitude': '108.4832',  // Koordinat Kab. Kuningan
         },
       ).timeout(const Duration(seconds: 8));
 
