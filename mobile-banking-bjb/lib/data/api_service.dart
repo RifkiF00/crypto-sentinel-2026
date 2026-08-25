@@ -107,4 +107,66 @@ class BjbApiService {
       'isBlocked': false,
     };
   }
+
+  /// Ambil riwayat transaksi live dari Core Banking API
+  /// Filter berdasarkan account (sender atau receiver)
+  static Future<List<Map<String, dynamic>>> getTransactions({
+    String? accountId,
+    int limit = 10,
+  }) async {
+    final uri = Uri.parse('$baseUrl/bri/transactions?limit=$limit');
+    try {
+      final response = await http.get(uri).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final List<dynamic> raw = json.decode(response.body);
+        // Filter transaksi milik akun ini (sebagai sender atau receiver)
+        final filtered = raw.where((tx) {
+          if (accountId == null) return true;
+          final sender = tx['sender_account']?.toString() ?? '';
+          final receiver = tx['receiver_account']?.toString() ?? '';
+          return sender == accountId || receiver == accountId;
+        }).take(limit).toList();
+
+        return filtered.map<Map<String, dynamic>>((tx) {
+          final sender = tx['sender_account']?.toString() ?? '';
+          final isOutgoing = sender == accountId;
+          final amount = tx['amount'] ?? 0;
+          final status = tx['sentinel_decision'] ?? tx['status'] ?? 'BERHASIL';
+          final receiver = tx['receiver_account']?.toString() ?? '';
+          final txType = tx['method'] ?? tx['type'] ?? 'TRANSFER';
+
+          return {
+            'id': tx['transaction_id'] ?? tx['id'] ?? '-',
+            'title': isOutgoing
+                ? 'Transfer ke $receiver'
+                : 'Transfer dari $sender',
+            'category': txType,
+            'date': tx['timestamp'] ?? tx['created_at'] ?? '-',
+            'amount': isOutgoing
+                ? '- Rp ${_formatAmount(amount)}'
+                : '+ Rp ${_formatAmount(amount)}',
+            'isIncoming': !isOutgoing,
+            'status': status == 'BLOCK' ? 'DIBLOKIR FDS' : 'BERHASIL',
+            'refNumber': tx['transaction_id'] ?? 'REF-BJB-2026',
+            'isBlocked': status == 'BLOCK',
+          };
+        }).toList();
+      }
+    } catch (_) {}
+
+    // Fallback: list kosong jika server offline
+    return [];
+  }
+
+  static String _formatAmount(dynamic amount) {
+    try {
+      final num = int.parse(amount.toString());
+      return num.toString().replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+        (m) => '${m[1]}.',
+      );
+    } catch (_) {
+      return amount.toString();
+    }
+  }
 }

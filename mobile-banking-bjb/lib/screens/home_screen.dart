@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/constants/colors.dart';
 import '../core/constants/strings.dart';
+import '../data/api_service.dart';
 import '../data/mock_data.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/quick_action_button.dart';
@@ -26,6 +27,51 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // === Live data state ===
+  static const String _bjbAccountId = '1234567890'; // Billy Jonathan di DB
+  String _userName = MockData.userName;
+  String _accountBalance = MockData.accountBalance;
+  bool _isLoadingAccount = true;
+  bool _isLoadingTx = true;
+  List<Map<String, dynamic>> _liveTxList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLiveData();
+  }
+
+  Future<void> _fetchLiveData() async {
+    // Fetch saldo & nama akun
+    final accountInfo = await BjbApiService.getAccountInfo(_bjbAccountId);
+    if (mounted) {
+      setState(() {
+        _userName = accountInfo['ownerName'] ?? MockData.userName;
+        final bal = accountInfo['balance'];
+        if (bal != null) {
+          final formatted = bal.toString().replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (m) => '${m[1]}.',
+          );
+          _accountBalance = 'Rp $formatted';
+        }
+        _isLoadingAccount = false;
+      });
+    }
+
+    // Fetch riwayat transaksi live dari DB
+    final txList = await BjbApiService.getTransactions(
+      accountId: _bjbAccountId,
+      limit: 10,
+    );
+    if (mounted) {
+      setState(() {
+        _liveTxList = txList;
+        _isLoadingTx = false;
+      });
+    }
+  }
+
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour >= 5 && hour < 11) return AppStrings.greetingMorning;
@@ -105,23 +151,23 @@ class _HomeScreenState extends State<HomeScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '${_getGreeting()},',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const Text(
-                            MockData.userName,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
+                           Text(
+                             '${_getGreeting()},',
+                             style: const TextStyle(
+                               fontSize: 12,
+                               fontWeight: FontWeight.w500,
+                               color: AppColors.textSecondary,
+                             ),
+                           ),
+                           Text(
+                             _userName,
+                             style: const TextStyle(
+                               fontSize: 16,
+                               fontWeight: FontWeight.w800,
+                               color: AppColors.textPrimary,
+                               letterSpacing: -0.3,
+                             ),
+                           ),
                         ],
                       ),
                     ],
@@ -149,12 +195,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 20),
 
-              // 2. Kartu Saldo Eksklusif Bank bjb
-              const BalanceCard(
-                userName: MockData.userName,
-                accountNumber: MockData.accountNumber,
-                balance: MockData.accountBalance,
-              ),
+              // 2. Kartu Saldo Eksklusif Bank bjb (LIVE dari DB)
+              _isLoadingAccount
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      ),
+                    )
+                  : BalanceCard(
+                      userName: _userName,
+                      accountNumber: MockData.accountNumber,
+                      balance: _accountBalance,
+                    ),
 
               const SizedBox(height: 24),
 
@@ -283,44 +336,83 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 10),
 
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: const [
-                    BoxShadow(color: AppColors.shadow, blurRadius: 10, offset: Offset(0, 2)),
-                  ],
-                ),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: MockData.recentTransactions.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1, indent: 70),
-                  itemBuilder: (context, index) {
-                    final tx = MockData.recentTransactions[index];
-                    return TransactionItem(
-                      transaction: tx,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ReceiptScreen(
-                              title: tx.title,
-                              amount: tx.amount.replaceAll('+', '').replaceAll('-', '').trim(),
-                              receiverAccount: '1234-5678-90',
-                              receiverName: tx.title.replaceAll('Transfer ke ', '').replaceAll('Transfer dari ', ''),
-                              category: tx.category,
-                              refNumber: tx.refNumber,
-                              status: tx.status,
+              // 5. Mutasi Rekening — LIVE dari DB (fallback ke empty state)
+              _isLoadingTx
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      ),
+                    )
+                  : _liveTxList.isEmpty
+                      ? Container(
+                          padding: const EdgeInsets.all(28),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: const Center(
+                            child: Column(
+                              children: [
+                                Icon(Icons.receipt_long_outlined, size: 40, color: AppColors.textSecondary),
+                                SizedBox(height: 10),
+                                Text(
+                                  'Belum ada riwayat transaksi',
+                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                                ),
+                              ],
                             ),
                           ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.border),
+                            boxShadow: const [
+                              BoxShadow(color: AppColors.shadow, blurRadius: 10, offset: Offset(0, 2)),
+                            ],
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _liveTxList.length,
+                            separatorBuilder: (_, __) => const Divider(height: 1, indent: 70),
+                            itemBuilder: (context, index) {
+                              final tx = _liveTxList[index];
+                              final liveModel = TransactionModel(
+                                id: tx['id'] ?? '-',
+                                title: tx['title'] ?? '-',
+                                category: tx['category'] ?? 'TRANSFER',
+                                date: tx['date'] ?? '-',
+                                amount: tx['amount'] ?? '-',
+                                isIncoming: tx['isIncoming'] == true,
+                                status: tx['status'] ?? 'BERHASIL',
+                                refNumber: tx['refNumber'] ?? 'REF-BJB',
+                              );
+                              return TransactionItem(
+                                transaction: liveModel,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ReceiptScreen(
+                                        title: liveModel.title,
+                                        amount: liveModel.amount.replaceAll('+', '').replaceAll('-', '').trim(),
+                                        receiverAccount: '-',
+                                        receiverName: liveModel.title,
+                                        category: liveModel.category,
+                                        refNumber: liveModel.refNumber,
+                                        status: liveModel.status,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
 
               const SizedBox(height: 20),
             ],
