@@ -1,5 +1,5 @@
 # Crypto-Sentinel 2026 — Rencana Implementasi Final Pitch & Capstone Report
-*Updated: **25 Agustus 2026 16:08 WIB** — ✅ Branch Protection GitHub + Multi-Partner SNAP BI Auth Fix + ML Feature Fix (29 fitur) + Full Integration Test PASSED + Semua Server Running*
+*Updated: **26 Agustus 2026 03:43 WIB** — ✅ SHAP Explainability LIVE (top-5 feature contributions per transaksi) + Semua perbaikan 25 Agt tersimpan*
 
 > **Tujuan**: Sistem siap pitch offline 25/26 Agustus + validasi pilot Bank Kuningan & Bu Fatimah (Financial Advisor BRI Kuningan)
 > **Deadline**: 25 Agustus 2026 — **🎯 HARI H PITCH**
@@ -22,6 +22,7 @@
 | 5 | **Sinkronisasi Test Suite** — `test_rule_engine.py` outdated: expected score belum update setelah rule engine dapat base score +15 | `crypto-sentinel-api/app/test_rule_engine.py` | 🟢 5/5 PASSED |
 | 6 | **Pull update teman** — Merge `feature/transaction` (RTOL/SKNBI update Billy) + `mobile-banking-bjb` (Flutter app baru) ke `main` | Git merge | 🟢 `mobile-banking-bjb/` sekarang ada di repo |
 | 7 | **Semua server restart** setelah system restart | Port 8000, 8080, 5173 | 🟢 3 server running |
+| 8 | **SHAP Explainability** — Install `shap==0.49.1`, init `TreeExplainer` saat startup, kalkulasi top-5 fitur per transaksi, tambah field `shap_explanation` di API response | `crypto-sentinel-api/app/main.py` + `requirements.txt` | 🟢 Live! Contoh: `dest_in_degree: +0.1482`, `amount: -0.1307` |
 
 ### 🧪 Hasil Integration Test Akhir (25 Agustus 2026 16:05 WIB)
 
@@ -55,7 +56,74 @@ Sekarang:
 
 ---
 
-## 📌 Status Sistem — Terverifikasi (Update 25 Agustus 2026)
+## 🚦 Rencana Pengerjaan Berikutnya (Next Session)
+
+> Gunakan bagian ini sebagai **briefing untuk obrolan baru**. Copy-paste ke awal percakapan berikutnya.
+
+### 🎯 Prioritas Tinggi (Segera Dikerjakan)
+
+| # | Task | File | Estimasi |
+|---|---|---|---|
+| 1 | **Cloud Deployment via PIDI** — Setelah dapat URL Render dari PIDI, update `SENTINEL_API_URL` di `expresso-api/.env` dan semua `localhost:8000` di `dashboard/src/api.js` (4 titik) | `expresso-api/.env`, `dashboard-crypto-sentinel/src/services/api.js`, `dashboard-crypto-sentinel/src/components/TransactionTable.jsx` | 10 menit setelah URL ada |
+| 2 | **Visualisasi SHAP di Dashboard** — Tambah komponen bar chart SHAP di detail alert (sudah ada data `shap_explanation` di API response, tinggal render) | `dashboard-crypto-sentinel/src/components/` → buat `ShapExplanation.jsx` | 1-2 jam |
+| 3 | **Anonimisasi Data Nasabah** — Permintaan Bank BJB: nama/NIK di dashboard harus di-mask jadi token anonim (e.g. `****7890` bukan `1234567890`) | `dashboard-crypto-sentinel/src/components/` semua komponen yang tampilkan `account` | 1-2 jam |
+| 4 | **CMS (Case Management System) dasar** — Permintaan Bank Kuningan: tambah status tracking alert `OPEN → IN_REVIEW → CLOSED` + catatan investigasi per kasus | `expresso-api/models/db_models.py`, `expresso-api/routers/`, buat tabel `case_logs` | 3-4 jam |
+
+### 🟡 Prioritas Sedang
+
+| # | Task | Keterangan |
+|---|---|---|
+| 5 | **Endpoint `/model/metrics`** | Expose akurasi, AUC, threshold model live ke dashboard |
+| 6 | **Rule Geolokasi (Impossible Travel)** | Deteksi transaksi dari kota berbeda <30 menit (request Bank Kuningan) |
+| 7 | **Audit Trail & Device Binding** | 1 akun 1 device, log login dari IP berbeda (request Bank Kuningan) |
+| 8 | **User Testing dengan Pak Rian** | Kirim link dashboard ke staff Bank Kuningan untuk feedback UX |
+
+### 🔵 Roadmap Fase 2 (Post-Inkubasi)
+
+| # | Task | Keterangan |
+|---|---|---|
+| 9 | **Federated Learning** | Multi-bank training tanpa share data nasabah |
+| 10 | **Neo4j** | Ganti NetworkX in-memory dengan graph database skalabel |
+| 11 | **GNN Upgrade (PyTorch Geometric)** | True GraphSAGE production-grade |
+| 12 | **X.509 / HSM** | SNAP BI production-grade key management |
+
+---
+
+### 📦 State Saat Ini (untuk briefing obrolan baru)
+
+```
+REPO : github.com/RifkiF00/crypto-sentinel-2026
+BRANCH : main (branch protected)
+LAST COMMIT : ef5967d - feat: add SHAP TreeExplainer explainability
+
+SERVER LOKAL:
+  Port 8000 → crypto-sentinel-api (uvicorn app.main:app --port 8000)
+  Port 8080 → expresso-api       (uvicorn main:app --port 8080)
+  Port 5173 → dashboard          (npm run dev -- --host di dashboard-crypto-sentinel/)
+
+KOMPETISI:
+  Program : PIDI Digdaya Hackathon & Inkubasi 2026
+  Tim     : EXPRESSO S1251
+  Offtaker: Bank Kuningan (BPR) + Bank BJB (BUMD)
+  Mentor  : #20 Dea Saka (BSSN) | #18 Teguh (Tokocrypto) | #05 Pujo (Finastra AI)
+
+FITUR SELESAI:
+  - GNN GraphSAGE 562K nodes + Hybrid Scoring (GNN 60% + Rule 40%)
+  - SHAP Explainability (top-5 feature contributions per transaksi)
+  - LTKM/STR Generator (format PPATK goAML)
+  - SNAP BI Multi-Partner Auth (KNG + BJB)
+  - Flutter Mobile Banking x2 (Bank Kuningan + Bank BJB)
+  - Rule Engine 13 indikator / 15 sub-indikator
+
+FITUR BERIKUTNYA:
+  1. Update URL ke Render (tunggu PIDI)
+  2. Visualisasi SHAP di dashboard
+  3. Anonimisasi data nasabah (request BJB)
+  4. CMS basic (request Bank Kuningan)
+```
+
+---
+
 
 ### Fakta Dataset & Konfigurasi
 
