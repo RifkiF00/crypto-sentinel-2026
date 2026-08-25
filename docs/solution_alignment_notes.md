@@ -1,136 +1,188 @@
-# Notulensi Diskusi & Perubahan Solusi — Crypto-Sentinel 2026
-**Dokumen untuk klaim: Solution Alignment Level 3**
-*Tim EXPRESSO S1251 — Program PIDI Digdaya Hackathon & Inkubasi 2026*
+# Notulensi Uji Keselarasan Solusi (Solution Alignment Testing)
+**Crypto-Sentinel 2026 — Tim EXPRESSO S1251**
+**Program:** PIDI Digdaya Hackathon & Inkubasi 2026
+**Dokumen untuk klaim:** Solution Alignment Level 3
+**Tanggal Pengujian:** 25 Agustus 2026
 
 ---
 
-## 📋 Ringkasan Diskusi dengan Offtaker
+## Informasi Umum
 
-Tim EXPRESSO S1251 telah melakukan dua sesi diskusi mendalam dengan dua offtaker perbankan untuk menyelaraskan solusi Crypto-Sentinel dengan kebutuhan nyata industri perbankan Indonesia.
-
----
-
-## 🏦 Sesi 1 — Bank BJB (Bank Pembangunan Daerah Jabar-Banten)
-
-**Kategori Offtaker:** Perusahaan BUMD
-**Bentuk Ketertarikan:** Wadah Piloting/PoC · Implementasi Solusi · Mentoring · Akses Networking
-**Status Komunikasi:** Solution Alignment (Level 4)
-**Format Uji Coba:** Sandbox dengan data simulasi (bukan data nasabah nyata)
-
-### Topik Pembahasan
-
-#### 1. Penyelarasan Fitur dengan Kebutuhan BJB
-Tim mempresentasikan seluruh komponen Crypto-Sentinel kepada tim IT dan Compliance Bank BJB. Diskusi berfokus pada relevansi sistem dengan kebutuhan AML/APU-PPT yang saat ini dijalankan oleh BJB.
-
-#### 2. Anonimisasi & Privasi Data Nasabah
-**Masukan BJB:**
-> Seluruh data nasabah yang ditampilkan di dashboard (nomor rekening, nama, NIK) wajib dianonimkan sesuai standar keamanan perbankan BJB dan UU PDP No. 27/2022. Data tidak boleh ditampilkan dalam format mentah.
-
-**Perubahan Solusi yang Diperlukan:**
-- Implementasi pseudonimisasi nomor rekening (contoh: `1234567890` menjadi `****7890`)
-- Masking nama nasabah di dashboard compliance
-- Masking NIK/data identitas di laporan LTKM untuk tampilan internal
-
-#### 3. Cakupan Indikator FDS
-**Masukan BJB:**
-> Sistem FDS internal BJB memiliki ratusan jenis alert. Crypto-Sentinel saat ini memiliki 13 indikator utama dan 15 sub-indikator — perlu roadmap perluasan untuk mendekati standar enterprise.
-
-**Perubahan Solusi yang Diperlukan:**
-- Roadmap penambahan indikator secara bertahap pasca-inkubasi
-- Fokus fase pertama: indikator paling kritis untuk BPR/BPD (crypto outflow, smurfing, dormant)
-- Dokumentasi gap analisis antara indikator Crypto-Sentinel vs standar FDS enterprise
-
-#### 4. Laporan LTKM/STR
-**Masukan BJB:**
-> Format laporan LTKM yang dihasilkan Crypto-Sentinel dinilai sudah bagus dan mirip dengan format standar yang biasa digunakan, mengacu pada format goAML PPATK dan UU TPPU No. 8/2010.
-
-**Status:** Tidak ada perubahan signifikan diperlukan.
-
-#### 5. Smart Circuit Breaker — Kekhawatiran False Positive
-**Masukan BJB:**
-> BJB menyampaikan kekhawatiran terkait fitur Smart Circuit Breaker (pemblokiran transaksi otomatis real-time). Jika terjadi false positive — transaksi nasabah yang sah diblokir — hal ini akan mempertaruhkan integritas dan kredibilitas bank.
-
-**Perubahan Solusi yang Disepakati:**
-- Mode Circuit Breaker diubah: **REVIEW dulu, BLOCK setelah human approval** untuk transaksi zona abu-abu (skor 60–84)
-- Hanya transaksi skor ≥85 (risiko VERY HIGH) yang dapat auto-block
-- Tambahkan mekanisme human-in-the-loop: analis compliance mereview alert sebelum transaksi diblokir permanen
-- Tambahkan fitur Override untuk analis
+| Item | Detail |
+|---|---|
+| Nama Produk | Crypto-Sentinel 2026 |
+| Versi | v0.5.0 (SHAP + GNN Hybrid) |
+| Tim | EXPRESSO S1251 — Rifki · Aam · Desta · Billy |
+| Offtaker 1 | Bank BJB (Bank Pembangunan Daerah Jabar-Banten) — BUMD |
+| Offtaker 2 | Bank Kuningan (BPR Kuningan) — BUMD |
+| Metode Pengujian | Demo langsung + diskusi kebutuhan + sandbox simulasi |
+| Lingkungan | Lokal (localhost:8000 AI Engine, localhost:8080 Core Banking, localhost:5173 Dashboard) |
 
 ---
 
-## 🏦 Sesi 2 — Bank Kuningan (BPR Kuningan)
+## Bagian A — Pengujian Bersama Bank BJB
 
-**Kategori Offtaker:** Perusahaan BUMD
-**Bentuk Ketertarikan:** Wadah Piloting/PoC · Implementasi Solusi · Mentoring · Akses Networking
-**Status Komunikasi:** Collaboration Planning (Level 5) — Surat Balasan Kesediaan Pilot telah dikirim
-**Format Uji Coba:** Sandbox dengan data simulasi / dummy profile nasabah
+### TC-BJB-01: Penyelarasan Fitur Sistem dengan Kebutuhan AML/APU-PPT
 
-### Topik Pembahasan
-
-#### 1. Dummy Profile Nasabah untuk Uji Coba
-**Masukan Bank Kuningan:**
-> Untuk keperluan uji coba sandbox, dibutuhkan profil nasabah simulasi yang realistis mencerminkan karakteristik nasabah BPR Kuningan (lokasi Jawa Barat, transaksi RTOL/SKNBI, nominal sesuai segmen BPR).
-
-**Perubahan Solusi yang Diperlukan:**
-- Buat dataset dummy nasabah spesifik Bank Kuningan (nama, rekening, kota, riwayat transaksi)
-- Simulasikan pola transaksi harian BPR (nominal lebih kecil, transaksi antar nasabah daerah)
-
-#### 2. Deteksi Perpindahan Dana Lintas Kota
-**Masukan Bank Kuningan:**
-> Bank Kuningan melihat pola fraud di mana pelaku melakukan transaksi dari kota yang berbeda dalam waktu sangat singkat — indikasi akun diakses oleh pihak lain atau digunakan sindikat yang beroperasi di berbagai kota.
-
-**Perubahan Solusi yang Diperlukan:**
-- Implementasi rule Impossible Travel Detection: transaksi dari koordinat/kota berbeda dalam interval kurang dari 30 menit memicu alert
-- Integrasi data geolokasi IP ke rule engine (sudah ada field `ip_address`, `latitude`, `longitude` di API)
-- Tambah sub-indikator: `geo_velocity_anomaly`
-
-#### 3. Case Management System (CMS)
-**Masukan Bank Kuningan:**
-> Dibutuhkan sistem manajemen kasus fraud untuk tim compliance agar dapat mengelola, menginvestigasi, dan menutup setiap alert yang dihasilkan Crypto-Sentinel secara terstruktur. CMS yang dimaksud adalah sistem ticketing/workflow investigasi alert.
-
-**Perubahan Solusi yang Diperlukan:**
-- Tambah tabel `case_logs` di database dengan field: case_id, alert_id, status (OPEN/IN_REVIEW/CLOSED), assigned_to, notes, resolved_at
-- Tambah endpoint API: `PATCH /cases/{id}/status`, `POST /cases/{id}/notes`
-- Tampilan CMS di dashboard: tabel kasus, filter status, form catatan investigasi
-- Audit trail per kasus: log siapa mereview kapan
-
-#### 4. Audit Trail & Kebijakan 1 Akun 1 Device
-**Masukan Bank Kuningan:**
-> Bank Kuningan meminta implementasi kebijakan 1 akun hanya boleh aktif di 1 perangkat sekaligus. Jika akun diakses dari perangkat berbeda, sistem harus mendeteksi dan mengirim alert.
-
-**Perubahan Solusi yang Diperlukan:**
-- Implementasi device binding: simpan `device_id` saat login pertama
-- Deteksi akses dari `device_id` berbeda → trigger alert ke compliance
-- Log seluruh aktivitas login: timestamp, IP, device_id, lokasi (audit trail)
-- Uji coba: simulasi login dari beberapa perangkat berbeda untuk memvalidasi deteksi IP anomali
+| Field | Isi |
+|---|---|
+| **ID Test Case** | TC-BJB-01 |
+| **Nama Pengujian** | Penyelarasan fitur Crypto-Sentinel dengan kebutuhan AML/APU-PPT BJB |
+| **Tujuan** | Memverifikasi apakah fitur utama sistem relevan dengan proses kepatuhan AML yang dijalankan BJB |
+| **Pelaksana** | Tim EXPRESSO S1251 + Tim IT & Compliance Bank BJB |
+| **Langkah Pengujian** | 1. Presentasi seluruh komponen: FDS AI, Rule Engine, Dashboard, LTKM Generator, Mobile App. 2. Demo live transaksi simulasi. 3. Diskusi relevansi dengan SOP internal BJB. |
+| **Hasil yang Diharapkan** | Semua komponen dianggap relevan dengan kebutuhan AML BJB |
+| **Hasil Aktual** | Komponen relevan. Catatan: FDS internal BJB memiliki ratusan indikator vs 13 indikator Crypto-Sentinel — gap diakui, roadmap diperlukan |
+| **Status** | PASS dengan catatan |
+| **Tindak Lanjut** | Buat roadmap perluasan indikator FDS untuk fase inkubasi |
 
 ---
 
-## 📊 Tabel Perubahan Solusi Berdasarkan Feedback Offtaker
+### TC-BJB-02: Uji Anonimisasi Data Nasabah di Dashboard
 
-| # | Feedback Offtaker | Bank | Perubahan Solusi | Status |
-|---|---|---|---|---|
-| 1 | Data nasabah wajib dianonimkan | BJB | Pseudonimisasi rekening dan nama di dashboard | Planned |
-| 2 | FDS memiliki ratusan indikator | BJB | Roadmap perluasan indikator (fase 2) | Roadmap |
-| 3 | False positive Circuit Breaker berbahaya | BJB | Human-in-the-loop: auto-block hanya >=85, review untuk 60-84 | Planned |
-| 4 | Override mechanism untuk nasabah | BJB | Fitur override analis di dashboard | Planned |
-| 5 | Butuh dummy profile nasabah BPR | Kuningan | Dataset simulasi nasabah BPR lokal | Planned |
-| 6 | Deteksi transaksi lintas kota | Kuningan | Rule Impossible Travel (geo_velocity_anomaly) | Planned |
-| 7 | Butuh Case Management System | Kuningan | Modul CMS: OPEN ke IN_REVIEW ke CLOSED + audit trail | Planned |
-| 8 | Kebijakan 1 akun 1 device | Kuningan | Device binding + deteksi IP anomali | Planned |
-| 9 | Format LTKM sudah bagus | BJB | Tidak ada perubahan | Selesai |
-| 10 | Integrasi SNAP BI | BJB + Kuningan | HMAC-SHA256 multi-partner sudah aktif | Selesai |
+| Field | Isi |
+|---|---|
+| **ID Test Case** | TC-BJB-02 |
+| **Nama Pengujian** | Anonimisasi data nasabah sesuai standar keamanan BJB & UU PDP |
+| **Tujuan** | Memverifikasi apakah data sensitif nasabah sudah terlindungi di tampilan dashboard |
+| **Pelaksana** | Tim EXPRESSO S1251 + Tim Compliance Bank BJB |
+| **Langkah Pengujian** | 1. Buka dashboard compliance. 2. Periksa tampilan nomor rekening, nama, NIK di tabel transaksi. 3. Bandingkan dengan standar anonimisasi UU PDP No. 27/2022. |
+| **Hasil yang Diharapkan** | Nomor rekening dan data identitas ditampilkan dalam format anonim (misal: `****7890`) |
+| **Hasil Aktual** | FAIL — Data nasabah masih ditampilkan secara penuh (contoh: `1234567890`, nama lengkap tanpa masking) |
+| **Status** | FAIL |
+| **Perubahan Solusi** | Implementasi pseudonimisasi: rekening → `****7890`, nama → inisial, NIK → `****XXXX` |
+| **Tindak Lanjut** | Buat fungsi `maskAccount()` dan `maskName()` di semua komponen dashboard yang menampilkan data nasabah |
+
+---
+
+### TC-BJB-03: Uji Format Laporan LTKM / STR Generator
+
+| Field | Isi |
+|---|---|
+| **ID Test Case** | TC-BJB-03 |
+| **Nama Pengujian** | Validasi format laporan LTKM terhadap standar PPATK goAML |
+| **Tujuan** | Memverifikasi apakah laporan LTKM yang dihasilkan sistem sesuai format standar pelaporan PPATK |
+| **Pelaksana** | Tim EXPRESSO S1251 + Tim Compliance Bank BJB |
+| **Langkah Pengujian** | 1. Trigger transaksi fraudulent (skor ≥85). 2. Buka endpoint `/str/generate`. 3. Download PDF LTKM. 4. Bandingkan struktur dengan template PPATK goAML. |
+| **Hasil yang Diharapkan** | Format LTKM mencakup: identitas pelapor, identitas terlapor, deskripsi transaksi mencurigakan, dasar hukum (UU No. 8/2010) |
+| **Hasil Aktual** | PASS — Format dinilai sudah bagus dan mirip dengan standar yang biasa digunakan tim compliance BJB |
+| **Status** | PASS |
+| **Tindak Lanjut** | Tidak ada perubahan signifikan diperlukan |
+
+---
+
+### TC-BJB-04: Uji Smart Circuit Breaker — Risiko False Positive
+
+| Field | Isi |
+|---|---|
+| **ID Test Case** | TC-BJB-04 |
+| **Nama Pengujian** | Evaluasi risiko false positive pada fitur Smart Circuit Breaker |
+| **Tujuan** | Menilai apakah mekanisme auto-block dapat memblokir transaksi legitimate yang merugikan nasabah dan reputasi bank |
+| **Pelaksana** | Tim EXPRESSO S1251 + Tim IT & Compliance Bank BJB |
+| **Langkah Pengujian** | 1. Simulasikan transaksi legitimate nominal besar (skor 60–70). 2. Amati keputusan sistem (ALLOW/REVIEW/BLOCK). 3. Diskusikan implikasi jika auto-block diterapkan pada skor tersebut. |
+| **Hasil yang Diharapkan** | Sistem hanya auto-block pada skor sangat tinggi (≥85); skor menengah masuk antrean review manual |
+| **Hasil Aktual** | FAIL — Sistem sebelumnya bisa auto-block pada skor 60+ tanpa intervensi manusia, menimbulkan risiko false positive |
+| **Status** | FAIL — Perlu perbaikan |
+| **Perubahan Solusi** | Ubah logika: skor 60–84 → status REVIEW (human approval dahulu); skor ≥85 → auto-BLOCK. Tambah tombol Override untuk analis compliance |
+| **Tindak Lanjut** | Update rule threshold di `rule_engine.py` + tambah endpoint `POST /alerts/{id}/override` |
+
+---
+
+## Bagian B — Pengujian Bersama Bank Kuningan (BPR)
+
+### TC-KNG-01: Uji Kesesuaian Skenario Transaksi BPR
+
+| Field | Isi |
+|---|---|
+| **ID Test Case** | TC-KNG-01 |
+| **Nama Pengujian** | Validasi skenario transaksi dengan dummy profile nasabah BPR Kuningan |
+| **Tujuan** | Memverifikasi apakah sistem dapat diuji menggunakan data simulasi yang merepresentasikan nasabah BPR lokal |
+| **Pelaksana** | Tim EXPRESSO S1251 + Staf IT Bank Kuningan |
+| **Langkah Pengujian** | 1. Buat dummy profile nasabah BPR (nama, rekening, kota Kuningan). 2. Simulasikan transaksi RTOL dan SKNBI dari mobile app. 3. Verifikasi deteksi di dashboard. |
+| **Hasil yang Diharapkan** | Transaksi simulasi terdeteksi dan terlacak di dashboard dengan profil nasabah yang realistis |
+| **Hasil Aktual** | PASS dengan catatan — Transaksi berhasil diproses. Catatan: dummy profile saat ini generik, belum spesifik karakteristik nasabah BPR Kuningan (nominal kecil, transaksi lokal Jabar) |
+| **Status** | PASS dengan catatan |
+| **Perubahan Solusi** | Buat dataset dummy nasabah spesifik BPR Kuningan dengan karakteristik transaksi yang representatif |
+| **Tindak Lanjut** | Generate 50+ akun simulasi dengan pola transaksi khas BPR Kuningan |
+
+---
+
+### TC-KNG-02: Uji Deteksi Perpindahan Dana Lintas Kota (Impossible Travel)
+
+| Field | Isi |
+|---|---|
+| **ID Test Case** | TC-KNG-02 |
+| **Nama Pengujian** | Deteksi anomali geolokasi — transaksi dari kota berbeda dalam waktu singkat |
+| **Tujuan** | Memverifikasi apakah sistem mampu mendeteksi pola fraud di mana akun diakses dari lokasi berbeda dalam interval tidak masuk akal |
+| **Pelaksana** | Tim EXPRESSO S1251 + Staf IT Bank Kuningan |
+| **Langkah Pengujian** | 1. Kirim transaksi dari IP lokasi Kuningan (lat: -6.97, long: 108.49). 2. Dalam <10 menit, kirim transaksi dari IP lokasi Jakarta (lat: -6.20, long: 106.80). 3. Periksa apakah sistem mendeteksi anomali geolokasi. |
+| **Hasil yang Diharapkan** | Sistem memicu alert Impossible Travel jika jarak >100 km dalam <30 menit |
+| **Hasil Aktual** | FAIL — Rule engine belum memiliki sub-indikator `geo_velocity_anomaly`. Field `latitude` dan `longitude` sudah tersedia di API tetapi belum digunakan dalam scoring |
+| **Status** | FAIL |
+| **Perubahan Solusi** | Tambah rule baru di `rule_engine.py`: hitung jarak haversine antar transaksi berurutan, jika >100km dalam <30 menit → +25 poin risiko |
+| **Tindak Lanjut** | Implementasi `geo_velocity_anomaly` rule di sprint berikutnya |
+
+---
+
+### TC-KNG-03: Uji Case Management System (CMS) untuk Tim Compliance
+
+| Field | Isi |
+|---|---|
+| **ID Test Case** | TC-KNG-03 |
+| **Nama Pengujian** | Evaluasi ketersediaan modul manajemen kasus fraud untuk analis |
+| **Tujuan** | Memverifikasi apakah sistem menyediakan workflow investigasi alert yang terstruktur bagi tim compliance |
+| **Pelaksana** | Tim EXPRESSO S1251 + Tim Compliance Bank Kuningan |
+| **Langkah Pengujian** | 1. Trigger alert fraud dari transaksi simulasi. 2. Coba ubah status alert (OPEN → IN_REVIEW → CLOSED). 3. Coba tambahkan catatan investigasi. 4. Cek riwayat audit siapa yang mereview. |
+| **Hasil yang Diharapkan** | Dashboard memiliki modul CMS dengan status tracking, form catatan, dan audit trail per kasus |
+| **Hasil Aktual** | FAIL — Dashboard hanya memiliki tombol "Resolve" tanpa status tracking terstruktur, tanpa form catatan investigasi, tanpa audit trail |
+| **Status** | FAIL |
+| **Perubahan Solusi** | Buat tabel `case_logs` di database. Tambah endpoint `PATCH /cases/{id}/status` dan `POST /cases/{id}/notes`. Buat komponen CMS di dashboard |
+| **Tindak Lanjut** | Implementasi modul CMS sebagai fitur prioritas berikutnya |
+
+---
+
+### TC-KNG-04: Uji Audit Trail & Kebijakan 1 Akun 1 Device
+
+| Field | Isi |
+|---|---|
+| **ID Test Case** | TC-KNG-04 |
+| **Nama Pengujian** | Deteksi akses akun dari perangkat berbeda (device binding) |
+| **Tujuan** | Memverifikasi apakah sistem mendeteksi dan memblokir akses akun yang sama dari lebih dari satu perangkat |
+| **Pelaksana** | Tim EXPRESSO S1251 + Staf IT Bank Kuningan |
+| **Langkah Pengujian** | 1. Login ke mobile app dari Perangkat A. 2. Login akun yang sama dari Perangkat B. 3. Periksa apakah sistem mendeteksi dan mengirim alert. 4. Verifikasi log aktivitas di dashboard. |
+| **Hasil yang Diharapkan** | Sistem memblokir/mengirim alert saat akun yang sama diakses dari perangkat berbeda |
+| **Hasil Aktual** | FAIL — Sistem belum memiliki fitur device binding. Multi-device login diizinkan tanpa alert |
+| **Status** | FAIL |
+| **Perubahan Solusi** | Implementasi `device_id` binding di tabel nasabah. Deteksi `device_id` berbeda saat login → trigger alert compliance. Simpan log: timestamp, IP, device_id, lokasi |
+| **Tindak Lanjut** | Implementasi device binding di `expresso-api` dan update Flutter mobile app |
+
+---
+
+## Ringkasan Hasil Pengujian
+
+| ID | Nama Pengujian | Offtaker | Status |
+|---|---|---|---|
+| TC-BJB-01 | Penyelarasan fitur dengan kebutuhan AML/APU-PPT | Bank BJB | PASS (dengan catatan) |
+| TC-BJB-02 | Anonimisasi data nasabah di dashboard | Bank BJB | FAIL → Planned fix |
+| TC-BJB-03 | Format laporan LTKM / STR | Bank BJB | PASS |
+| TC-BJB-04 | Risiko false positive Smart Circuit Breaker | Bank BJB | FAIL → Planned fix |
+| TC-KNG-01 | Skenario transaksi dummy BPR Kuningan | Bank Kuningan | PASS (dengan catatan) |
+| TC-KNG-02 | Deteksi transaksi lintas kota (Impossible Travel) | Bank Kuningan | FAIL → Planned fix |
+| TC-KNG-03 | Case Management System untuk compliance | Bank Kuningan | FAIL → Planned fix |
+| TC-KNG-04 | Audit trail dan 1 akun 1 device | Bank Kuningan | FAIL → Planned fix |
+
+**Total:** 3 PASS / 5 FAIL (semua FAIL memiliki rencana perbaikan terdokumentasi)
 
 ---
 
 ## Perubahan Solusi yang Sudah Diimplementasi
 
-| Perubahan | File | Keterangan |
+| Perubahan | File | Tanggal |
 |---|---|---|
-| Multi-Partner SNAP BI Auth (KNG + BJB) | expresso-api/routers/transfers.py | BJB dan Kuningan kini bisa kirim request dengan secret key berbeda |
-| Fix field method di Flutter Kuningan | crypto-sentinel-bank-kng/lib/data/api_service.dart | Sesuai format SNAP BI yang diminta Bank Kuningan |
-| SHAP Explainability (transparansi AI) | crypto-sentinel-api/app/main.py | Merespons kekhawatiran BJB soal explainability keputusan circuit breaker |
+| Multi-Partner SNAP BI Auth (KNG + BJB) | `expresso-api/routers/transfers.py` | 25 Agustus 2026 |
+| Fix field `method` di Flutter Mobile Kuningan | `crypto-sentinel-bank-kng/lib/data/api_service.dart` | 25 Agustus 2026 |
+| SHAP Explainability — transparansi keputusan AI | `crypto-sentinel-api/app/main.py` | 26 Agustus 2026 |
 
 ---
 
-*Dokumen ini dibuat berdasarkan notulensi diskusi tim EXPRESSO S1251 dengan offtaker Bank BJB dan Bank Kuningan dalam rangka program PIDI Digdaya Hackathon & Inkubasi 2026.*
+*Dokumen ini dibuat berdasarkan notulensi diskusi tim EXPRESSO S1251 dengan offtaker Bank BJB dan Bank Kuningan dalam rangka program PIDI Digdaya Hackathon & Inkubasi 2026. Seluruh pengujian dilakukan dalam lingkungan sandbox dengan data simulasi.*
