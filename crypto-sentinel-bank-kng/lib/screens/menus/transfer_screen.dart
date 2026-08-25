@@ -21,7 +21,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
 
-  String _selectedTransferMethod = 'BI-FAST';
+  String _selectedTransferMethod = 'RTOL';
   String _selectedBank = 'Bank Central Asia (BCA)';
 
   bool _isAccountVerified = false;
@@ -187,8 +187,14 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     final bankName = isSesama ? 'Bank Kuningan' : _selectedBank;
     final amountInt = int.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
     final amountText = 'Rp ${_amountController.text}';
-    final adminFee = isSesama ? 'GRATIS (Rp 0)' : 'Rp ${_selectedTransferMethod == 'BI-FAST' ? "2.500" : "6.500"} ($_selectedTransferMethod)';
-    final totalAmountText = isSesama ? amountText : 'Rp ${_amountController.text} (+ Rp ${_selectedTransferMethod == 'BI-FAST' ? "2.500" : "6.500"})';
+    final adminFee = isSesama
+        ? 'GRATIS (Rp 0)'
+        : (_selectedTransferMethod == 'RTOL'
+            ? 'Rp 7.500 (RTOL via APEX bjb)'
+            : 'Rp 2.900 (SKNBI via bank bjb)');
+    final totalAmountText = isSesama
+        ? amountText
+        : 'Rp ${_amountController.text} (+ ${_selectedTransferMethod == 'RTOL' ? "Rp 7.500" : "Rp 2.900"})';
 
     PinConfirmationModal.show(
       context,
@@ -531,7 +537,41 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
                               fontWeight: FontWeight.w800,
                             ),
                           ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Pindah Buku Real-Time (Core Banking SIBAKU)',
+                            style: AppTextStyles.textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
                         ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border.withOpacity(0.8)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(CupertinoIcons.info_circle_fill, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '*Catatan: Transfer Sesama Rekening Bank Kuningan tetap GRATIS (Rp 0) Pindah Buku Real-Time (Core Banking SIBAKU).',
+                        style: AppTextStyles.textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                          fontSize: 11,
+                          height: 1.3,
+                        ),
                       ),
                     ),
                   ],
@@ -553,72 +593,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
               ),
               const SizedBox(height: 10),
               
-              GestureDetector(
-                onTap: () => setState(() => _selectedTransferMethod = 'BI-FAST'),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: _selectedTransferMethod == 'BI-FAST'
-                        ? AppColors.primary.withOpacity(0.06)
-                        : AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: _selectedTransferMethod == 'BI-FAST'
-                          ? AppColors.primary
-                          : AppColors.border.withOpacity(0.8),
-                      width: _selectedTransferMethod == 'BI-FAST' ? 1.8 : 1.0,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: _selectedTransferMethod == 'BI-FAST'
-                              ? AppColors.primary.withOpacity(0.15)
-                              : AppColors.border.withOpacity(0.3),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          CupertinoIcons.bolt_fill,
-                          size: 20,
-                          color: _selectedTransferMethod == 'BI-FAST' ? AppColors.primary : AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'BI-FAST (Rekomendasi)',
-                              style: AppTextStyles.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: _selectedTransferMethod == 'BI-FAST' ? AppColors.primaryDark : AppColors.textPrimary,
-                              ),
-                            ),
-                            Text(
-                              'Biaya Rp 2.500 • Real-Time 24/7 (SNAP BI)',
-                              style: AppTextStyles.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Radio<String>(
-                        value: 'BI-FAST',
-                        groupValue: _selectedTransferMethod,
-                        activeColor: AppColors.primary,
-                        onChanged: (val) {
-                          if (val != null) setState(() => _selectedTransferMethod = val);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-
+              // 1. Transfer Real-Time Online (RTOL via APEX bjb)
               GestureDetector(
                 onTap: () => setState(() => _selectedTransferMethod = 'RTOL'),
                 child: AnimatedContainer(
@@ -637,9 +612,11 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
                     ),
                   ),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
+                        margin: const EdgeInsets.only(top: 2),
                         decoration: BoxDecoration(
                           color: _selectedTransferMethod == 'RTOL'
                               ? AppColors.primary.withOpacity(0.15)
@@ -647,7 +624,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          CupertinoIcons.paperplane_fill,
+                          CupertinoIcons.bolt_fill,
                           size: 20,
                           color: _selectedTransferMethod == 'RTOL' ? AppColors.primary : AppColors.textSecondary,
                         ),
@@ -658,15 +635,40 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Real-Time Online (RTOL)',
+                              'Transfer Real-Time Online (RTOL via APEX bjb)',
                               style: AppTextStyles.textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: _selectedTransferMethod == 'RTOL' ? AppColors.primaryDark : AppColors.textPrimary,
                               ),
                             ),
+                            const SizedBox(height: 2),
                             Text(
-                              'Biaya Rp 6.500 • Jaringan ATM Bersama / ALTO / PRIMA',
+                              'Biaya Rp 7.500 • Real-Time 24/7 (Jaringan PRIMA / ATM Bersama)',
                               style: AppTextStyles.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF3CD),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFFFE69C)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text('⚡', style: TextStyle(fontSize: 11)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '[Instan • Dana Langsung Sampai di Bank Tujuan]',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.amber.shade900,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -681,6 +683,128 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
                       ),
                     ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 2. Transfer Kliring SKNBI (via bank bjb)
+              GestureDetector(
+                onTap: () => setState(() => _selectedTransferMethod = 'SKNBI'),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: _selectedTransferMethod == 'SKNBI'
+                        ? AppColors.primary.withOpacity(0.06)
+                        : AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _selectedTransferMethod == 'SKNBI'
+                          ? AppColors.primary
+                          : AppColors.border.withOpacity(0.8),
+                      width: _selectedTransferMethod == 'SKNBI' ? 1.8 : 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        margin: const EdgeInsets.only(top: 2),
+                        decoration: BoxDecoration(
+                          color: _selectedTransferMethod == 'SKNBI'
+                              ? AppColors.primary.withOpacity(0.15)
+                              : AppColors.border.withOpacity(0.3),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          CupertinoIcons.clock_fill,
+                          size: 20,
+                          color: _selectedTransferMethod == 'SKNBI' ? AppColors.primary : AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Transfer Kliring SKNBI (via bank bjb)',
+                              style: AppTextStyles.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: _selectedTransferMethod == 'SKNBI' ? AppColors.primaryDark : AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Biaya Rp 2.900 • Diproses pada Jam Kerja (Sistem Batch BI)',
+                              style: AppTextStyles.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE7F1FF),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFB6D4FE)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text('🕒', style: TextStyle(fontSize: 11)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '[Ekonomis • Waktu Proses 1-2 Jam]',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.blue.shade900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Radio<String>(
+                        value: 'SKNBI',
+                        groupValue: _selectedTransferMethod,
+                        activeColor: AppColors.primary,
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedTransferMethod = val);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Catatan Footer Mockup
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border.withOpacity(0.8)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(CupertinoIcons.info_circle_fill, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '*Catatan: Transfer Sesama Rekening Bank Kuningan tetap GRATIS (Rp 0) Pindah Buku Real-Time (Core Banking SIBAKU).',
+                        style: AppTextStyles.textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                          fontSize: 11,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

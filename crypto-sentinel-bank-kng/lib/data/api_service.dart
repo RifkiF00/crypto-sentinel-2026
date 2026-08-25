@@ -7,12 +7,12 @@ class BankKuninganApiService {
   // Base URL Core Banking Expresso API
   static const String baseUrl = 'http://192.168.100.8:8080/api/v1';
 
-  /// Kirim transaksi transfer (Dukungan BI-FAST & RTOL / Interbank)
+  /// Kirim transaksi transfer (Dukungan RTOL via APEX bjb & Kliring SKNBI / Interbank)
   static Future<Map<String, dynamic>> sendTransfer({
     required String senderAccount,
     required String receiverAccount,
     required int amount,
-    String method = 'BI-FAST',
+    String method = 'RTOL',
     String purposeCode = 'SALA',
     String description = 'Transfer M-Banking Bank Kuningan',
   }) async {
