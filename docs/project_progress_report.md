@@ -1,13 +1,61 @@
 # Crypto-Sentinel 2026 — Rencana Implementasi Final Pitch & Capstone Report
-*Updated: 19 Agustus 2026 13:30 WIB — ✅ Retraining AI Augmented 320K (Indonesian Edge Cases) + Notebook 01 Dieksekusi Lengkap + Unified STR PPATK + Narasi Valid OJK IASC*
+*Updated: **25 Agustus 2026 16:08 WIB** — ✅ Branch Protection GitHub + Multi-Partner SNAP BI Auth Fix + ML Feature Fix (29 fitur) + Full Integration Test PASSED + Semua Server Running*
 
 > **Tujuan**: Sistem siap pitch offline 25/26 Agustus + validasi pilot Bank Kuningan & Bu Fatimah (Financial Advisor BRI Kuningan)
-> **Deadline**: 25 Agustus 2026 (~9 hari tersisa)
+> **Deadline**: 25 Agustus 2026 — **🎯 HARI H PITCH**
 > **Tim**: Tim EXPRESSO S1251 — Rifki · Aam · Desta · Billy
 
 ---
 
-## 📌 Status Sistem — Terverifikasi (Update 19 Agustus 2026)
+## 🔥 Update Sesi — 25 Agustus 2026 (Hari Pitch)
+
+> Semua perbaikan kritis berikut diselesaikan pada sesi hari ini sebelum/saat pitch berlangsung.
+
+### ✅ Yang Diselesaikan Hari Ini
+
+| # | Perbaikan | File | Hasil |
+|---|---|---|---|
+| 1 | **Branch Protection GitHub** — Aktifkan ruleset `protect-main`: wajib PR sebelum merge ke `main`, dismiss stale reviews, block force push | GitHub Settings → Rulesets | 🟢 Aktif — teman tidak bisa push langsung ke `main` lagi |
+| 2 | **Fix error BRI demo BI** — Root cause: teman push `feature/transaction` (update RTOL/SKNBI) langsung ke `main` tanpa koordinasi, field `method` tidak diteruskan di HTTP body | `crypto-sentinel-bank-kng/lib/data/api_service.dart` | 🟢 `method` sekarang dikirim ke server |
+| 3 | **Multi-Partner SNAP BI Auth** — Endpoint `/bri/transfer` hanya kenal `KNG_SECRET_2026`, sedangkan BJB kirim `BJB_SECRET_DIGDAYA_2026` → `401 Unauthorized` | `expresso-api/routers/transfers.py` | 🟢 Registry multi-partner aktif (KNG + BJB) |
+| 4 | **Fix ML Feature Mismatch** — Model `ml_model.joblib` butuh 29 fitur, kode hanya kirim 20 fitur → `FDS ML Prediction Error` tiap request | `crypto-sentinel-api/app/main.py` | 🟢 Semua 29 fitur terpenuhi (`hour_of_day`, `purpose_CRYPTO`, dll) |
+| 5 | **Sinkronisasi Test Suite** — `test_rule_engine.py` outdated: expected score belum update setelah rule engine dapat base score +15 | `crypto-sentinel-api/app/test_rule_engine.py` | 🟢 5/5 PASSED |
+| 6 | **Pull update teman** — Merge `feature/transaction` (RTOL/SKNBI update Billy) + `mobile-banking-bjb` (Flutter app baru) ke `main` | Git merge | 🟢 `mobile-banking-bjb/` sekarang ada di repo |
+| 7 | **Semua server restart** setelah system restart | Port 8000, 8080, 5173 | 🟢 3 server running |
+
+### 🧪 Hasil Integration Test Akhir (25 Agustus 2026 16:05 WIB)
+
+```
+[KNG RTOL]          ✅ HTTP 200 | Decision: ALLOW  | TxID: TXN-20260825-1B8B62
+[KNG SKNBI]         ✅ HTTP 200 | Decision: ALLOW  | TxID: TXN-20260825-A58AE5
+[BJB SESAMA]        ✅ HTTP 200 | Decision: ALLOW  | TxID: TXN-20260825-53D77F
+[KNG → KRIPTO]      ✅ HTTP 403 | Decision: BLOCK  🚨 ← Terdeteksi & Diblokir!
+```
+
+> **Catatan BLOCK**: Transaksi dari Mobile Kuningan ke rekening crypto exchange (`9012666666`) sekarang ter-BLOCK dengan HTTP 403 — membuktikan ML model (29 fitur) + Rule Engine bekerja benar.
+
+### 🟢 Status Server Saat Ini (25 Agustus 2026)
+
+| Service | Port | Status | Keterangan |
+|---|---|---|---|
+| **Crypto-Sentinel AI API** | `:8000` | 🟢 Running | ML 29 fitur aktif, GNN 562K nodes loaded, tidak ada error |
+| **Expresso-API Core Banking** | `:8080` | 🟢 Running | Multi-partner auth (KNG+BJB), method field fix |
+| **Dashboard React/Vite** | `:5173` | 🟢 Running | Accessible via `http://192.168.100.8:5173` |
+
+### 🔒 Git Workflow Sekarang (Aman)
+
+```
+Sebelum: siapapun bisa push langsung ke main → demo error
+Sekarang:
+  - Teman harus push ke feature/[nama] branch
+  - Buat Pull Request → Rifki review & approve
+  - Baru bisa merge ke main
+  - Ruleset: protect-main (Active) di GitHub
+```
+
+---
+
+## 📌 Status Sistem — Terverifikasi (Update 25 Agustus 2026)
 
 ### Fakta Dataset & Konfigurasi
 
@@ -17,18 +65,21 @@
 | Fraud Count & Ratio | **10.606 kasus (3.31%)** ✅ | Lebih balanced & mencakup ragam modus operandi perbankan digital Indonesia |
 | Notebook EDA & Training (`01_explore_paysim.ipynb`) | **30 Sel Ter-eksekusi** ✅ | Full execution outputs tertanam: grafik distribusi, confusion matrix, ROC-AUC, feature importances, FedAvg simulation |
 | Evaluasi Model ML (RF Augmented) | **ROC-AUC: 0.9993** ✅ | **Akurasi: 99.98% · Presisi: 99.95% · Recall: 99.48% · F1-Score: 99.72%** (Test set 64.122 data) |
-| Model Artifact RF | `app/ml_model.joblib` ✅ | Model 29 Features terintegrasi ke FastAPI (`hour_of_day`, `is_known_merchant`, `account_dormant_days`, `purpose_*`) |
+| Model Artifact RF | `app/ml_model.joblib` ✅ | **29 Fitur** aktif & terpasang (`hour_of_day`, `is_known_merchant`, `account_dormant_days`, `purpose_*`) — **fix 25 Agt** |
 | **GNN GraphSAGE** | **Aktif & Terpasang** 🔥 | 562.239 nodes, 308.213 edges, Device: CUDA, Best Val AUC: **1.0000** |
 | **GNN Artifacts** | `gnn_embeddings.pkl` (171 MB) + `gnn_hybrid_model.joblib` ✅ | Berada di `app/` dan aktif di runtime API |
 | **Hybrid Scoring Engine** | **Aktif (`hybrid_gnn`)** ✅ | `final_score = max(0.6×GNN + 0.4×Rule Engine, rule_score)` |
 | Generator LTKM PPATK | `app/str_generator.py` ✅ | Format formal hitam-putih standar PPATK goAML (UU No. 8/2010), NIK masked, ttd Pejabat Kepatuhan |
 | Rule Engine | **13/13 Sub-Indikator** ✅ | Odd-Hour, Dormant, VPN/Datacenter, Dynamic Profile, Smurfing, Anti-FP Whitelist (-30 offset) |
 | Threshold Kalibrasi BPR | **ALLOW <60 / REVIEW 60-84 / BLOCK ≥85** ✅ | Dikalibrasi realistis standar BPR/perbankan nasional |
-| API Test Suite | **8/8 PASS** ✅ | Full endpoint testing terverifikasi & terdokumentasi di `docs/API_TESTING_GUIDE.md` |
-| Flutter app | **HP asli via USB** ✅ | Sanitasi UX selesai (tidak ada istilah teknis FDS/Mule ke nasabah) |
+| API Test Suite | **5/5 PASS** ✅ | `test_rule_engine.py` sinkron dengan rule engine terbaru — **fix 25 Agt** |
+| **Multi-Partner SNAP BI Auth** | **KNG + BJB** ✅ | `/bri/transfer` menerima request dari Mobile Kuningan & Mobile BJB — **fix 25 Agt** |
+| Flutter Mobile Kuningan | **HP asli via USB** ✅ | `method` field diteruskan ke server, RTOL/SKNBI/OVERBOOKING — **fix 25 Agt** |
+| **Mobile Banking BJB** | **Tersedia** ✅ | `mobile-banking-bjb/` Flutter app selesai di-merge dari Billy — **25 Agt** |
 | Landing Page Dashboard | **Data Terverifikasi** ✅ | Angka kerugian diperbarui ke OJK IASC Rp 9,1T, PPATK Kripto Rp 800M+, latency <18ms |
 | Database `expresso.db` | **111 akun aktif** ✅ | 11 akun inti + 100 dummy prefiks bank asli |
 | Tabel `str_drafts` | **Sudah ada & Terhubung** ✅ | Endpoint `/str/generate`, `/str/html/{id}`, `/str/list` live |
+| **Branch Protection GitHub** | **`protect-main` Active** 🔒 | PR wajib, 1 approval, dismiss stale, block force push — **25 Agt** |
 
 ### Fitur yang Sudah Selesai Diimplementasi
 
