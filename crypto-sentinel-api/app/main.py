@@ -10,6 +10,7 @@ from datetime import datetime
 import pandas as pd
 import uuid
 import networkx as nx
+import numpy as np
 
 from app.rule_engine import evaluate_transaction
 from app.str_generator import generate_str_draft, generate_str_html
@@ -47,11 +48,19 @@ demo_df = pd.read_csv(BASE_DIR / "data" / "demo_transactions.csv")
 
 # 1. Load joblib ML model
 ml_model = None
+shap_explainer = None
 model_path = BASE_DIR / "app" / "ml_model.joblib"
 if os.path.exists(model_path):
     try:
         ml_model = joblib.load(model_path)
         print(f"[FDS API] ML Model loaded successfully from: {model_path}")
+        # Inisialisasi SHAP TreeExplainer sekali saat startup (lebih efisien)
+        try:
+            import shap
+            shap_explainer = shap.TreeExplainer(ml_model)
+            print("[FDS API] SHAP TreeExplainer initialized [OK]")
+        except Exception as shap_err:
+            print(f"[FDS API Warning] SHAP init failed: {shap_err}")
     except Exception as e:
         print(f"[FDS API Warning] Failed to load ML Model: {e}")
 
@@ -214,6 +223,7 @@ def analyze_transaction(transaction: Transaction):
     
     # 3. Predict with ML model
     ml_prob = 0.0
+    computed_shap = {}  # default kosong jika ML tidak tersedia
     if ml_model is not None:
         try:
             features = {
@@ -233,14 +243,52 @@ def analyze_transaction(transaction: Transaction):
                 "dest_in_degree": dest_in,
                 "dest_out_degree": dest_out,
                 "dest_pagerank": dest_pr,
-                "type_CASH_IN": 0,
+                # --- Fitur baru (sesuai versi model terbaru) ---
+                "hour_of_day": datetime.now().hour,
+                "is_known_merchant": 1 if (transaction.destinationAccount or "").startswith("MERCHANT") else 0,
+                "account_dormant_days": 0,  # default 0 (akun aktif)
+                "type_CASH_IN": 1 if transaction.type == "CASH_IN" else 0,
                 "type_CASH_OUT": 1 if transaction.type == "CASH_OUT" else 0,
                 "type_DEBIT": 0,
                 "type_PAYMENT": 1 if transaction.type == "PAYMENT" else 0,
-                "type_TRANSFER": 1 if transaction.type == "TRANSFER" else 0
+                "type_TRANSFER": 1 if transaction.type == "TRANSFER" else 0,
+                # Purpose one-hot encoding dari purpose_code
+                "purpose_BANSOS": 1 if getattr(transaction, "purpose_code", "") == "BANSOS" else 0,
+                "purpose_CRYPTO": 1 if (transaction.destinationAccount or "").startswith(("9012", "0x")) else 0,
+                "purpose_GENERAL": 1 if getattr(transaction, "purpose_code", "") in ("SALA", "GENE", "") else 0,
+                "purpose_MERCHANT": 1 if getattr(transaction, "purpose_code", "") == "MERCH" else 0,
+                "purpose_SPP": 1 if getattr(transaction, "purpose_code", "") == "SPP" else 0,
             }
             features_df = pd.DataFrame([features])
             ml_prob = float(ml_model.predict_proba(features_df)[0][1])
+
+            # --- SHAP Explainability (robust untuk RF & GradientBoosting) ---
+            if shap_explainer is not None:
+                try:
+                    shap_vals = shap_explainer.shap_values(features_df)
+                    # Robust extraction: handle RandomForest (list) & GradientBoosting (ndarray)
+                    if isinstance(shap_vals, list):
+                        # RandomForest binary: list [class0_arr, class1_arr]
+                        raw = np.array(shap_vals[1]).flatten()
+                    else:
+                        # GradientBoosting: 2D array shape (n_samples, n_features)
+                        raw = np.array(shap_vals).reshape(-1)
+                    feature_names_list = list(features.keys())
+                    # Pastikan panjang sama
+                    n = min(len(feature_names_list), len(raw))
+                    shap_dict = {
+                        feature_names_list[i]: round(float(raw[i]), 4)
+                        for i in range(n)
+                    }
+                    # Ambil top 5 fitur paling berkontribusi ke fraud (absolut terbesar)
+                    top5_shap = dict(
+                        sorted(shap_dict.items(), key=lambda x: abs(x[1]), reverse=True)[:5]
+                    )
+                    computed_shap = top5_shap
+                except Exception as shap_err:
+                    computed_shap = {"shap_error": str(shap_err)[:100]}
+            else:
+                computed_shap = {}
         except Exception as e:
             print(f"[FDS ML Prediction Error]: {e}")
             
@@ -325,6 +373,8 @@ def analyze_transaction(transaction: Transaction):
         "hybrid_score": hybrid_score,
         "gnn_loaded": gnn_loaded,
         "scoring_mode": "hybrid_gnn" if gnn_loaded else "rf_rule_engine",
+        # ── SHAP Explainability (Top-5 fitur paling berpengaruh) ──
+        "shap_explanation": computed_shap,
     }
 
     transaction_logs.append(payload)
