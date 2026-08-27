@@ -1,9 +1,9 @@
 # Crypto-Sentinel 2026 — Rencana Implementasi Final Pitch & Capstone Report
-*Updated: **26 Agustus 2026 03:43 WIB** — ✅ SHAP Explainability LIVE (top-5 feature contributions per transaksi) + Semua perbaikan 25 Agt tersimpan*
+*Updated: **28 Agustus 2026 02:35 WIB** — ✅ BJB Live DB Integration (Saldo & Mutasi Real) + Solution Alignment UAT Docx + Target Dynamic Dashboard Sprint*
 
-> **Tujuan**: Sistem siap pitch offline 25/26 Agustus + validasi pilot Bank Kuningan & Bu Fatimah (Financial Advisor BRI Kuningan)
-> **Deadline**: 25 Agustus 2026 — **🎯 HARI H PITCH**
-> **Tim**: Tim EXPRESSO S1251 — Rifki · Aam · Desta · Billy
+> **Tujuan**: Sistem siap pitch offline + validasi pilot Bank Kuningan & Bank BJB + Ready to Deploy
+> **Program**: PIDI Digdaya Hackathon & Inkubasi 2026 — Tim EXPRESSO S1251
+> **Mentor Capstone**: Bayu Ferdian, MBA., CIP. (CEO Gizalab — CX & Product Strategy)
 
 ---
 
@@ -23,6 +23,8 @@
 | 6 | **Pull update teman** — Merge `feature/transaction` (RTOL/SKNBI update Billy) + `mobile-banking-bjb` (Flutter app baru) ke `main` | Git merge | 🟢 `mobile-banking-bjb/` sekarang ada di repo |
 | 7 | **Semua server restart** setelah system restart | Port 8000, 8080, 5173 | 🟢 3 server running |
 | 8 | **SHAP Explainability** — Install `shap==0.49.1`, init `TreeExplainer` saat startup, kalkulasi top-5 fitur per transaksi, tambah field `shap_explanation` di API response | `crypto-sentinel-api/app/main.py` + `requirements.txt` | 🟢 Live! Contoh: `dest_in_degree: +0.1482`, `amount: -0.1307` |
+| 9 | **BJB Mobile Live DB Integration** — Ubah HomeScreen & API service BJB dari mock statis menjadi real fetch saldo (`/bri/account/{id}`) dan mutasi live (`/bri/transactions`) | `mobile-banking-bjb/lib/data/api_service.dart`, `mobile-banking-bjb/lib/screens/home_screen.dart` | 🟢 Saldo, nama, dan riwayat transaksi BJB real-time dari database |
+| 10 | **Dokumen UAT Solution Alignment (Level 3)** — Susun 8 Test Case UAT Bank BJB & Kuningan, generate Word formal `.docx` dan Markdown | `docs/solution_alignment_notes.md`, `docs/solution_alignment_notes.docx` | 🟢 Siap upload untuk klaim Level 3 |
 
 ### 🧪 Hasil Integration Test Akhir (25 Agustus 2026 16:05 WIB)
 
@@ -56,27 +58,19 @@ Sekarang:
 
 ---
 
-## 🚦 Rencana Pengerjaan Berikutnya (Next Session)
+## 🚦 Rencana Pengerjaan Berikutnya (Technical Sprint — 100% Dynamic & Deploy Ready)
 
-> Gunakan bagian ini sebagai **briefing untuk obrolan baru**. Copy-paste ke awal percakapan berikutnya.
+> Target: Menghilangkan semua elemen statis/simulasi di Dashboard dan membuat sistem 100% live, dinamis dari SQLite/API, serta siap deploy ke Cloud.
 
-### 🎯 Prioritas Tinggi (Segera Dikerjakan)
+### 🎯 Prioritas Utama (Sprint Dashboard Dinamis & Production Ready)
 
-| # | Task | File | Estimasi |
+| # | Task | Area | Detail Teknis |
 |---|---|---|---|
-| 1 | **Cloud Deployment via PIDI** — Setelah dapat URL Render dari PIDI, update `SENTINEL_API_URL` di `expresso-api/.env` dan semua `localhost:8000` di `dashboard/src/api.js` (4 titik) | `expresso-api/.env`, `dashboard-crypto-sentinel/src/services/api.js`, `dashboard-crypto-sentinel/src/components/TransactionTable.jsx` | 10 menit setelah URL ada |
-| 2 | **Visualisasi SHAP di Dashboard** — Tambah komponen bar chart SHAP di detail alert (sudah ada data `shap_explanation` di API response, tinggal render) | `dashboard-crypto-sentinel/src/components/` → buat `ShapExplanation.jsx` | 1-2 jam |
-| 3 | **Anonimisasi Data Nasabah** — Permintaan Bank BJB: nama/NIK di dashboard harus di-mask jadi token anonim (e.g. `****7890` bukan `1234567890`) | `dashboard-crypto-sentinel/src/components/` semua komponen yang tampilkan `account` | 1-2 jam |
-| 4 | **CMS (Case Management System) dasar** — Permintaan Bank Kuningan: tambah status tracking alert `OPEN → IN_REVIEW → CLOSED` + catatan investigasi per kasus | `expresso-api/models/db_models.py`, `expresso-api/routers/`, buat tabel `case_logs` | 3-4 jam |
-
-### 🟡 Prioritas Sedang
-
-| # | Task | Keterangan |
-|---|---|---|
-| 5 | **Endpoint `/model/metrics`** | Expose akurasi, AUC, threshold model live ke dashboard |
-| 6 | **Rule Geolokasi (Impossible Travel)** | Deteksi transaksi dari kota berbeda <30 menit (request Bank Kuningan) |
-| 7 | **Audit Trail & Device Binding** | 1 akun 1 device, log login dari IP berbeda (request Bank Kuningan) |
-| 8 | **User Testing dengan Pak Rian** | Kirim link dashboard ke staff Bank Kuningan untuk feedback UX |
+| 1 | **Dynamic Aggregation Dashboard** | `dashboard-crypto-sentinel/src/components/` | Ubah `StatsGrid`, `RiskDistribution`, `TransactionChart`, `HourlyActivity`, `BlockedPatterns` agar mengkalkulasi agregat dari array `transactions` live backend secara dinamis (hilangkan ketergantungan `mockData.js`). |
+| 2 | **Visualisasi SHAP di UI Alert Detail** | `dashboard-crypto-sentinel/src/components/ShapExplanation.jsx` | Buat bar chart visual interaktif untuk `shap_explanation` di modal detail transaksi (merah = faktor pemicu fraud, hijau = faktor peringan). |
+| 3 | **Modul CMS (Case Management System)** | `expresso-api/routers/`, `dashboard-crypto-sentinel/` | Bangun alur ticketing investigasi kepatuhan: status `OPEN` → `IN_REVIEW` → `RESOLVED/BLOCKED`, form catatan analis, dan riwayat audit per kasus. |
+| 4 | **Masking & Data Anonymization (UU PDP)** | `dashboard-crypto-sentinel/src/utils/` | Terapkan helper penyamaran data (`maskAccount`, `maskName`, `maskNIK`) di seluruh tabel & komponen visual sesuai standar kepatuhan Bank BJB. |
+| 5 | **Cloud Deployment Setup** | Root / API / Dashboard | Siapkan `Dockerfile`, `render.yaml`, dan konfigurasi environment terpusat agar sistem siap deploy multi-service ke cloud (Render/Vercel). |
 
 ### 🔵 Roadmap Fase 2 (Post-Inkubasi)
 
