@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+
 import '../../core/constants/colors.dart';
 import '../../data/api_service.dart';
 import '../../data/mock_data.dart';
@@ -8,7 +9,7 @@ import '../../widgets/custom_text_field.dart';
 import '../../widgets/pin_confirmation_modal.dart';
 import 'receipt_screen.dart';
 
-/// Halaman Transfer Dana bjb
+/// Halaman Transfer Dana bjb — Mengikuti alur real DIGI bank bjb
 class TransferScreen extends StatefulWidget {
   const TransferScreen({super.key});
 
@@ -18,39 +19,94 @@ class TransferScreen extends StatefulWidget {
 
 class _TransferScreenState extends State<TransferScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final TextEditingController _accountController = TextEditingController(text: '9876543210');
-  final TextEditingController _amountController = TextEditingController(text: '500000');
-  final TextEditingController _noteController = TextEditingController(text: 'Transfer bjb DIGI');
+  final TextEditingController _accountController = TextEditingController();
+  final TextEditingController _amountController  = TextEditingController();
+  final TextEditingController _noteController    = TextEditingController();
 
-  String _selectedTransferMethod = 'RTOL';
+  // Antar-bank: 3 metode real BJB DIGI
+  String _selectedTransferMethod = 'BI_FAST';
   String _selectedBank = 'Bank Central Asia (BCA)';
 
-  bool _isAccountVerified = true;
-  String _verifiedName = 'Siti Rahmawati (bjb Tandamata)';
-  bool _isVerifying = false;
+  // Wajib verifikasi rekening dulu (default false, seperti BJB real)
+  bool   _isAccountVerified = false;
+  String _verifiedName      = '';
+  bool   _isVerifying       = false;
 
-  final List<String> _banks = const [
-    'Bank Central Asia (BCA)',
-    'Bank Mandiri',
-    'Bank Rakyat Indonesia (BRI)',
-    'Bank Negara Indonesia (BNI)',
-    'Bank Syariah Indonesia (BSI)',
-    'Bank CIMB Niaga',
-    'Bank Permata',
+  // ── Data Referensi ──────────────────────────────────────────────────────────
+
+  /// Bank beserta panjang nomor rekening yang valid
+  final List<Map<String, dynamic>> _bankList = const [
+    {'name': 'Bank Central Asia (BCA)',           'digits': [10]},
+    {'name': 'Bank Mandiri',                       'digits': [13]},
+    {'name': 'Bank Rakyat Indonesia (BRI)',        'digits': [15]},
+    {'name': 'Bank Negara Indonesia (BNI)',        'digits': [10]},
+    {'name': 'Bank Syariah Indonesia (BSI)',       'digits': [10]},
+    {'name': 'Bank CIMB Niaga',                    'digits': [13]},
+    {'name': 'Bank Permata',                       'digits': [10]},
+    {'name': 'Bank Danamon',                       'digits': [10]},
+    {'name': 'Bank Tabungan Negara (BTN)',         'digits': [15]},
+    {'name': 'GoPay',                              'digits': [10, 12]},
+    {'name': 'OVO',                                'digits': [10, 12]},
+    {'name': 'DANA',                               'digits': [10, 12]},
+    {'name': 'ShopeePay',                          'digits': [10, 12]},
   ];
 
+  List<String> get _banks => _bankList.map((b) => b['name'] as String).toList();
+
+  /// Metode transfer antar-bank DIGI bjb (sesuai lapangan)
+  static const List<Map<String, String>> _antarBankMethods = [
+    {
+      'key':     'BI_FAST',
+      'label':   'Transfer via BI-FAST',
+      'fee':     'Rp 2.500',
+      'desc':    'Real-time 24/7 • Jaringan BI-FAST Bank Indonesia',
+      'badge':   '⚡ Instan',
+    },
+    {
+      'key':     'FLIP',
+      'label':   'Transfer via FLIP',
+      'fee':     'Rp 2.000',
+      'desc':    'Real-time • Ekonomis via FLIP Payment Gateway',
+      'badge':   '💸 Termurah',
+    },
+    {
+      'key':     'BANK_LAIN',
+      'label':   'Transfer Bank Lain',
+      'fee':     'Rp 6.500',
+      'desc':    'Real-time via Jaringan SKN/ATM Bersama/Prima',
+      'badge':   '🏦 Standar',
+    },
+  ];
+
+  /// Nominal cepat (sesuai BJB DIGI)
+  static const List<String> _quickAmounts = [
+    '50.000', '100.000', '200.000', '500.000', '1.000.000', '2.000.000', '5.000.000',
+  ];
+
+  /// Favorit tersimpan
   final List<Map<String, String>> _favorites = const [
-    {'name': 'Siti Rahmawati', 'account': '9876543210', 'bank': 'Bank bjb'},
-    {'name': 'Budi Santoso', 'account': '8820192831', 'bank': 'Bank Central Asia (BCA)'},
-    {'name': 'Desta Erlangga', 'account': '1122334455', 'bank': 'Bank bjb'},
-    {'name': 'Aam Setiana', 'account': '1310029384912', 'bank': 'Bank Mandiri'},
-    {'name': 'PT Indodax Nasional Indonesia', 'account': '9012666666', 'bank': 'Bank Central Asia (BCA)'},
+    {'name': 'Siti Rahmawati',               'account': '9876543210',    'bank': 'Bank bjb'},
+    {'name': 'Budi Santoso',                 'account': '8820192831',    'bank': 'Bank Central Asia (BCA)'},
+    {'name': 'Desta Erlangga',               'account': '1122334455',    'bank': 'Bank bjb'},
+    {'name': 'Aam Setiana',                  'account': '1310029384912', 'bank': 'Bank Mandiri'},
+    {'name': 'PT Indodax Nasional Indonesia','account': '9012666666',    'bank': 'Bank Central Asia (BCA)'},
   ];
+
+  // ── Lifecycle ───────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      // Reset verifikasi saat ganti tab
+      if (!_tabController.indexIsChanging) return;
+      setState(() {
+        _isAccountVerified = false;
+        _verifiedName      = '';
+        _accountController.clear();
+      });
+    });
   }
 
   @override
@@ -62,40 +118,73 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     super.dispose();
   }
 
-  void _verifyAccount() async {
-    final raw = _accountController.text.trim();
-    final acc = raw.replaceAll(RegExp(r'[^0-9A-Za-z]'), '');
+  // ── Helper ──────────────────────────────────────────────────────────────────
 
-    if (raw.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap masukkan nomor rekening tujuan'), backgroundColor: AppColors.accentRed),
-      );
+  String? _validateAccountLength(String acc, {bool isSesama = false}) {
+    if (isSesama) {
+      if (acc.length != 14) return 'Nomor rekening bjb harus 14 digit';
+      return null;
+    }
+    final bank = _bankList.firstWhere(
+      (b) => b['name'] == _selectedBank,
+      orElse: () => {'digits': <int>[]},
+    );
+    final allowed = List<int>.from(bank['digits'] as List);
+    if (allowed.isEmpty) return null;
+    if (!allowed.contains(acc.length)) {
+      return 'Panjang rekening ${_selectedBank.split(' ').first}: ${allowed.join(' atau ')} digit';
+    }
+    return null;
+  }
+
+  Map<String, String> _getMethodInfo(String key) =>
+      _antarBankMethods.firstWhere((m) => m['key'] == key,
+          orElse: () => _antarBankMethods.first);
+
+  String _feeForMethod(String key) => _getMethodInfo(key)['fee'] ?? 'Rp 2.500';
+
+  // ── Actions ─────────────────────────────────────────────────────────────────
+
+  void _verifyAccount() async {
+    final acc = _accountController.text.trim().replaceAll(RegExp(r'\D'), '');
+    if (acc.isEmpty) {
+      _snack('Masukkan nomor rekening terlebih dahulu', isError: true);
       return;
     }
 
+    final isSesama = _tabController.index == 0;
+    final err = _validateAccountLength(acc, isSesama: isSesama);
+    if (err != null) { _snack(err, isError: true); return; }
+
     setState(() => _isVerifying = true);
-    await Future.delayed(const Duration(milliseconds: 400));
+
+    // Simulasi Inquiry API Core Banking (~300ms)
+    await Future.delayed(const Duration(milliseconds: 350));
     if (!mounted) return;
 
-    final nameMap = {
-      '9876543210': 'Siti Rahmawati (bjb Tandamata)',
-      '8820192831': 'Budi Santoso',
-      '1122334455': 'Desta Erlangga (Bank bjb)',
-      '1310029384912': 'Aam Setiana',
-      '9012666666': 'PT Indodax Nasional Indonesia',
+    // Nama mock — di produksi hit GET /bjb/account/{acc}
+    final mockNames = {
+      '98765432100001': 'Siti Rahmawati',
+      '11223344551234': 'Desta Erlangga',
+      '9876543210':     'Siti Rahmawati',
+      '8820192831':     'Budi Santoso',
+      '1122334455':     'Desta Erlangga',
+      '1310029384912':  'Aam Setiana',
+      '9012666666':     'PT Indodax Nasional Indonesia',
     };
-    final name = nameMap[acc] ?? 'Rekening ${_accountController.text} (${_tabController.index == 0 ? "Bank bjb" : _selectedBank})';
+    final name = mockNames[acc] ??
+        'Rekening $acc · ${isSesama ? "Bank bjb" : _selectedBank}';
 
-    setState(() { _isVerifying = false; _isAccountVerified = true; _verifiedName = name; });
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Rekening Valid: $name'), backgroundColor: AppColors.accentGreen),
-      );
-    }
+    setState(() {
+      _isVerifying       = false;
+      _isAccountVerified = true;
+      _verifiedName      = name;
+    });
+    _snack('Rekening valid: $name');
   }
 
-  void _selectQuickAmount(String amount) {
-    setState(() => _amountController.text = amount.replaceAll('.', ''));
+  void _selectQuickAmount(String raw) {
+    setState(() => _amountController.text = raw.replaceAll('.', ''));
   }
 
   void _onFavoriteSelected(Map<String, String> fav) {
@@ -108,44 +197,52 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
       }
       _accountController.text = fav['account'] ?? '';
       _isAccountVerified = true;
-      _verifiedName = fav['name'] ?? 'Siti Rahmawati';
+      _verifiedName      = fav['name'] ?? '';
     });
+  }
+
+  void _snack(String msg, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: isError ? AppColors.accentRed : AppColors.accentGreen,
+    ));
   }
 
   void _handleTransfer() {
     if (!_isAccountVerified) { _verifyAccount(); return; }
-    if (_amountController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap masukkan nominal transfer'), backgroundColor: AppColors.accentRed),
-      );
-      return;
-    }
+
+    final rawAmt = _amountController.text.replaceAll(RegExp(r'\D'), '');
+    if (rawAmt.isEmpty) { _snack('Masukkan nominal transfer', isError: true); return; }
+    final amountInt = int.tryParse(rawAmt) ?? 0;
+    if (amountInt < 10000) { _snack('Minimal transfer Rp 10.000', isError: true); return; }
 
     final isSesama = _tabController.index == 0;
     final bankName = isSesama ? 'Bank bjb' : _selectedBank;
-    final amountInt = int.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-    final amountText = 'Rp ${_amountController.text}';
-    final adminFee = isSesama ? 'GRATIS (Rp 0)' : (_selectedTransferMethod == 'RTOL' ? 'Rp 2.500 (RTOL)' : 'Rp 2.900 (SKNBI)');
-    final totalText = isSesama ? amountText : '$amountText (+ ${_selectedTransferMethod == 'RTOL' ? "Rp 2.500" : "Rp 2.900"})';
+    final method   = isSesama ? 'SESAMA_BJB' : _selectedTransferMethod;
+    final feeLabel = isSesama ? 'GRATIS' : _feeForMethod(_selectedTransferMethod);
+    final amtStr   = 'Rp ${_formatAmount(amountInt)}';
+    final totalStr = isSesama ? amtStr : '$amtStr (+ ${_feeForMethod(_selectedTransferMethod)})';
 
     PinConfirmationModal.show(
       context,
-      title: 'Konfirmasi Transfer bjb',
-      subtitle: '$_verifiedName • $bankName\nTotal: $totalText',
+      title:    'Konfirmasi Transfer bjb',
+      subtitle: '$_verifiedName · $bankName\nTotal: $totalStr',
       onPinConfirmed: (pin) async {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (ctx) => const Center(
+          builder: (_) => const Center(
             child: Card(
               child: Padding(
-                padding: EdgeInsets.all(24.0),
+                padding: EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     CircularProgressIndicator(color: AppColors.primary),
                     SizedBox(height: 16),
-                    Text('Memproses via SNAP BI & Sentinel FDS...', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Memproses via Sentinel FDS…',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -154,64 +251,56 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
         );
 
         final result = await BjbApiService.sendTransfer(
-          senderAccount: MockData.accountNumber.replaceAll('-', ''),
+          senderAccount:   MockData.accountNumber.replaceAll('-', ''),
           receiverAccount: _accountController.text.trim(),
-          amount: amountInt > 0 ? amountInt : 500000,
-          method: isSesama ? 'SESAMA_BJB' : (_selectedTransferMethod == 'RTOL' ? 'RTOL_APEX' : 'SKNBI'),
-          description: _noteController.text.isEmpty ? (isSesama ? 'Transfer Sesama Bank bjb' : 'Transfer $bankName') : _noteController.text,
+          amount:          amountInt,
+          method:          method,
+          description:     _noteController.text.isEmpty
+              ? (isSesama ? 'Transfer Sesama Bank bjb' : 'Transfer $bankName')
+              : _noteController.text,
         );
 
         if (mounted) Navigator.of(context).pop();
 
         if (result['success'] == true) {
-          final refNo = 'REF-BJB-${DateTime.now().millisecondsSinceEpoch.toString().substring(3)}';
+          final refNo     = 'BJB${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
           final isPending = result['status'] == 'REVIEW';
           if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ReceiptScreen(
-                  title: isPending ? 'Transfer Ditangguhkan FDS' : 'Transfer $bankName',
-                  amount: amountText,
-                  receiverAccount: _accountController.text.trim(),
-                  receiverName: _verifiedName,
-                  bankName: bankName,
-                  category: isSesama ? 'Transfer Sesama bjb' : 'Transfer Antar-Bank',
-                  refNumber: refNo,
-                  status: isPending ? 'PENDING REVIEW FDS' : 'BERHASIL',
-                  adminFee: adminFee,
-                ),
+            Navigator.pushReplacement(context, MaterialPageRoute(
+              builder: (_) => ReceiptScreen(
+                title:           isPending ? 'Transfer Ditangguhkan FDS' : 'Transfer $bankName',
+                amount:          amtStr,
+                receiverAccount: _accountController.text.trim(),
+                receiverName:    _verifiedName,
+                bankName:        bankName,
+                category:        isSesama ? 'Transfer Sesama bjb' : 'Transfer Antar-Bank',
+                refNumber:       refNo,
+                status:          isPending ? 'PENDING REVIEW FDS' : 'BERHASIL',
+                adminFee:        feeLabel,
               ),
-            );
+            ));
           }
         } else {
-          final isBlocked = result['isBlocked'] == true || result['status'] == 'BLOCK';
+          final blocked = result['isBlocked'] == true;
           if (mounted) {
             showDialog(
               context: context,
-              builder: (ctx) => AlertDialog(
+              builder: (_) => AlertDialog(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                title: Row(
-                  children: [
-                    Icon(isBlocked ? Icons.shield_outlined : Icons.error_outline,
-                        color: isBlocked ? Colors.red : Colors.orange, size: 28),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        isBlocked ? 'Transaksi Ditolak Sentinel FDS' : 'Transfer Gagal',
-                        style: TextStyle(color: isBlocked ? Colors.red : Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                    ),
-                  ],
-                ),
-                content: Text(
-                  result['message'] ?? 'Demi keamanan, transaksi Anda diblokir oleh Crypto-Sentinel FDS Bank bjb.',
-                  style: const TextStyle(fontSize: 13, height: 1.4),
-                ),
+                title: Row(children: [
+                  Icon(blocked ? Icons.shield_outlined : Icons.error_outline,
+                      color: blocked ? Colors.red : Colors.orange, size: 26),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(
+                    blocked ? 'Transaksi Ditolak Sentinel' : 'Transfer Gagal',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  )),
+                ]),
+                content: Text(result['message'] ?? 'Terjadi kesalahan.'),
                 actions: [
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                    onPressed: () => Navigator.of(ctx).pop(),
+                    onPressed: () => Navigator.of(context).pop(),
                     child: const Text('Tutup'),
                   ),
                 ],
@@ -223,9 +312,11 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     );
   }
 
-  // ──────────────────────────────────────────
-  // BUILD
-  // ──────────────────────────────────────────
+  static String _formatAmount(int v) => v.toString().replaceAllMapped(
+    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.',
+  );
+
+  // ── Build ───────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -234,6 +325,13 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
       _buildFormTab(isSesama: false),
       _buildFavoritesTab(),
     ];
+
+    final body = kIsWeb
+        ? LayoutBuilder(builder: (_, c) => TabBarView(
+            controller: _tabController,
+            children: tabs.map((t) => SizedBox(height: c.maxHeight, child: t)).toList(),
+          ))
+        : TabBarView(controller: _tabController, children: tabs);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -246,267 +344,121 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
           unselectedLabelColor: AppColors.textSecondary,
           labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
           unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-          tabs: const [Tab(text: 'Sesama BJB'), Tab(text: 'Antar-Bank'), Tab(text: 'Favorit')],
+          tabs: const [Tab(text: 'Sesama bjb'), Tab(text: 'Antar-Bank'), Tab(text: 'Favorit')],
         ),
       ),
-      // Web: SizedBox memberikan bounded height ke ListView
-      // Android: TabBarView + ListView langsung — tidak memerlukan LayoutBuilder
-      body: kIsWeb
-          ? LayoutBuilder(
-              builder: (context, constraints) => TabBarView(
-                controller: _tabController,
-                children: [
-                  SizedBox(height: constraints.maxHeight, child: tabs[0]),
-                  SizedBox(height: constraints.maxHeight, child: tabs[1]),
-                  SizedBox(height: constraints.maxHeight, child: tabs[2]),
-                ],
-              ),
-            )
-          : TabBarView(controller: _tabController, children: tabs),
+      body: body,
     );
   }
 
-  // ──────────────────────────────────────────
-  // Form Tab — ListView (fix BoxConstraints infinite width)
-  // ──────────────────────────────────────────
+  // ── Form Tab ────────────────────────────────────────────────────────────────
 
   Widget _buildFormTab({required bool isSesama}) {
-    // ListView adalah pengganti definitif untuk SingleChildScrollView+Column
-    // di dalam TabBarView — selalu memberikan bounded constraints di semua platform
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
       children: [
         // 1. Kartu Sumber Dana
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 22),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Sumber Dana: bjb Tandamata Utama', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                    Text(MockData.accountNumber, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                    Text('Saldo: ${MockData.accountBalance}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        _buildSourceCard(),
+
         const SizedBox(height: 16),
 
-        // 2. Bank Tujuan (antar-bank saja)
+        // 2. Pilih Bank Tujuan (antar-bank)
         if (!isSesama) ...[
-          const Text('Pilih Bank Tujuan', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+          _buildLabel('Pilih Bank / E-Wallet Tujuan'),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.border, width: 1.2),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _selectedBank,
-                isExpanded: true,
-                icon: const Icon(CupertinoIcons.chevron_down, size: 18, color: AppColors.primary),
-                onChanged: (val) {
-                  if (val != null) setState(() { _selectedBank = val; _isAccountVerified = false; });
-                },
-                items: _banks.map((b) => DropdownMenuItem<String>(
-                  value: b,
-                  child: Text(b, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                )).toList(),
-              ),
-            ),
-          ),
+          _buildBankDropdown(),
           const SizedBox(height: 18),
         ],
 
-        // 3. Input Nomor Rekening + tombol Cek
-        CustomTextField(
-          label: isSesama ? 'Nomor Rekening Bank bjb' : 'Nomor Rekening Tujuan',
-          hint: 'Masukkan nomor rekening',
-          prefixIcon: const Icon(Icons.pin_rounded, color: AppColors.primary, size: 20),
-          suffixIcon: _isVerifying
-              ? const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2.5),
-                  ),
-                )
-              : TextButton(
-                  onPressed: _verifyAccount,
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryDark,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Text('Cek', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                ),
-          controller: _accountController,
-          keyboardType: TextInputType.number,
-          onChanged: (val) { if (_isAccountVerified) setState(() => _isAccountVerified = false); },
-        ),
+        // 3. Nomor Rekening + tombol Cek (suffixIcon — hindari Row+Expanded di ListView)
+        _buildLabel(isSesama ? 'Nomor Rekening bjb (14 digit)' : 'Nomor Rekening Tujuan'),
+        const SizedBox(height: 8),
+        _buildAccountField(isSesama: isSesama),
         const SizedBox(height: 16),
 
-        // 4. Form setelah verifikasi
+        // 4. Konten setelah verifikasi
         if (_isAccountVerified) ...[
-          // Badge verifikasi
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.accentGreen.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.accentGreen.withOpacity(0.4), width: 1.2),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(color: AppColors.accentGreen, shape: BoxShape.circle),
-                  child: const Icon(CupertinoIcons.checkmark_alt, color: Colors.white, size: 18),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('IDENTITAS PENERIMA TERVERIFIKASI',
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentGreen, letterSpacing: 0.8)),
-                      const SizedBox(height: 2),
-                      Text(_verifiedName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                      Text('${isSesama ? "Bank bjb" : _selectedBank} \u2022 ${_accountController.text}',
-                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _buildVerifiedBadge(isSesama: isSesama),
           const SizedBox(height: 20),
 
-          // Nominal
+          _buildLabel('Nominal Transfer (Rp)'),
+          const SizedBox(height: 8),
           CustomTextField(
-            label: 'Nominal Transfer (Rp)',
-            hint: 'Masukkan nominal transfer',
+            label: '',
+            hint: 'Masukkan nominal',
             prefixIcon: const Icon(Icons.payments_outlined, color: AppColors.primary, size: 20),
             controller: _amountController,
             keyboardType: TextInputType.number,
           ),
-          const SizedBox(height: 12),
-          const Text('Pilihan Cepat Nominal', style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
+
+          // Quick amount chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: ['50.000', '100.000', '250.000', '500.000', '1.000.000'].map((amt) => Padding(
+              children: _quickAmounts.map((a) => Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: ActionChip(
-                  label: Text('Rp $amt', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 12)),
+                  label: Text('Rp $a',
+                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 11)),
                   backgroundColor: AppColors.primary.withOpacity(0.08),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  onPressed: () => _selectQuickAmount(amt),
+                  onPressed: () => _selectQuickAmount(a),
                 ),
               )).toList(),
             ),
           ),
           const SizedBox(height: 18),
 
-          // Catatan
+          _buildLabel('Catatan (Opsional)'),
+          const SizedBox(height: 8),
           CustomTextField(
-            label: 'Catatan Transfer (Opsional)',
-            hint: 'Masukkan catatan (opsional)',
+            label: '',
+            hint: 'Tambahkan catatan transfer',
             prefixIcon: const Icon(Icons.edit_note_rounded, color: AppColors.primary, size: 22),
             controller: _noteController,
           ),
           const SizedBox(height: 24),
 
-          // Biaya / Metode
-          if (isSesama) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: AppColors.accentGreen.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.accentGreen.withOpacity(0.3), width: 1.2),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(color: AppColors.accentGreen, shape: BoxShape.circle),
-                    child: const Icon(CupertinoIcons.checkmark_shield_fill, color: Colors.white, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Biaya Admin Bank', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600, fontSize: 11)),
-                        SizedBox(height: 2),
-                        Text('GRATIS (Rp 0)', style: TextStyle(color: AppColors.accentGreen, fontWeight: FontWeight.w800, fontSize: 14)),
-                        Text('Pindah Buku Real-Time Bank bjb', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ] else ...[
-            const Text('Pilih Metode Transfer Antar-Bank', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 10),
-            _methodTile('RTOL', 'Transfer Real-Time Online (RTOL via APEX bjb)', 'Biaya: Rp 2.500 \u2022 Real-Time 24/7', '\u26a1 Instan', AppColors.accentGold),
-            const SizedBox(height: 10),
-            _methodTile('SKNBI', 'Transfer Kliring SKNBI', 'Biaya: Rp 2.900 \u2022 Jam Kerja Bank Indonesia', '\u23f0 Batch BI', AppColors.accentSky),
-          ],
+          // Biaya / Metode transfer
+          if (isSesama)
+            _buildFeeCard()
+          else
+            _buildMethodSelector(),
+
           const SizedBox(height: 28),
 
           // Tombol Lanjutkan
           SizedBox(
             width: double.infinity,
-            height: 50,
+            height: 52,
             child: ElevatedButton(
               onPressed: _handleTransfer,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryDark,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              child: const Text('Lanjutkan ke Konfirmasi', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+              child: const Text('Lanjutkan ke Konfirmasi',
+                  style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
             ),
           ),
         ] else ...[
-          // Belum verifikasi
+          // Info: belum verifikasi
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.amber.shade50,
+              color: Colors.blue.shade50,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.amber.shade300),
+              border: Border.all(color: Colors.blue.shade200),
             ),
             child: Row(
               children: [
-                Icon(CupertinoIcons.info_circle_fill, color: Colors.amber.shade800, size: 22),
+                Icon(Icons.info_outline_rounded, color: Colors.blue.shade700, size: 22),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Silakan tekan tombol "Cek" untuk memverifikasi nama pemilik rekening penerima terlebih dahulu.',
-                    style: TextStyle(color: Colors.amber.shade900, fontSize: 13, height: 1.4),
+                    'Masukkan nomor rekening lalu tekan "Cek" untuk memverifikasi nama pemilik rekening.',
+                    style: TextStyle(color: Colors.blue.shade800, fontSize: 13, height: 1.4),
                   ),
                 ),
               ],
@@ -517,58 +469,257 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     );
   }
 
-  Widget _methodTile(String method, String title, String subtitle, String badge, Color color) {
-    final sel = _selectedTransferMethod == method;
-    return InkWell(
-      onTap: () => setState(() => _selectedTransferMethod = method),
+  // ── Sub-widgets ─────────────────────────────────────────────────────────────
+
+  Widget _buildLabel(String text) => Text(text,
+      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary));
+
+  Widget _buildSourceCard() => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
       borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: sel ? AppColors.primary.withOpacity(0.06) : AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: sel ? AppColors.primary : AppColors.border, width: sel ? 1.8 : 1.0),
+      border: Border.all(color: AppColors.border),
+    ),
+    child: Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(9),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 22),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(sel ? Icons.radio_button_checked : Icons.radio_button_off,
-                color: sel ? AppColors.primary : AppColors.textSecondary, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(width: 12),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('bjb Tandamata Utama',
+                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+              Text(MockData.accountNumber,
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+              Text('Saldo: ${MockData.accountBalance}',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildBankDropdown() => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: AppColors.border, width: 1.2),
+    ),
+    child: DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: _selectedBank,
+        isExpanded: true,
+        icon: const Icon(CupertinoIcons.chevron_down, size: 16, color: AppColors.primary),
+        onChanged: (v) {
+          if (v != null) {
+            setState(() {
+              _selectedBank       = v;
+              _isAccountVerified  = false;
+              _verifiedName       = '';
+              _accountController.clear();
+            });
+          }
+        },
+        items: _banks.map((b) => DropdownMenuItem(
+          value: b,
+          child: Text(b, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        )).toList(),
+      ),
+    ),
+  );
+
+  Widget _buildAccountField({required bool isSesama}) => CustomTextField(
+    label: '',
+    hint: isSesama ? 'Contoh: 00123456789012 (14 digit)' : 'Masukkan nomor rekening',
+    prefixIcon: const Icon(Icons.pin_rounded, color: AppColors.primary, size: 20),
+    suffixIcon: _isVerifying
+        ? const Padding(
+            padding: EdgeInsets.all(12),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2.5),
+            ),
+          )
+        : TextButton(
+            onPressed: _verifyAccount,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primaryDark,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Cek', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+          ),
+    controller: _accountController,
+    keyboardType: TextInputType.number,
+    onChanged: (v) {
+      if (_isAccountVerified) setState(() { _isAccountVerified = false; _verifiedName = ''; });
+    },
+  );
+
+  Widget _buildVerifiedBadge({required bool isSesama}) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: AppColors.accentGreen.withOpacity(0.08),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: AppColors.accentGreen.withOpacity(0.4), width: 1.2),
+    ),
+    child: Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: const BoxDecoration(color: AppColors.accentGreen, shape: BoxShape.circle),
+          child: const Icon(CupertinoIcons.checkmark_alt, color: Colors.white, size: 16),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('REKENING TERVERIFIKASI',
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold,
+                      color: AppColors.accentGreen, letterSpacing: 0.8)),
+              const SizedBox(height: 2),
+              Text(_verifiedName,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              Text('${isSesama ? "Bank bjb" : _selectedBank} · ${_accountController.text}',
+                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            ],
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
+          tooltip: 'Ganti rekening',
+          onPressed: () => setState(() { _isAccountVerified = false; _verifiedName = ''; }),
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildFeeCard() => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    decoration: BoxDecoration(
+      color: AppColors.accentGreen.withOpacity(0.07),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: AppColors.accentGreen.withOpacity(0.3), width: 1.2),
+    ),
+    child: Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: const BoxDecoration(color: AppColors.accentGreen, shape: BoxShape.circle),
+          child: const Icon(CupertinoIcons.checkmark_shield_fill, color: Colors.white, size: 18),
+        ),
+        const SizedBox(width: 12),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Biaya Layanan',
+                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+              SizedBox(height: 2),
+              Text('GRATIS (Rp 0)',
+                  style: TextStyle(color: AppColors.accentGreen, fontWeight: FontWeight.w800, fontSize: 15)),
+              Text('Pindah Buku Real-Time Sesama Bank bjb',
+                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildMethodSelector() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _buildLabel('Pilih Metode Transfer'),
+      const SizedBox(height: 10),
+      ..._antarBankMethods.map((m) {
+        final sel = _selectedTransferMethod == m['key'];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: InkWell(
+            onTap: () => setState(() => _selectedTransferMethod = m['key']!),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: sel ? AppColors.primary.withOpacity(0.06) : AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: sel ? AppColors.primary : AppColors.border,
+                  width: sel ? 1.8 : 1.0,
+                ),
+              ),
+              child: Row(
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
-                    child: Text(badge, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
-                        color: color == AppColors.accentGold ? AppColors.primaryDark : AppColors.primary)),
+                  Icon(sel ? Icons.radio_button_checked : Icons.radio_button_off,
+                      color: sel ? AppColors.primary : AppColors.textSecondary, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(m['label']!,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: sel ? AppColors.primary : AppColors.border,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(m['fee']!,
+                                  style: TextStyle(
+                                    fontSize: 11, fontWeight: FontWeight.w800,
+                                    color: sel ? Colors.white : AppColors.textSecondary,
+                                  )),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(m['desc']!,
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                        const SizedBox(height: 4),
+                        Text(m['badge']!,
+                            style: TextStyle(
+                              fontSize: 11, fontWeight: FontWeight.w700,
+                              color: sel ? AppColors.primary : AppColors.textSecondary,
+                            )),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
+          ),
+        );
+      }),
+    ],
+  );
 
-  // ──────────────────────────────────────────
-  // Favorites Tab
-  // ──────────────────────────────────────────
+  // ── Favorites Tab ───────────────────────────────────────────────────────────
 
   Widget _buildFavoritesTab() {
     return ListView.separated(
       padding: const EdgeInsets.all(20),
       itemCount: _favorites.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final fav = _favorites[index];
+      itemBuilder: (context, i) {
+        final fav   = _favorites[i];
         final isBjb = fav['bank'] == 'Bank bjb';
         return Material(
           color: AppColors.surface,
@@ -585,20 +736,24 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: isBjb ? AppColors.primary.withOpacity(0.1) : AppColors.accentSky.withOpacity(0.1),
-                    child: Text(
-                      fav['name']![0],
-                      style: TextStyle(fontWeight: FontWeight.bold, color: isBjb ? AppColors.primary : AppColors.accentSky),
-                    ),
+                    backgroundColor: isBjb
+                        ? AppColors.primary.withOpacity(0.1)
+                        : AppColors.accentSky.withOpacity(0.1),
+                    child: Text(fav['name']![0],
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isBjb ? AppColors.primary : AppColors.accentSky,
+                        )),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(fav['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text(fav['name']!,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 2),
-                        Text('${fav['bank']} \u2022 ${fav['account']}',
+                        Text('${fav['bank']} · ${fav['account']}',
                             style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                       ],
                     ),
@@ -613,4 +768,3 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     );
   }
 }
-

@@ -83,6 +83,8 @@ async def analyze_via_sentinel(
 # ================================================================
 
 @router.post("/bri/transfer")
+@router.post("/kuningan/transfer")
+@router.post("/bjb/transfer")
 async def bri_transfer(
     request: Request,
     sender_account: str = Form(..., description="Rekening Pengirim (misal: 0123456789)"),
@@ -90,7 +92,7 @@ async def bri_transfer(
     amount: int = Form(..., description="Nominal Transfer"),
     latitude: float = Form(-6.2, description="Latitude (Nanti diisi otomatis oleh Frontend)"),
     longitude: float = Form(106.8, description="Longitude (Nanti diisi otomatis oleh Frontend)"),
-    method: str = Form(None, description="Metode Transfer: RTOL, SKNBI, SESAMA_BJB (opsional)")
+    method: str = Form(None, description="Metode Transfer: RTOL, SKNBI, SESAMA_BJB, BI_FAST, FLIP (opsional)")
 ):
     import hmac
     import hashlib
@@ -133,10 +135,10 @@ async def bri_transfer(
             detail="SNAP BI Security Error: Invalid digital signature (X-Signature verification failed)"
         )
 
-    if amount < 50000:
+    if amount < 10000:
         raise HTTPException(
             status_code=400,
-            detail="Nominal transfer minimal adalah Rp50.000"
+            detail="Nominal transfer minimal adalah Rp10.000"
         )
 
     ip_address = request.headers.get("X-Forwarded-For", request.client.host)
@@ -145,11 +147,15 @@ async def bri_transfer(
     if not ip_address:
         ip_address = "127.0.0.1"
 
+    is_bjb = ("/bjb" in request.url.path) or (partner_id == "BJB-PARTNER-Billy") or (method and "BJB" in method) or (sender_account == "0123456789")
+    sender_bank_name = "Bank bjb" if is_bjb else "Bank Kuningan"
+
     tx_id            = "TXN-" + datetime.now(timezone.utc).strftime("%Y%m%d") + "-" + str(uuid.uuid4())[:6].upper()
     purpose_code     = "SALA"
-    description      = "Transfer via API Gateway"
+    description      = f"[{sender_bank_name}] Transfer via API Gateway"
     destination_type = "DOMESTIC"
     country_code     = "ID"
+
 
     with Session(engine) as db:
         sender   = db.get(Account, sender_account)
@@ -258,7 +264,8 @@ async def bri_transfer(
             
             raise HTTPException(
                 status_code=403,
-                detail="Demi keamanan, transaksi Anda tidak dapat diproses saat ini. Silakan hubungi Customer Service Bank Kuningan di 1500000."
+                detail="Demi keamanan, transaksi Anda tidak dapat diproses saat ini. Silakan hubungi Customer Service Bank bjb di 14049."
+
             )
             
         elif sentinel_decision == "REVIEW":
@@ -739,6 +746,8 @@ async def bri_transfer_interbank(
 
 
 @router.get("/bri/account/{account_id}")
+@router.get("/kuningan/account/{account_id}")
+@router.get("/bjb/account/{account_id}")
 def get_account_info(account_id: str):
     """Mendapatkan informasi detail akun berdasarkan account_id untuk validasi nama penerima."""
     with Session(engine) as db:
@@ -756,6 +765,8 @@ def get_account_info(account_id: str):
 
 
 @router.get("/bri/accounts")
+@router.get("/kuningan/accounts")
+@router.get("/bjb/accounts")
 def list_accounts(limit: int = 150):
     """Mendapatkan daftar seluruh akun nasabah di database untuk kemudahan testing manual."""
     with Session(engine) as db:
@@ -776,6 +787,8 @@ def list_accounts(limit: int = 150):
 
 
 @router.get("/bri/transactions")
+@router.get("/kuningan/transactions")
+@router.get("/bjb/transactions")
 def get_all_transactions(limit: int = 100):
     """Mendapatkan seluruh riwayat transaksi dari Database SQLite expresso.db."""
     with Session(engine) as db:
@@ -791,12 +804,16 @@ def get_all_transactions(limit: int = 100):
             sentinel_dec = tx.sentinel_decision or ("BLOCK" if tx.status == "FAILED" else "ALLOW")
             risk_val = tx.sentinel_score if tx.sentinel_score is not None else (90.0 if sentinel_dec == "BLOCK" else (65.0 if sentinel_dec == "REVIEW" else 15.0))
 
+            # Dynamic Bank Detection per transaction
+            is_tx_bjb = (tx.description and "[Bank bjb]" in tx.description) or (tx.sender_account == "0123456789")
+            sender_bank = "Bank bjb" if is_tx_bjb else "Bank Kuningan"
+
             results.append({
                 "transaction_id": tx.transaction_id,
                 "timestamp": tx.timestamp.isoformat().replace("T", " "),
                 "senderAccount": tx.sender_account,
                 "senderName": sender_name,
-                "senderBank": "Bank Kuningan",
+                "senderBank": sender_bank,
                 "destinationAccount": tx.receiver_account,
                 "destination": receiver_name,
                 "amount": float(tx.amount),
@@ -806,6 +823,7 @@ def get_all_transactions(limit: int = 100):
                 "reasons": [tx.description] if tx.description else []
             })
         return {"total": len(results), "data": results}
+
 
 
 @router.get("/bri/transactions/{account_id}")

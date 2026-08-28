@@ -16,7 +16,8 @@ class BjbApiService {
     String purposeCode = 'SALA',
     String description = 'Transfer bjb DIGI Mobile Banking',
   }) async {
-    final uri = Uri.parse('$baseUrl/bri/transfer');
+    final uri = Uri.parse('$baseUrl/bjb/transfer');
+
 
     // 1. Generate SNAP BI Security Signature via HMAC-SHA256
     const String partnerId = 'BJB-PARTNER-Billy';
@@ -73,19 +74,22 @@ class BjbApiService {
         };
       }
     } catch (e) {
-      // Fallback respons lokal jika server backend offline saat testing
+      // Koneksi ke backend gagal — jangan pura-pura berhasil!
+      // Ini memastikan semua transaksi benar-benar melalui Sentinel FDS
       return {
-        'success': true,
-        'isFallback': true,
-        'status': 'ALLOW',
-        'message': 'Transfer Berhasil Diproses (Mode Lokal)',
+        'success': false,
+        'isBlocked': false,
+        'status': 'CONNECTION_ERROR',
+        'message': 'Tidak dapat terhubung ke server Bank bjb.\n'
+            'Pastikan jaringan aktif dan server berjalan.\n'
+            'Error: ${e.runtimeType}',
       };
     }
   }
 
   /// Ambil data akun nasabah dinamis dari Core Banking API
   static Future<Map<String, dynamic>> getAccountInfo(String accountId) async {
-    final uri = Uri.parse('$baseUrl/bri/account/$accountId');
+    final uri = Uri.parse('$baseUrl/bjb/account/$accountId');
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
@@ -99,11 +103,11 @@ class BjbApiService {
       }
     } catch (_) {}
 
-    // Fallback Mock data Billy Jonathan
+    // Fallback Mock data Rifki Firmansyah
     return {
       'success': false,
-      'ownerName': 'Billy Jonathan',
-      'balance': 24550000,
+      'ownerName': 'Rifki Firmansyah',
+      'balance': 499700000,
       'isBlocked': false,
     };
   }
@@ -114,7 +118,8 @@ class BjbApiService {
     String? accountId,
     int limit = 10,
   }) async {
-    final uri = Uri.parse('$baseUrl/bri/transactions?limit=$limit');
+    final uri = Uri.parse('$baseUrl/bjb/transactions?limit=$limit');
+
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {

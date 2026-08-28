@@ -49,21 +49,28 @@ export function mapApiLogToTx(log) {
   const destAcc = txn.destinationAccount || '';
   const isCrypto = destAcc.startsWith('9012') || destAcc.toLowerCase().includes('exchange') || destAcc.toLowerCase().includes('mule');
 
-  let senderName = log.senderName || 'Billy Jonathan';
-  let senderBank = log.senderBank || 'Bank Kuningan';
-  let senderAccount = log.senderAccount || '1234567890';
+  let senderAccount = log.senderAccount || txn.sender_account || '0123456789';
+  let senderName = log.senderName || (senderAccount === '0123456789' ? 'Rifki Firmansyah' : 'Billy Jonathan');
+  let senderBank = log.senderBank || (senderAccount === '0123456789' || senderAccount === '1122334455' ? 'Bank bjb' : 'Bank Kuningan');
 
   if (senderAccount === '1234567890') {
     senderName = 'Billy Jonathan';
     senderBank = 'Bank Kuningan';
+  } else if (senderAccount === '0123456789') {
+    senderName = 'Rifki Firmansyah';
+    senderBank = 'Bank bjb';
+  } else if (senderAccount === '1122334455') {
+    senderName = 'Desta Erlangga';
+    senderBank = 'Bank bjb';
   } else if (senderAccount === '9876543210') {
     senderName = 'Siti Rahma';
-    senderBank = 'Bank Kuningan';
+    senderBank = 'Bank bjb';
   }
 
-  let destDisplay = log.destinationName ? `${log.destinationName} (${log.destinationBank || 'Bank Kuningan'})` : destAcc;
+  let destDisplay = log.destinationName ? `${log.destinationName} (${log.destinationBank || 'Bank bjb'})` : destAcc;
   if (destAcc === '9876543210' || destAcc === '098765432100') {
-    destDisplay = 'Siti Rahma (Bank Kuningan)';
+    destDisplay = 'Siti Rahma (Bank bjb)';
+
   } else if (destAcc === '9012666666') {
     destDisplay = 'PT Indodax Nasional Indonesia (BCA)';
   } else if (destAcc === '9012999999') {
@@ -114,7 +121,7 @@ export async function fetchTransactions() {
 
     // 1. Fetch from SQLite DB (Core Banking API)
     try {
-      const dbRes = await fetch(`http://localhost:8080/api/v1/bri/transactions`);
+      const dbRes = await fetch(`http://localhost:8080/api/v1/bjb/transactions`);
       if (dbRes.ok) {
         const dbData = await dbRes.json();
         if (dbData.data && dbData.data.length > 0) {
@@ -123,7 +130,7 @@ export async function fetchTransactions() {
             timestamp: item.timestamp,
             senderName: item.senderName,
             senderAccount: item.senderAccount,
-            senderBank: item.senderBank || 'Bank Kuningan',
+            senderBank: item.senderBank || (item.senderAccount === '0123456789' || item.senderAccount === '1122334455' ? 'Bank bjb' : 'Bank Kuningan'),
             amount: item.amount,
             destinationType: item.destinationAccount.startsWith('9012') ? 'Crypto Exchange' : 'Transfer Bank',
             destination: item.destination,
@@ -136,6 +143,7 @@ export async function fetchTransactions() {
         }
       }
     } catch (e) {
+
       console.warn('SQLite DB transactions fetch warning:', e);
     }
 
@@ -169,12 +177,12 @@ function formatAlertTime(timestampStr) {
     const txTime = new Date(timestampStr);
     const now = new Date();
     const diffSec = Math.floor((now - txTime) / 1000);
-    
+
     if (diffSec < 15) return 'Baru saja';
     if (diffSec < 60) return `${diffSec} detik lalu`;
     const diffMin = Math.floor(diffSec / 60);
     if (diffMin < 60) return `${diffMin} mnt lalu`;
-    
+
     return txTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
   } catch (e) {
     return 'Baru saja';
@@ -493,7 +501,7 @@ function cleanAndFormatGraph(data) {
   const mappedNodes = uniqueNodes.map(n => {
     let x = 300;
     let y = 250;
-    
+
     // Vertical space ranges from 80 to 640 (offering 560px for spacing nodes)
     if (n.type === 'bank') {
       const idx = bankNodes.findIndex(node => node.id === n.id);

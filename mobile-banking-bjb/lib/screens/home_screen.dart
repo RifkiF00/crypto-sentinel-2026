@@ -28,7 +28,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   // === Live data state ===
-  static const String _bjbAccountId = '1234567890'; // Billy Jonathan di DB
+  static const String _bjbAccountId = '0123456789'; // Rifki Firmansyah di DB
+
   String _userName = MockData.userName;
   String _accountBalance = MockData.accountBalance;
   bool _isLoadingAccount = true;

@@ -61,13 +61,14 @@ class MockData {
   MockData._();
 
   // Data Profil Nasabah
-  static const String userName = 'Billy Jonathan';
+  static const String userName = 'Rifki Firmansyah';
   static const String userPhone = '+62 812-3456-7890';
-  static const String userEmail = 'billy.jonathan@bankbjb.co.id';
-  static const String accountNumber = '0012-3456-7890';
+  static const String userEmail = 'rifki.firmansyah@bankbjb.co.id';
+  static const String accountNumber = '0123-456789';  // DB: 0123456789
+
   static const String accountType = 'bjb Tandamata Utama';
-  static const String accountBalance = 'Rp 24.550.000';
-  static const int balanceValue = 24550000;
+  static const String accountBalance = 'Rp 499.700.000';
+  static const int balanceValue = 499700000;
 
   // 8 Layanan Cepat di Beranda
   static const List<QuickActionModel> quickActions = [
