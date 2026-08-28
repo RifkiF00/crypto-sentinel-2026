@@ -377,47 +377,42 @@ class _HomeScreenState extends State<HomeScreen> {
                       BoxShadow(color: AppColors.shadow, blurRadius: 10, offset: Offset(0, 2)),
                     ],
                   ),
-                  // Gunakan Column+map bukan ListView.separated untuk
-                  // menghindari RenderBox constraint error di SingleChildScrollView
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       for (int i = 0; i < _liveTxList.length; i++) ...[
-                        Builder(builder: (ctx) {
-                          final tx = _liveTxList[i];
-                          final liveModel = TransactionModel(
-                            id: tx['id'] ?? '-',
-                            title: tx['title'] ?? '-',
-                            category: tx['category'] ?? 'TRANSFER',
-                            date: tx['date'] ?? '-',
-                            amount: tx['amount'] ?? '-',
-                            isIncoming: tx['isIncoming'] == true,
-                            status: tx['status'] ?? 'BERHASIL',
-                            refNumber: tx['refNumber'] ?? 'REF-BJB',
-                          );
-                          return TransactionItem(
-                            transaction: liveModel,
-                            onTap: () {
-                              Navigator.push(
-                                ctx,
-                                MaterialPageRoute(
-                                  builder: (_) => ReceiptScreen(
-                                    title: liveModel.title,
-                                    amount: liveModel.amount
-                                        .replaceAll('+ ', '')
-                                        .replaceAll('- ', '')
-                                        .trim(),
-                                    receiverAccount: '-',
-                                    receiverName: liveModel.title,
-                                    category: liveModel.category,
-                                    refNumber: liveModel.refNumber,
-                                    status: liveModel.status,
-                                  ),
+                        TransactionItem(
+                          transaction: TransactionModel(
+                            id: _liveTxList[i]['id'] ?? '-',
+                            title: _liveTxList[i]['title'] ?? '-',
+                            category: _liveTxList[i]['category'] ?? 'TRANSFER',
+                            date: _liveTxList[i]['date'] ?? '-',
+                            amount: _liveTxList[i]['amount'] ?? '-',
+                            isIncoming: _liveTxList[i]['isIncoming'] == true,
+                            status: _liveTxList[i]['status'] ?? 'BERHASIL',
+                            refNumber: _liveTxList[i]['refNumber'] ?? 'REF-BJB',
+                          ),
+                          onTap: () {
+                            final tx = _liveTxList[i];
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ReceiptScreen(
+                                  title: tx['title'] ?? '-',
+                                  amount: (tx['amount'] ?? '0')
+                                      .replaceAll('+ ', '')
+                                      .replaceAll('- ', '')
+                                      .trim(),
+                                  receiverAccount: '-',
+                                  receiverName: tx['title'] ?? '-',
+                                  category: tx['category'] ?? 'TRANSFER',
+                                  refNumber: tx['refNumber'] ?? '-',
+                                  status: tx['status'] ?? 'BERHASIL',
                                 ),
-                              );
-                            },
-                          );
-                        }),
+                              ),
+                            );
+                          },
+                        ),
                         if (i < _liveTxList.length - 1)
                           const Divider(height: 1, indent: 70),
                       ],

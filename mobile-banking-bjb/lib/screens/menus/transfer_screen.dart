@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../core/constants/colors.dart';
 import '../../data/api_service.dart';
@@ -264,6 +265,12 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final tabs = [
+      _buildFormTab(isSesama: true),
+      _buildFormTab(isSesama: false),
+      _buildFavoritesTab(),
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -282,30 +289,32 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
           ],
         ),
       ),
-      // LayoutBuilder dibutuhkan agar TabBarView memberikan
-      // bounded constraints ke SingleChildScrollView di Flutter Web
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _buildFormTab(isSesama: true, constraints: constraints),
-              _buildFormTab(isSesama: false, constraints: constraints),
-              _buildFavoritesTab(constraints: constraints),
-            ],
-          );
-        },
-      ),
+      // Web: LayoutBuilder + SizedBox memberikan bounded height ke TabBarView children
+      // Android: TabBarView langsung — PageView sudah memberikan bounded constraints
+      body: kIsWeb
+          ? LayoutBuilder(
+              builder: (context, constraints) => TabBarView(
+                controller: _tabController,
+                children: [
+                  SizedBox(height: constraints.maxHeight, child: tabs[0]),
+                  SizedBox(height: constraints.maxHeight, child: tabs[1]),
+                  SizedBox(height: constraints.maxHeight, child: tabs[2]),
+                ],
+              ),
+            )
+          : TabBarView(
+              controller: _tabController,
+              children: tabs,
+            ),
     );
   }
 
-  Widget _buildFormTab({required bool isSesama, required BoxConstraints constraints}) {
+  Widget _buildFormTab({required bool isSesama}) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Kartu Sumber Dana
           Container(
@@ -692,19 +701,17 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
             ),
           ],
           const SizedBox(height: 24),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildFavoritesTab({required BoxConstraints constraints}) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
-      child: ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemCount: _favorites.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
+  Widget _buildFavoritesTab() {
+    return ListView.separated(
+      padding: const EdgeInsets.all(20),
+      itemCount: _favorites.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
         final fav = _favorites[index];
         final isBjb = fav['bank'] == 'Bank bjb';
         return Container(
