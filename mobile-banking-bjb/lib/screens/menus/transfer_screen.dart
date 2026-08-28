@@ -336,36 +336,32 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
           const SizedBox(height: 18),
         ],
 
-        // 3. Input Nomor Rekening
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: CustomTextField(
-                label: isSesama ? 'Nomor Rekening Bank bjb' : 'Nomor Rekening Tujuan',
-                hint: 'Masukkan nomor rekening',
-                prefixIcon: const Icon(Icons.pin_rounded, color: AppColors.primary, size: 20),
-                controller: _accountController,
-                keyboardType: TextInputType.number,
-                onChanged: (val) { if (_isAccountVerified) setState(() => _isAccountVerified = false); },
-              ),
-            ),
-            const SizedBox(width: 10),
-            SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _isVerifying ? null : _verifyAccount,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryDark,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
+        // 3. Input Nomor Rekening + tombol Cek
+        CustomTextField(
+          label: isSesama ? 'Nomor Rekening Bank bjb' : 'Nomor Rekening Tujuan',
+          hint: 'Masukkan nomor rekening',
+          prefixIcon: const Icon(Icons.pin_rounded, color: AppColors.primary, size: 20),
+          suffixIcon: _isVerifying
+              ? const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2.5),
+                  ),
+                )
+              : TextButton(
+                  onPressed: _verifyAccount,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryDark,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('Cek', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                 ),
-                child: _isVerifying
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Cek', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ],
+          controller: _accountController,
+          keyboardType: TextInputType.number,
+          onChanged: (val) { if (_isAccountVerified) setState(() => _isAccountVerified = false); },
         ),
         const SizedBox(height: 16),
 
@@ -574,27 +570,47 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
       itemBuilder: (context, index) {
         final fav = _favorites[index];
         final isBjb = fav['bank'] == 'Bank bjb';
-        return Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
+        return Material(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: CircleAvatar(
-              backgroundColor: isBjb ? AppColors.primary.withOpacity(0.1) : AppColors.accentSky.withOpacity(0.1),
-              child: Text(fav['name']![0],
-                  style: TextStyle(fontWeight: FontWeight.bold, color: isBjb ? AppColors.primary : AppColors.accentSky)),
-            ),
-            title: Text(fav['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            subtitle: Text('${fav['bank']} \u2022 ${fav['account']}',
-                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-            trailing: const Icon(CupertinoIcons.chevron_right, size: 16, color: AppColors.textSecondary),
             onTap: () => _onFavoriteSelected(fav),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: isBjb ? AppColors.primary.withOpacity(0.1) : AppColors.accentSky.withOpacity(0.1),
+                    child: Text(
+                      fav['name']![0],
+                      style: TextStyle(fontWeight: FontWeight.bold, color: isBjb ? AppColors.primary : AppColors.accentSky),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(fav['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(height: 2),
+                        Text('${fav['bank']} \u2022 ${fav['account']}',
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                      ],
+                    ),
+                  ),
+                  const Icon(CupertinoIcons.chevron_right, size: 16, color: AppColors.textSecondary),
+                ],
+              ),
+            ),
           ),
         );
       },
     );
   }
 }
+
