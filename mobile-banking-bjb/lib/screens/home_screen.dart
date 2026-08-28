@@ -255,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 24),
 
-              // 4. Banner Spesial Inovasi PIDI DIGDAYA bjb 2026
+              // 4. Banner Keamanan Transaksi (Profesional)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -278,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.white.withOpacity(0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.auto_awesome_rounded, color: AppColors.accentGold, size: 28),
+                      child: const Icon(Icons.shield_rounded, color: AppColors.accentGold, size: 28),
                     ),
                     const SizedBox(width: 14),
                     const Expanded(
@@ -286,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'PIDI DIGDAYA HACKATHON 2026',
+                            'Transaksi Anda Terlindungi',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
@@ -295,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           SizedBox(height: 2),
                           Text(
-                            'Inovasi AI Sentinel FDS menjaga keamanan transaksi Anda secara real-time.',
+                            'Sistem deteksi fraud AI aktif 24/7 menjaga setiap transaksi Anda secara real-time.',
                             style: TextStyle(fontSize: 11, color: Colors.white70, height: 1.3),
                           ),
                         ],
@@ -306,6 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               const SizedBox(height: 24),
+
 
               // 5. Mutasi Rekening Terakhir & CTA Lihat Semua
               Row(
@@ -336,83 +337,94 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 10),
 
-              // 5. Mutasi Rekening — LIVE dari DB (fallback ke empty state)
-              _isLoadingTx
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: CircularProgressIndicator(color: AppColors.primary),
-                      ),
-                    )
-                  : _liveTxList.isEmpty
-                      ? Container(
-                          padding: const EdgeInsets.all(28),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: const Center(
-                            child: Column(
-                              children: [
-                                Icon(Icons.receipt_long_outlined, size: 40, color: AppColors.textSecondary),
-                                SizedBox(height: 10),
-                                Text(
-                                  'Belum ada riwayat transaksi',
-                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              // 5. Mutasi Rekening — LIVE dari DB (fallback ke empty/loading state)
+              if (_isLoadingTx)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
+                )
+              else if (_liveTxList.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(28),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.receipt_long_outlined, size: 40, color: AppColors.textSecondary),
+                        SizedBox(height: 10),
+                        Text(
+                          'Belum ada riwayat transaksi',
+                          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: const [
+                      BoxShadow(color: AppColors.shadow, blurRadius: 10, offset: Offset(0, 2)),
+                    ],
+                  ),
+                  // Gunakan Column+map bukan ListView.separated untuk
+                  // menghindari RenderBox constraint error di SingleChildScrollView
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (int i = 0; i < _liveTxList.length; i++) ...[
+                        Builder(builder: (ctx) {
+                          final tx = _liveTxList[i];
+                          final liveModel = TransactionModel(
+                            id: tx['id'] ?? '-',
+                            title: tx['title'] ?? '-',
+                            category: tx['category'] ?? 'TRANSFER',
+                            date: tx['date'] ?? '-',
+                            amount: tx['amount'] ?? '-',
+                            isIncoming: tx['isIncoming'] == true,
+                            status: tx['status'] ?? 'BERHASIL',
+                            refNumber: tx['refNumber'] ?? 'REF-BJB',
+                          );
+                          return TransactionItem(
+                            transaction: liveModel,
+                            onTap: () {
+                              Navigator.push(
+                                ctx,
+                                MaterialPageRoute(
+                                  builder: (_) => ReceiptScreen(
+                                    title: liveModel.title,
+                                    amount: liveModel.amount
+                                        .replaceAll('+ ', '')
+                                        .replaceAll('- ', '')
+                                        .trim(),
+                                    receiverAccount: '-',
+                                    receiverName: liveModel.title,
+                                    category: liveModel.category,
+                                    refNumber: liveModel.refNumber,
+                                    status: liveModel.status,
+                                  ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.border),
-                            boxShadow: const [
-                              BoxShadow(color: AppColors.shadow, blurRadius: 10, offset: Offset(0, 2)),
-                            ],
-                          ),
-                          child: ListView.separated(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: _liveTxList.length,
-                            separatorBuilder: (_, __) => const Divider(height: 1, indent: 70),
-                            itemBuilder: (context, index) {
-                              final tx = _liveTxList[index];
-                              final liveModel = TransactionModel(
-                                id: tx['id'] ?? '-',
-                                title: tx['title'] ?? '-',
-                                category: tx['category'] ?? 'TRANSFER',
-                                date: tx['date'] ?? '-',
-                                amount: tx['amount'] ?? '-',
-                                isIncoming: tx['isIncoming'] == true,
-                                status: tx['status'] ?? 'BERHASIL',
-                                refNumber: tx['refNumber'] ?? 'REF-BJB',
-                              );
-                              return TransactionItem(
-                                transaction: liveModel,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => ReceiptScreen(
-                                        title: liveModel.title,
-                                        amount: liveModel.amount.replaceAll('+', '').replaceAll('-', '').trim(),
-                                        receiverAccount: '-',
-                                        receiverName: liveModel.title,
-                                        category: liveModel.category,
-                                        refNumber: liveModel.refNumber,
-                                        status: liveModel.status,
-                                      ),
-                                    ),
-                                  );
-                                },
                               );
                             },
-                          ),
-                        ),
+                          );
+                        }),
+                        if (i < _liveTxList.length - 1)
+                          const Divider(height: 1, indent: 70),
+                      ],
+                    ],
+                  ),
+                ),
+
 
               const SizedBox(height: 20),
             ],

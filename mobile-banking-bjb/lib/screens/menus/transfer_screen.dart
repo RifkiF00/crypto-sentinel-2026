@@ -267,7 +267,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Transfer Dana bjb'),
+        title: const Text('Transfer Dana'),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.primary,
@@ -276,28 +276,36 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
           labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
           unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
           tabs: const [
-            Tab(text: 'Sesama bjb'),
+            Tab(text: 'Sesama BJB'),
             Tab(text: 'Antar-Bank'),
             Tab(text: 'Favorit'),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildFormTab(isSesama: true),
-          _buildFormTab(isSesama: false),
-          _buildFavoritesTab(),
-        ],
+      // LayoutBuilder dibutuhkan agar TabBarView memberikan
+      // bounded constraints ke SingleChildScrollView di Flutter Web
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return TabBarView(
+            controller: _tabController,
+            children: [
+              _buildFormTab(isSesama: true, constraints: constraints),
+              _buildFormTab(isSesama: false, constraints: constraints),
+              _buildFavoritesTab(constraints: constraints),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildFormTab({required bool isSesama}) {
+  Widget _buildFormTab({required bool isSesama, required BoxConstraints constraints}) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Kartu Sumber Dana
           Container(
@@ -684,17 +692,19 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
             ),
           ],
           const SizedBox(height: 24),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildFavoritesTab() {
-    return ListView.separated(
-      padding: const EdgeInsets.all(20),
-      itemCount: _favorites.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
+  Widget _buildFavoritesTab({required BoxConstraints constraints}) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+      child: ListView.separated(
+        padding: const EdgeInsets.all(20),
+        itemCount: _favorites.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
         final fav = _favorites[index];
         final isBjb = fav['bank'] == 'Bank bjb';
         return Container(
