@@ -21,6 +21,7 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
       {
         title: 'Operasional Harian Per Bank',
         items: [
+          { icon: LayoutDashboard, label: 'Dashboard Operasional', id: 'dashboard', badge: 'TRIAGE' },
           { icon: Activity, label: 'Live Sentinel Stream', id: 'monitoring', badge: 'LIVE' },
           { icon: GitBranch, label: 'Analisis Graf Relasi (GNN)', id: 'analysis' },
           { icon: ShieldAlert, label: 'Investigasi Alert (CMS)', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },

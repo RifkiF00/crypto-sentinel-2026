@@ -75,11 +75,11 @@ export const ROLES = {
     badge: 'READ + TRIAGE',
     badgeColor: '#0284c7',
     level: 'LEVEL 1 — Read + Triage',
-    defaultPage: 'monitoring',
-    allowedMenus: ['monitoring', 'analysis', 'alerts'],
+    defaultPage: 'dashboard',
+    allowedMenus: ['dashboard', 'monitoring', 'analysis', 'alerts'],
     description: 'Deteksi cepat, investigasi transaksi harian, analisis graf relasi GNN, dan eskalasi indikasi ancaman ke Pejabat Kepatuhan.',
     permissions: {
-      viewDashboard: false,      // Tidak ada di menu analis
+      viewDashboard: true,       // Dashboard Operasional (Beban Kerja & Triage Personal)
       viewLiveMonitoring: true,  // Live Sentinel Stream
       viewGNN: true,             // Analisis Graf Relasi (GNN) - Cross-Bank Explorer
       viewAlerts: true,          // Investigasi Alert (CMS)
@@ -88,9 +88,9 @@ export const ROLES = {
       executeBlock: false,       // Eskalasi ke MLRO
       resolveAlert: false,
       generateLTKM: false,
-      viewRules: false,          // Tidak ada di menu analis
+      viewRules: false,          // Dihilangkan
       editRules: false,
-      viewCompliance: false,     // Tidak ada di menu analis
+      viewCompliance: false,     // Dihilangkan
       viewApolo: false,
       downloadLTKM: false,
       manageGovernance: false,
