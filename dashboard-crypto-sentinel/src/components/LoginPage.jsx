@@ -110,10 +110,10 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
         onClick={onBackToLanding}
         style={{
           position: 'absolute',
-          top: 24,
-          left: 24,
-          background: 'rgba(255, 255, 255, 0.9)',
-          border: '1px solid rgba(255, 255, 255, 0.8)',
+          top: 28,
+          left: 'clamp(40px, 5.5vw, 84px)',
+          background: 'rgba(255, 255, 255, 0.92)',
+          border: '1px solid rgba(255, 255, 255, 0.85)',
           color: '#0f172a',
           padding: '8px 18px',
           borderRadius: 9999,
@@ -133,7 +133,7 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
           e.currentTarget.style.transform = 'translateX(-3px)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.92)';
           e.currentTarget.style.transform = 'none';
         }}
       >
@@ -146,12 +146,12 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
           position: 'relative',
           zIndex: 10,
           width: '100%',
-          maxWidth: '560px',
+          maxWidth: '620px',
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '40px clamp(16px, 4vw, 48px)',
+          padding: '40px 32px 40px clamp(40px, 5.5vw, 84px)',
           boxSizing: 'border-box'
         }}
       >
