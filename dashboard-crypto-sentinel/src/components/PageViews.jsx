@@ -2817,7 +2817,7 @@ export function ComplianceView({ addToast }) {
             <td style="width: 50%; text-align: center; vertical-align: top;">
                 <p>Kuningan, ${dateOnlyStr}<br><strong>Petugas Kepatuhan / Analis APU-PPT</strong></p>
                 <div style="height: 65px;"></div>
-                <p><strong><u>Rifki Firmansyah, S.Kom</u></strong><br>Unit Kerja Kepatuhan & Manajemen Risiko</p>
+                <p><strong><u>Pejabat Kepatuhan &amp; APU-PPT</u></strong><br>Unit Kerja Kepatuhan &amp; Manajemen Risiko</p>
             </td>
         </tr>
     </table>

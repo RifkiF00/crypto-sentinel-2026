@@ -13,7 +13,7 @@ import { createContext, useContext, useState } from 'react';
 // ─── Permission Matrix ────────────────────────────────────────────────────────
 export const ROLES = {
   admin_regulator: {
-    label: 'Admin Regulator',
+    label: 'Pengawas Regulasi (OJK / BI)',
     sublabel: 'OJK — Supervisory Access',
     avatar: 'AR',
     badge: 'SUPERVISORY',
@@ -33,8 +33,8 @@ export const ROLES = {
     }
   },
   compliance_officer: {
-    label: 'Pejabat Kepatuhan',
-    sublabel: 'APU-PPT — Compliance Officer',
+    label: 'Pejabat Kepatuhan (Compliance Officer)',
+    sublabel: 'Unit APU-PPT & Kepatuhan Bank',
     avatar: 'PK',
     badge: 'FULL ACCESS',
     badgeColor: '#059669',
@@ -53,8 +53,8 @@ export const ROLES = {
     }
   },
   analyst: {
-    label: 'Analis AML',
-    sublabel: 'Unit Investigasi Keuangan',
+    label: 'Analis AML & Investigasi Fraud',
+    sublabel: 'Unit Forensik & Triage Transaksi',
     avatar: 'AA',
     badge: 'READ + TRIAGE',
     badgeColor: '#0284c7',
@@ -80,28 +80,28 @@ export const DEMO_USERS = [
     id: 'u1',
     email: 'compliance@bankkuningan.co.id',
     password: 'SentinelPass2026!',
-    name: 'Rifki Firmansyah, S.Kom',
+    name: 'Pejabat Kepatuhan (Compliance Officer)',
     role: 'compliance_officer',
     bank: 'PT BPR Kuningan (Perseroda)',
-    nip: 'BKG-2026-0089',
+    nip: 'BKG-COMPLIANCE-0089',
   },
   {
     id: 'u2',
     email: 'regulator@ojk.go.id',
     password: 'OJKInspect2026!',
-    name: 'Bu Fatimah Sari, M.Ak',
+    name: 'Pengawas Regulasi (OJK / BI Inspector)',
     role: 'admin_regulator',
     bank: 'OJK — Pengawasan Perbankan',
-    nip: 'OJK-REG-0042',
+    nip: 'OJK-SUPERVISORY-0042',
   },
   {
     id: 'u3',
     email: 'analyst@bankbjb.co.id',
     password: 'AnalystBjb2026!',
-    name: 'Billy Jonathan, S.E',
+    name: 'Analis AML / Fraud Investigator',
     role: 'analyst',
-    bank: 'Bank bjb — Unit AML',
-    nip: 'BJB-AML-0211',
+    bank: 'Bank bjb — Unit AML & Forensik',
+    nip: 'BJB-ANALYST-0211',
   }
 ];
 
