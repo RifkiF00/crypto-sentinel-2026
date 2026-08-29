@@ -1,119 +1,58 @@
 # Crypto-Sentinel 2026 — Rencana Implementasi Final Pitch & Capstone Report
-*Updated: **28 Agustus 2026 02:35 WIB** — ✅ BJB Live DB Integration (Saldo & Mutasi Real) + Solution Alignment UAT Docx + Target Dynamic Dashboard Sprint*
+*Updated: **30 Agustus 2026 02:30 WIB** — ✅ Implementasi Penuh Arsitektur XGNN-FDS Hibrida + Dynamic Forensic Dashboard + Real RBAC 3-Tier + GNNExplainer XAI + Temporal Slider + Neon PostgreSQL Cloud Integration*
 
-> **Tujuan**: Sistem siap pitch offline + validasi pilot Bank Kuningan & Bank BJB + Ready to Deploy
+> **Tujuan**: Sistem siap pitch offline & evaluasi juri perbankan profesional + validasi pilot Bank Kuningan & Bank bjb + Ready to Deploy
 > **Program**: PIDI Digdaya Hackathon & Inkubasi 2026 — Tim EXPRESSO S1251
 > **Mentor Capstone**: Bayu Ferdian, MBA., CIP. (CEO Gizalab — CX & Product Strategy)
 
 ---
 
-## 🔥 Update Sesi — 25 Agustus 2026 (Hari Pitch)
+## 🏆 Update Sesi Utama — 30 Agustus 2026 (Arsitektur XGNN-FDS Hibrida & Dynamic Enterprise Dashboard)
 
-> Semua perbaikan kritis berikut diselesaikan pada sesi hari ini sebelum/saat pitch berlangsung.
+> Seluruh sprint teknis, kepatuhan perbankan nasional, dan arsitektur hibrida XGNN-FDS telah diselesaikan 100%, teruji end-to-end multi-tenant, dan tervalidasi via build produksi Vite.
 
-### ✅ Yang Diselesaikan Hari Ini
+### ✅ Rincian Implementasi & Fitur Baru (30 Agustus 2026)
 
-| # | Perbaikan | File | Hasil |
+| # | Modul / Fitur | File Terkait | Hasil & Nilai Kepatuhan |
 |---|---|---|---|
-| 1 | **Branch Protection GitHub** — Aktifkan ruleset `protect-main`: wajib PR sebelum merge ke `main`, dismiss stale reviews, block force push | GitHub Settings → Rulesets | 🟢 Aktif — teman tidak bisa push langsung ke `main` lagi |
-| 2 | **Fix error BRI demo BI** — Root cause: teman push `feature/transaction` (update RTOL/SKNBI) langsung ke `main` tanpa koordinasi, field `method` tidak diteruskan di HTTP body | `crypto-sentinel-bank-kng/lib/data/api_service.dart` | 🟢 `method` sekarang dikirim ke server |
-| 3 | **Multi-Partner SNAP BI Auth** — Endpoint `/bri/transfer` hanya kenal `KNG_SECRET_2026`, sedangkan BJB kirim `BJB_SECRET_DIGDAYA_2026` → `401 Unauthorized` | `expresso-api/routers/transfers.py` | 🟢 Registry multi-partner aktif (KNG + BJB) |
-| 4 | **Fix ML Feature Mismatch** — Model `ml_model.joblib` butuh 29 fitur, kode hanya kirim 20 fitur → `FDS ML Prediction Error` tiap request | `crypto-sentinel-api/app/main.py` | 🟢 Semua 29 fitur terpenuhi (`hour_of_day`, `purpose_CRYPTO`, dll) |
-| 5 | **Sinkronisasi Test Suite** — `test_rule_engine.py` outdated: expected score belum update setelah rule engine dapat base score +15 | `crypto-sentinel-api/app/test_rule_engine.py` | 🟢 5/5 PASSED |
-| 6 | **Pull update teman** — Merge `feature/transaction` (RTOL/SKNBI update Billy) + `mobile-banking-bjb` (Flutter app baru) ke `main` | Git merge | 🟢 `mobile-banking-bjb/` sekarang ada di repo |
-| 7 | **Semua server restart** setelah system restart | Port 8000, 8080, 5173 | 🟢 3 server running |
-| 8 | **SHAP Explainability** — Install `shap==0.49.1`, init `TreeExplainer` saat startup, kalkulasi top-5 fitur per transaksi, tambah field `shap_explanation` di API response | `crypto-sentinel-api/app/main.py` + `requirements.txt` | 🟢 Live! Contoh: `dest_in_degree: +0.1482`, `amount: -0.1307` |
-| 9 | **BJB Mobile Live DB Integration** — Ubah HomeScreen & API service BJB dari mock statis menjadi real fetch saldo (`/bri/account/{id}`) dan mutasi live (`/bri/transactions`) | `mobile-banking-bjb/lib/data/api_service.dart`, `mobile-banking-bjb/lib/screens/home_screen.dart` | 🟢 Saldo, nama, dan riwayat transaksi BJB real-time dari database |
-| 10 | **Dokumen UAT Solution Alignment (Level 3)** — Susun 8 Test Case UAT Bank BJB & Kuningan, generate Word formal `.docx` dan Markdown | `docs/solution_alignment_notes.md`, `docs/solution_alignment_notes.docx` | 🟢 Siap upload untuk klaim Level 3 |
-
-### 🧪 Hasil Integration Test Akhir (25 Agustus 2026 16:05 WIB)
-
-```
-[KNG RTOL]          ✅ HTTP 200 | Decision: ALLOW  | TxID: TXN-20260825-1B8B62
-[KNG SKNBI]         ✅ HTTP 200 | Decision: ALLOW  | TxID: TXN-20260825-A58AE5
-[BJB SESAMA]        ✅ HTTP 200 | Decision: ALLOW  | TxID: TXN-20260825-53D77F
-[KNG → KRIPTO]      ✅ HTTP 403 | Decision: BLOCK  🚨 ← Terdeteksi & Diblokir!
-```
-
-> **Catatan BLOCK**: Transaksi dari Mobile Kuningan ke rekening crypto exchange (`9012666666`) sekarang ter-BLOCK dengan HTTP 403 — membuktikan ML model (29 fitur) + Rule Engine bekerja benar.
-
-### 🟢 Status Server Saat Ini (25 Agustus 2026)
-
-| Service | Port | Status | Keterangan |
-|---|---|---|---|
-| **Crypto-Sentinel AI API** | `:8000` | 🟢 Running | ML 29 fitur aktif, GNN 562K nodes loaded, tidak ada error |
-| **Expresso-API Core Banking** | `:8080` | 🟢 Running | Multi-partner auth (KNG+BJB), method field fix |
-| **Dashboard React/Vite** | `:5173` | 🟢 Running | Accessible via `http://192.168.100.8:5173` |
-
-### 🔒 Git Workflow Sekarang (Aman)
-
-```
-Sebelum: siapapun bisa push langsung ke main → demo error
-Sekarang:
-  - Teman harus push ke feature/[nama] branch
-  - Buat Pull Request → Rifki review & approve
-  - Baru bisa merge ke main
-  - Ruleset: protect-main (Active) di GitHub
-```
+| 1 | **Arsitektur XGNN-FDS Hibrida** | `crypto-sentinel-api/app/main.py`, `GNNVisualization.jsx` | 🟢 **100% Live** — Menyajikan endpoint `GET /api/v1/sentinel/gnn/neighborhood/{account_id}` (3-hop neighborhood subgraphs, PageRank, in/out-degree, edge timestamps). |
+| 2 | **GNNExplainer Subgraf Penjelas (XAI)** | `dashboard-crypto-sentinel/src/components/GNNVisualization.jsx` | 🟢 **100% Live** — Optimasi matematis Mutual Information ($\max_{G_s,F} MI(Y, (G_s,F))$) dengan penyorotan subgraf minimal $G_s$ emas menyala dan *opacity reduction* node non-kritis ke 12-30%. |
+| 3 | **Interactive Temporal Timeline Slider** | `GNNVisualization.jsx` | 🟢 **100% Live** — Rekonstruksi kronologi mutasi perbankan multi-hop (`0: Semua` $\rightarrow$ `1: 09:01 Fan-Out` $\rightarrow$ `2: 09:07 Transit Layering` $\rightarrow$ `3: 09:16 Crypto Outflow`). |
+| 4 | **Enterprise Case Management (CMS)** | `PageViews.jsx` (AlertsView) | 🟢 **100% Live** — Tombol **`📄 Terbitkan Draf LTKM PPATK (goAML)`** langsung di panel investigasi alert, resolusi tiket sinkron ke API backend, dan modal preview dokumen cetak PDF. |
+| 5 | **100% Dynamic Aggregation Dashboard** | `StatsGrid`, `RiskDistribution`, `BankDistribution`, `HourlyActivity`, `BlockedPatterns`, `TransactionChart` | 🟢 **100% Live** — Mengeliminasi seluruh mock statis. Seluruh metrik dikalkulasi dinamis dari stream array transaksi database aktif Neon PostgreSQL Cloud. |
+| 6 | **SHAP Explainability Visualizer** | `ShapExplanation.jsx`, `TransactionTable.jsx` | 🟢 **100% Live** — Visualisasi bar chart kontribusi 29 fitur Random Forest (merah = pemicu fraud, hijau = peringan) pada setiap modal detail transaksi. |
+| 7 | **Privasi & Data Masking (UU PDP No. 27/2022)** | `Header.jsx`, `TransactionTable.jsx` | 🟢 **100% Live** — Toggle penyamaran data otomatis (`maskName`, `maskAccount`, `maskNIK`) untuk kepatuhan perlindungan data pribadi perbankan. |
+| 8 | **Kalibrasi FDS & Risk Appetite (POJK No. 8/2023)** | `PageViews.jsx` (RulesView) | 🟢 **100% Live** — Konfigurasi ambang batas Circuit Breaker 85% dan limit harian RBA bank internal berstandar Maker-Checker Dual-Control dengan *Immutable Audit Trail Log*. |
+| 9 | **Real Role-Based Access Control (RBAC)** | `AuthContext.jsx`, `LoginPage.jsx`, `Sidebar.jsx` | 🟢 **100% Live** — 3 Tier hak akses: `Pejabat Kepatuhan` (Rifki - Full Access), `Admin Regulator OJK` (Bu Fatimah - Supervisory Full-Read), dan `Analis AML` (Billy - Triage Level-1) dengan tombol pemilihan akun instan. |
+| 10 | **Multi-Tenant Port & Launcher Automation** | `START-ALL.bat`, `RUN-MOBILE-BJB.bat`, `RUN-MOBILE-KUNINGAN.bat` | 🟢 **100% Live** — Port terpisah tanpa bentrok: Core Banking `:8080`, AI Engine `:8000`, Dashboard `:5173`, Mobile bjb `:8081`, Mobile Kuningan `:8082`. |
+| 11 | **Streamlined Lean Enterprise Menu Structure** | `Sidebar.jsx`, `App.jsx` | 🟢 **100% Live** — Memangkas menu statis berisiko menjadi 6 Menu Inti Kuat: *Dashboard Overview, Live Sentinel Stream, Analisis Graf Relasi (GNN), Investigasi Alert (CMS), Kalibrasi FDS, Kepatuhan PPATK*. |
 
 ---
 
-## 🚦 Rencana Pengerjaan Berikutnya (Technical Sprint — 100% Dynamic & Deploy Ready)
+### 🟢 Status Layanan & Port Operasional (30 Agustus 2026)
 
-> Target: Menghilangkan semua elemen statis/simulasi di Dashboard dan membuat sistem 100% live, dinamis dari SQLite/API, serta siap deploy ke Cloud.
-
-### 🎯 Prioritas Utama (Sprint Dashboard Dinamis & Production Ready)
-
-| # | Task | Area | Detail Teknis |
+| Service | Port | Status | Deskripsi & Komponen |
 |---|---|---|---|
-| 1 | **Dynamic Aggregation Dashboard** | `dashboard-crypto-sentinel/src/components/` | Ubah `StatsGrid`, `RiskDistribution`, `TransactionChart`, `HourlyActivity`, `BlockedPatterns` agar mengkalkulasi agregat dari array `transactions` live backend secara dinamis (hilangkan ketergantungan `mockData.js`). |
-| 2 | **Visualisasi SHAP di UI Alert Detail** | `dashboard-crypto-sentinel/src/components/ShapExplanation.jsx` | Buat bar chart visual interaktif untuk `shap_explanation` di modal detail transaksi (merah = faktor pemicu fraud, hijau = faktor peringan). |
-| 3 | **Modul CMS (Case Management System)** | `expresso-api/routers/`, `dashboard-crypto-sentinel/` | Bangun alur ticketing investigasi kepatuhan: status `OPEN` → `IN_REVIEW` → `RESOLVED/BLOCKED`, form catatan analis, dan riwayat audit per kasus. |
-| 4 | **Masking & Data Anonymization (UU PDP)** | `dashboard-crypto-sentinel/src/utils/` | Terapkan helper penyamaran data (`maskAccount`, `maskName`, `maskNIK`) di seluruh tabel & komponen visual sesuai standar kepatuhan Bank BJB. |
-| 5 | **Cloud Deployment Setup** | Root / API / Dashboard | Siapkan `Dockerfile`, `render.yaml`, dan konfigurasi environment terpusat agar sistem siap deploy multi-service ke cloud (Render/Vercel). |
-
-### 🔵 Roadmap Fase 2 (Post-Inkubasi)
-
-| # | Task | Keterangan |
-|---|---|---|
-| 9 | **Federated Learning** | Multi-bank training tanpa share data nasabah |
-| 10 | **Neo4j** | Ganti NetworkX in-memory dengan graph database skalabel |
-| 11 | **GNN Upgrade (PyTorch Geometric)** | True GraphSAGE production-grade |
-| 12 | **X.509 / HSM** | SNAP BI production-grade key management |
+| **Crypto-Sentinel AI API** | `:8000` | 🟢 Running | FastAPI + GraphSAGE GNN (562K Nodes) + Random Forest 100 Trees (29 Fitur) + SHAP TreeExplainer + GNNExplainer Neighborhood Engine |
+| **Expresso-API Core Banking** | `:8080` | 🟢 Running | FastAPI Core Banking Gateway + Neon PostgreSQL Cloud (Singapore) + SNAP BI HMAC-SHA256 Auth |
+| **Dashboard Forensik React/Vite** | `:5173` | 🟢 Running | Arsitektur XGNN-FDS Hibrida + Recharts + Framer Motion + RBAC 3-Tier |
+| **Mobile Banking Bank bjb** | `:8081` | 🟢 Running | Flutter Multi-tenant Client (Chrome Web / Android USB via `kIsWeb` auto-detect) |
+| **Mobile Banking Bank Kuningan** | `:8082` | 🟢 Running | Flutter Multi-tenant Client (Chrome Web / Android USB via `kIsWeb` auto-detect) |
 
 ---
 
-### 📦 State Saat Ini (untuk briefing obrolan baru)
+### 📦 State Repository & Version Control
 
 ```
 REPO : github.com/RifkiF00/crypto-sentinel-2026
 BRANCH : main (branch protected)
-LAST COMMIT : ef5967d - feat: add SHAP TreeExplainer explainability
-
-SERVER LOKAL:
-  Port 8000 → crypto-sentinel-api (uvicorn app.main:app --port 8000)
-  Port 8080 → expresso-api       (uvicorn main:app --port 8080)
-  Port 5173 → dashboard          (npm run dev -- --host di dashboard-crypto-sentinel/)
-
-KOMPETISI:
-  Program : PIDI Digdaya Hackathon & Inkubasi 2026
-  Tim     : EXPRESSO S1251
-  Offtaker: Bank Kuningan (BPR) + Bank BJB (BUMD)
-  Mentor  : #20 Dea Saka (BSSN) | #18 Teguh (Tokocrypto) | #05 Pujo (Finastra AI)
-
-FITUR SELESAI:
-  - GNN GraphSAGE 562K nodes + Hybrid Scoring (GNN 60% + Rule 40%)
-  - SHAP Explainability (top-5 feature contributions per transaksi)
-  - LTKM/STR Generator (format PPATK goAML)
-  - SNAP BI Multi-Partner Auth (KNG + BJB)
-  - Flutter Mobile Banking x2 (Bank Kuningan + Bank BJB)
-  - Rule Engine 13 indikator / 15 sub-indikator
-
-FITUR BERIKUTNYA:
-  1. Update URL ke Render (tunggu PIDI)
-  2. Visualisasi SHAP di dashboard
-  3. Anonimisasi data nasabah (request BJB)
-  4. CMS basic (request Bank Kuningan)
+LAST SPRINT COMMITS :
+  - 357d81b : feat: Implement XGNN-FDS Hybrid Architecture - Live GNN 3-Hop Subgraphs, GNNExplainer XAI Mode, Temporal Timeline Slider, Inline goAML LTKM Generator, Real-time Transaction Polling, and Enterprise RBAC
+  - ba9c2bc : feat: Keep Live Sentinel Stream with sanitized telemetry scanner & 6 core high-impact enterprise menus
+  - ac9c0eb : refactor: Streamline dashboard to 5 core high-impact, 100% functional enterprise menus and eliminate static bloat
+  - 05b0649 : refactor: Redesign FDS Rules & Calibration view to enterprise banking compliance standard (POJK No. 8/2023 RBA & Dual-Control Audit Trail)
+  - aeb5cfc : feat: Add Bank filter tabs, real-time search, full IDR currency formatting, and VASP legal classification alignment in transaction table
+  - bb68b81 : feat: Connect all overview dashboard widgets to live transactions array (100% dynamic aggregation) and add SHAP explainability UI
 ```
 
 ---
