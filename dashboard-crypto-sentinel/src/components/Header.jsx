@@ -86,28 +86,53 @@ export default function Header({
           <span>{privacyMasking ? 'UU PDP: AKTIF' : 'Sensor Data'}</span>
         </button>
 
-        <button
-          className="btn btn-sm"
-          onClick={handleSimulateSmurfing}
-          disabled={isSimulating}
-          style={{
-            background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: 'var(--radius-md)',
-            padding: '6px 14px',
-            fontSize: '0.8rem',
-            fontWeight: 700,
+        {/* Sandbox Demo Controls (Isolated from Production) */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'rgba(239, 68, 68, 0.08)',
+          border: '1px solid rgba(239, 68, 68, 0.25)',
+          borderRadius: 'var(--radius-md)',
+          padding: '3px 6px 3px 10px'
+        }}>
+          <span style={{
+            fontSize: '0.65rem',
+            fontWeight: 800,
+            color: '#f97316',
+            letterSpacing: '0.04em',
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
-            cursor: isSimulating ? 'wait' : 'pointer'
-          }}
-        >
-          <Zap size={14} className={isSimulating ? 'animate-bounce' : ''} />
-          <span>{isSimulating ? 'Menjalankan...' : '🔥 Simulasikan Smurfing'}</span>
-        </button>
+            gap: 4
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f97316', display: 'inline-block' }} />
+            SANDBOX DEMO
+          </span>
+
+          <button
+            className="btn btn-sm"
+            onClick={handleSimulateSmurfing}
+            disabled={isSimulating}
+            style={{
+              background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 'var(--radius-sm)',
+              padding: '4px 10px',
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.25)',
+              cursor: isSimulating ? 'wait' : 'pointer'
+            }}
+            title="Simulasi mutasi smurfing buatan dalam lingkungan sandbox pengujian"
+          >
+            <Zap size={12} className={isSimulating ? 'animate-bounce' : ''} />
+            <span>{isSimulating ? 'Memproses...' : 'Simulasi Smurfing'}</span>
+          </button>
+        </div>
 
         <div 
           className="live-indicator animate-pulse" 

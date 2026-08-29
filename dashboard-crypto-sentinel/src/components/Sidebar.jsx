@@ -5,14 +5,20 @@ import {
   ShieldAlert,
   Sliders,
   Shield,
+  Lock
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile, alertsCount }) {
+  const { currentUser, can } = useAuth();
+  const isAnalyst = currentUser?.role === 'analyst';
+  const isRegulator = currentUser?.role === 'admin_regulator';
+
   const navSections = [
     {
       title: 'Operasional Utama',
       items: [
-        { icon: LayoutDashboard, label: 'Dashboard Overview', id: 'dashboard' },
+        { icon: LayoutDashboard, label: 'Dashboard Overview', id: 'dashboard', badge: isRegulator ? 'AUDIT' : null },
         { icon: Activity, label: 'Live Sentinel Stream', id: 'monitoring', badge: 'LIVE' },
         { icon: GitBranch, label: 'Analisis Graf Relasi (GNN)', id: 'analysis' },
         { icon: ShieldAlert, label: 'Investigasi Alert (CMS)', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
@@ -21,8 +27,19 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
     {
       title: 'Tata Kelola & Regulasi',
       items: [
-        { icon: Sliders, label: 'Kalibrasi FDS (POJK 8/2023)', id: 'rules' },
-        { icon: Shield, label: 'Kepatuhan & Audit PPATK', id: 'compliance' },
+        {
+          icon: Sliders,
+          label: 'Kalibrasi FDS (POJK 8/2023)',
+          id: 'rules',
+          badge: isAnalyst ? 'LOCKED' : isRegulator ? 'READ-ONLY' : null,
+          isLocked: isAnalyst
+        },
+        {
+          icon: Shield,
+          label: 'Kepatuhan & Audit PPATK',
+          id: 'compliance',
+          badge: isRegulator ? 'INSPECTOR' : null
+        },
       ],
     },
   ];
@@ -59,10 +76,31 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
                 <item.icon />
                 <span>{item.label}</span>
                 {item.badge && (
-                  <span className={`nav-badge ${item.id === 'monitoring' ? 'badge-live' : ''}`} style={{
-                    background: item.id === 'monitoring' ? 'var(--status-success)' : 'var(--status-danger)',
-                    animation: item.id === 'monitoring' ? 'none' : 'pulse-badge 2s infinite'
-                  }}>
+                  <span
+                    className={`nav-badge ${item.id === 'monitoring' ? 'badge-live' : ''}`}
+                    style={{
+                      background: item.badge === 'LOCKED'
+                        ? 'rgba(239, 68, 68, 0.15)'
+                        : item.badge === 'READ-ONLY' || item.badge === 'AUDIT' || item.badge === 'INSPECTOR'
+                        ? 'rgba(124, 58, 237, 0.15)'
+                        : item.id === 'monitoring'
+                        ? 'var(--status-success)'
+                        : 'var(--status-danger)',
+                      color: item.badge === 'LOCKED'
+                        ? '#ef4444'
+                        : item.badge === 'READ-ONLY' || item.badge === 'AUDIT' || item.badge === 'INSPECTOR'
+                        ? '#a78bfa'
+                        : 'white',
+                      border: item.badge === 'LOCKED'
+                        ? '1px solid rgba(239, 68, 68, 0.3)'
+                        : item.badge === 'READ-ONLY' || item.badge === 'AUDIT' || item.badge === 'INSPECTOR'
+                        ? '1px solid rgba(124, 58, 237, 0.3)'
+                        : 'none',
+                      fontSize: '0.62rem',
+                      fontWeight: 800,
+                      animation: item.id === 'monitoring' || item.badge === 'LOCKED' || item.badge === 'READ-ONLY' || item.badge === 'AUDIT' || item.badge === 'INSPECTOR' ? 'none' : 'pulse-badge 2s infinite'
+                    }}
+                  >
                     {item.badge}
                   </span>
                 )}

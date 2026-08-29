@@ -58,6 +58,7 @@ import {
 } from 'recharts';
 import { formatCurrency, formatNumber, cryptoExchangeData, topBlockedPatterns, muleAccountsData, gnnGraphData } from '../data/mockData';
 import { useChartTheme } from '../hooks/useChartTheme';
+import { useAuth } from '../context/AuthContext';
 import MuleAccountAnalysis from './MuleAccountAnalysis';
 import GNNVisualization from './GNNVisualization';
 import ResponsiveChartWrapper from './ResponsiveChartWrapper';
@@ -328,7 +329,12 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
 // ==========================================
 // 2. ALERTS AND THREATS VIEW
 // ==========================================
-export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) {
+export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, onNavigateToGNN }) {
+  const { currentUser, can } = useAuth();
+  const isAnalyst = currentUser?.role === 'analyst';
+  const isRegulator = currentUser?.role === 'admin_regulator';
+  const isCompliance = currentUser?.role === 'compliance_officer';
+
   const [filterSeverity, setFilterSeverity] = useState('all');
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -339,6 +345,41 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
   const [showLtkmModal, setShowLtkmModal] = useState(false);
   const [ltkmHtml, setLtkmHtml] = useState('');
   const [isGeneratingLtkm, setIsGeneratingLtkm] = useState(false);
+
+  // Enterprise Triage & Notes State per Alert
+  const [triageStatuses, setTriageStatuses] = useState({});
+  const [investigationNotes, setInvestigationNotes] = useState({
+    'ALT-001': [
+      { id: '1', author: 'Analis AML / Fraud Investigator', text: 'Pola smurfing 5 rekening mule identik dengan cluster Indodax VASP.', time: '09:05 WIB' }
+    ]
+  });
+  const [noteInput, setNoteInput] = useState('');
+
+  const handleUpdateTriage = (alertId, newStatus) => {
+    setTriageStatuses(prev => ({ ...prev, [alertId]: newStatus }));
+    const statusLabels = {
+      'IN_REVIEW': '🔍 Kasus dialihkan ke status: DALAM PENINJAUAN ANALIS (In Review)',
+      'ESCALATED': '🚨 Kasus DIESKALASI ke Pejabat Kepatuhan (Compliance Officer / MLRO)',
+      'UNASSIGNED': 'Kasus dikembalikan ke antrean belum ditugaskan.'
+    };
+    if (addToast) addToast(statusLabels[newStatus] || `Status triage diperbarui ke ${newStatus}`, 'info');
+  };
+
+  const handleAddNote = (alertId) => {
+    if (!noteInput.trim()) return;
+    const noteObj = {
+      id: Date.now().toString(),
+      author: currentUser?.name || 'Analis AML',
+      text: noteInput.trim(),
+      time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
+    };
+    setInvestigationNotes(prev => ({
+      ...prev,
+      [alertId]: [...(prev[alertId] || []), noteObj]
+    }));
+    setNoteInput('');
+    if (addToast) addToast('📝 Catatan investigasi forensik berhasil ditambahkan!', 'success');
+  };
 
   const handleGenerateLtkm = async (alert) => {
     setIsGeneratingLtkm(true);
@@ -565,7 +606,31 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                       <p className="alert-desc" style={{ marginTop: 4, color: 'var(--text-secondary)' }}>{alert.description}</p>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {/* Direct Quick Action to GNN Graph Explainer */}
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onNavigateToGNN?.(alert);
+                      }}
+                      style={{
+                        fontSize: '0.72rem',
+                        padding: '4px 10px',
+                        background: 'rgba(2, 132, 199, 0.12)',
+                        border: '1px solid rgba(2, 132, 199, 0.35)',
+                        color: '#38bdf8',
+                        borderRadius: 6,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        fontWeight: 700
+                      }}
+                      title="Buka Analisis Graf Relasi GNN atas transaksi ini"
+                    >
+                      <GitBranch size={13} /> Subgraf GNN
+                    </button>
                     <span className="alert-time" style={{ fontSize: '0.78rem' }}>{alert.time}</span>
                     <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
                   </div>
@@ -587,12 +652,12 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                 style={{ padding: 20, borderColor: 'var(--border-accent)', background: 'var(--bg-glass)' }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid var(--border-color)', paddingBottom: 12 }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Remediasi Regulator</h3>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Investigasi &amp; Remediasi CMS</h3>
                   <button className="modal-close" onClick={() => setSelectedAlert(null)}><X size={16} /></button>
                 </div>
 
                 {/* Sub-tab Navigation */}
-                <div style={{ display: 'flex', background: 'var(--bg-elevated)', padding: 4, borderRadius: 8, marginBottom: 20, gap: 4 }}>
+                <div style={{ display: 'flex', background: 'var(--bg-elevated)', padding: 4, borderRadius: 8, marginBottom: 16, gap: 4 }}>
                   <button
                     onClick={() => setActiveDetailTab('remediation')}
                     className={`tab ${activeDetailTab === 'remediation' ? 'active' : ''}`}
@@ -610,7 +675,26 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                       transition: 'all 0.2s'
                     }}
                   >
-                    🛡️ Tindakan
+                    🛡️ Triage &amp; Tindakan
+                  </button>
+                  <button
+                    onClick={() => setActiveDetailTab('notes')}
+                    className={`tab ${activeDetailTab === 'notes' ? 'active' : ''}`}
+                    style={{
+                      fontSize: '0.75rem',
+                      padding: '8px 4px',
+                      flex: 1,
+                      textAlign: 'center',
+                      border: 'none',
+                      background: activeDetailTab === 'notes' ? 'var(--bg-card)' : 'transparent',
+                      color: activeDetailTab === 'notes' ? 'var(--text-primary)' : 'var(--text-muted)',
+                      borderRadius: 6,
+                      fontWeight: activeDetailTab === 'notes' ? 700 : 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    📝 Catatan Forensik ({investigationNotes[selectedAlert.id]?.length || 0})
                   </button>
                   <button
                     onClick={() => setActiveDetailTab('mule')}
@@ -652,77 +736,205 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                   </button>
                 </div>
 
+                {/* 1. Quick Action Button to GNN Subgraph Explainer */}
+                <button
+                  className="btn btn-primary"
+                  style={{
+                    width: '100%',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)',
+                    marginBottom: 16,
+                    boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)',
+                    padding: '9px 14px',
+                    fontSize: '0.8rem',
+                    fontWeight: 800
+                  }}
+                  onClick={() => onNavigateToGNN?.(selectedAlert)}
+                >
+                  <GitBranch size={16} /> 🧠 Telusuri Subgraf GNNExplainer (Quick-Action)
+                </button>
+
                 {activeDetailTab === 'remediation' && (
                   <>
-                    <div style={{ marginBottom: 20 }}>
-                      <span className={`badge badge-${selectedAlert.type === 'critical' ? 'blocked' : selectedAlert.type === 'warning' ? 'flagged' : 'pending'}`} style={{ marginBottom: 12 }}>
-                        Threat Level: {selectedAlert.type.toUpperCase()}
-                      </span>
-                      <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>{selectedAlert.title}</h4>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, background: 'var(--bg-input)', padding: 12, borderRadius: 8 }}>
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                        <span className={`badge badge-${selectedAlert.type === 'critical' ? 'blocked' : selectedAlert.type === 'warning' ? 'flagged' : 'pending'}`}>
+                          Threat Level: {selectedAlert.type.toUpperCase()}
+                        </span>
+                        <span style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 800,
+                          padding: '2px 8px',
+                          borderRadius: 4,
+                          background: triageStatuses[selectedAlert.id] === 'ESCALATED' ? 'rgba(239, 68, 68, 0.15)' : triageStatuses[selectedAlert.id] === 'IN_REVIEW' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(100, 116, 139, 0.15)',
+                          color: triageStatuses[selectedAlert.id] === 'ESCALATED' ? '#ef4444' : triageStatuses[selectedAlert.id] === 'IN_REVIEW' ? '#38bdf8' : '#94a3b8',
+                          border: `1px solid ${triageStatuses[selectedAlert.id] === 'ESCALATED' ? 'rgba(239, 68, 68, 0.3)' : triageStatuses[selectedAlert.id] === 'IN_REVIEW' ? 'rgba(56, 189, 248, 0.3)' : 'rgba(100, 116, 139, 0.3)'}`
+                        }}>
+                          STATUS: {triageStatuses[selectedAlert.id] || 'UNASSIGNED'}
+                        </span>
+                      </div>
+                      <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>{selectedAlert.title}</h4>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5, background: 'var(--bg-input)', padding: 12, borderRadius: 8 }}>
                         {selectedAlert.description}
                       </p>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
-                      <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>REMEDIASI OJK COMPLIANCE</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--border-color)', paddingTop: 14 }}>
+                      <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 2 }}>
+                        WEWENANG OPERASIONAL ({currentUser?.role === 'compliance_officer' ? 'PEJABAT KEPATUHAN / MLRO' : currentUser?.role === 'analyst' ? 'ANALIS AML LEVEL 1' : 'PENGAWAS REGULASI OJK'})
+                      </div>
 
-                      <button
-                        className="btn btn-primary"
-                        style={{ background: 'var(--gradient-danger)', justifyContent: 'center' }}
-                        onClick={() => handleResolveAlert(selectedAlert.id, 'block')}
-                      >
-                        🛡️ Blokir Rekening & Wallet Crypto
-                      </button>
+                      {/* --- A. ROLE: PENGAWAS REGULASI OJK (SUPERVISORY READ-ONLY) --- */}
+                      {isRegulator && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div style={{
+                            padding: '10px 12px',
+                            background: 'rgba(124, 58, 237, 0.1)',
+                            border: '1px solid rgba(124, 58, 237, 0.3)',
+                            borderRadius: 8,
+                            fontSize: '0.74rem',
+                            color: '#c4b5fd',
+                            lineHeight: 1.4
+                          }}>
+                            🔒 <strong>Mode Pengawasan OJK (Read-Only)</strong>: Pengawas memeriksa kepatuhan proses investigasi perbankan tanpa tombol eksekusi operasional (Anti-Conflict of Interest).
+                          </div>
+                          <button
+                            className="btn btn-ghost"
+                            style={{ justifyContent: 'center', fontSize: '0.78rem' }}
+                            onClick={() => handleGenerateLtkm(selectedAlert)}
+                          >
+                            <FileText size={15} /> Unduh Draf LTKM PPATK (Audit Copy)
+                          </button>
+                        </div>
+                      )}
 
-                      {/* Official LTKM Report Generation Button */}
-                      <button
-                        className="btn btn-primary"
-                        style={{
-                          background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-                          justifyContent: 'center',
-                          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
-                        }}
-                        disabled={isGeneratingLtkm}
-                        onClick={() => handleGenerateLtkm(selectedAlert)}
-                      >
-                        <FileText size={16} />
-                        <span>{isGeneratingLtkm ? 'Mengompilasi Dokumen...' : '📄 Terbitkan Draf LTKM PPATK (goAML)'}</span>
-                      </button>
+                      {/* --- B. ROLE: ANALIS AML / FRAUD INVESTIGATOR (READ + TRIAGE) --- */}
+                      {isAnalyst && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <button
+                            className="btn btn-secondary"
+                            style={{ justifyContent: 'center', fontSize: '0.78rem', background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)' }}
+                            onClick={() => handleUpdateTriage(selectedAlert.id, 'IN_REVIEW')}
+                          >
+                            🔍 Tandai Sedang Diinvestigasi (In Review)
+                          </button>
 
-                      <button
-                        className="btn btn-ghost"
-                        style={{ justifyContent: 'center' }}
-                        onClick={() => handleResolveAlert(selectedAlert.id, 'investigate')}
-                      >
-                        📂 Kirim Tim Investigasi AML
-                      </button>
+                          <button
+                            className="btn btn-primary"
+                            style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)', justifyContent: 'center', fontSize: '0.78rem', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
+                            onClick={() => handleUpdateTriage(selectedAlert.id, 'ESCALATED')}
+                          >
+                            🚨 Eskalasi Kasus ke Pejabat Kepatuhan (MLRO)
+                          </button>
 
-                      <button
-                        className="btn btn-ghost"
-                        style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', justifyContent: 'center' }}
-                        onClick={() => handleResolveAlert(selectedAlert.id, 'dismiss')}
-                      >
-                        Abaikan & Tandai Aman
-                      </button>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', background: 'var(--bg-input)', padding: '8px 10px', borderRadius: 6, lineHeight: 1.35 }}>
+                            ℹ️ <em>Prinsip Segregation of Duties (SoD)</em>: Analis melakukan triage dan forensik. Pemblokiran akun serta pengiriman laporan PPATK wajib melalui otorisasi Pejabat Kepatuhan.
+                          </div>
+                        </div>
+                      )}
 
-                      <button
-                        className="btn btn-primary"
-                        style={{
-                          background: 'var(--gradient-primary)',
-                          justifyContent: 'center',
-                          marginTop: 12,
-                          boxShadow: 'var(--shadow-glow)'
-                        }}
-                        onClick={() => {
-                          setShowFullModal(true);
-                          setModalTab('gnn');
-                        }}
-                      >
-                        🔍 Investigasi Diagnostik OJK
-                      </button>
+                      {/* --- C. ROLE: PEJABAT KEPATUHAN / COMPLIANCE OFFICER (FULL APPROVAL) --- */}
+                      {isCompliance && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <button
+                            className="btn btn-primary"
+                            style={{ background: 'var(--gradient-danger)', justifyContent: 'center', fontSize: '0.78rem' }}
+                            onClick={() => handleResolveAlert(selectedAlert.id, 'block')}
+                          >
+                            🛡️ Setujui Pemblokiran Akun &amp; Wallet Crypto
+                          </button>
+
+                          <button
+                            className="btn btn-primary"
+                            style={{
+                              background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                              justifyContent: 'center',
+                              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
+                              fontSize: '0.78rem'
+                            }}
+                            disabled={isGeneratingLtkm}
+                            onClick={() => handleGenerateLtkm(selectedAlert)}
+                          >
+                            <FileText size={15} />
+                            <span>{isGeneratingLtkm ? 'Mengompilasi Dokumen...' : '📄 Setujui &amp; Terbitkan LTKM PPATK (goAML)'}</span>
+                          </button>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                            <button
+                              className="btn btn-ghost"
+                              style={{ justifyContent: 'center', fontSize: '0.72rem', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' }}
+                              onClick={() => handleResolveAlert(selectedAlert.id, 'investigate')}
+                            >
+                              ✅ Putuskan: Valid Threat
+                            </button>
+                            <button
+                              className="btn btn-ghost"
+                              style={{ justifyContent: 'center', fontSize: '0.72rem', color: 'var(--text-muted)' }}
+                              onClick={() => handleResolveAlert(selectedAlert.id, 'dismiss')}
+                            >
+                              ❌ False Positive
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </>
+                )}
+
+                {/* Tab 2: Investigation Notes Section */}
+                {activeDetailTab === 'notes' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                      LOG CATATAN FORENSIK &amp; AUDIT TRAIL KASUS
+                    </div>
+
+                    <div style={{ maxHeight: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
+                      {(!investigationNotes[selectedAlert.id] || investigationNotes[selectedAlert.id].length === 0) ? (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', padding: 12, textAlign: 'center', background: 'var(--bg-input)', borderRadius: 8 }}>
+                          Belum ada catatan investigasi forensik untuk kasus ini.
+                        </div>
+                      ) : (
+                        investigationNotes[selectedAlert.id].map(n => (
+                          <div key={n.id} style={{ background: 'var(--bg-input)', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#38bdf8' }}>{n.author}</span>
+                              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{n.time}</span>
+                            </div>
+                            <p style={{ fontSize: '0.78rem', color: 'var(--text-primary)', margin: 0, lineHeight: 1.4 }}>{n.text}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {!isRegulator && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid var(--border-color)', paddingTop: 12 }}>
+                        <textarea
+                          rows={2}
+                          value={noteInput}
+                          onChange={(e) => setNoteInput(e.target.value)}
+                          placeholder="Tuliskan temuan analisis / indikasi multi-hop..."
+                          style={{
+                            width: '100%',
+                            background: 'var(--bg-input)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: 8,
+                            padding: '8px 10px',
+                            color: 'var(--text-primary)',
+                            fontSize: '0.78rem',
+                            resize: 'none',
+                            outline: 'none'
+                          }}
+                        />
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          style={{ justifyContent: 'center', fontSize: '0.75rem' }}
+                          onClick={() => handleAddNote(selectedAlert.id)}
+                        >
+                          ➕ Tambah Catatan Forensik
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {activeDetailTab === 'mule' && (
@@ -2199,7 +2411,7 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
 // ==========================================
 // 8. RULES & RISK APPETITE CALIBRATION VIEW (POJK No. 8/2023)
 // ==========================================
-export function RulesView({ rules, setRules, addToast }) {
+export function RulesView({ rules, setRules, addToast, isReadOnly = false }) {
   const [localThreshold, setLocalThreshold] = useState(rules.riskThreshold || 85);
   const [localLimit, setLocalLimit] = useState(rules.dailyLimit || 100000000);
   const [localAutoBlock, setLocalAutoBlock] = useState(rules.autoBlockEnabled !== false);
@@ -2229,6 +2441,11 @@ export function RulesView({ rules, setRules, addToast }) {
   ]);
 
   const handleSave = () => {
+    if (isReadOnly) {
+      if (addToast) addToast('🔒 Akses Ditolak: Pengawas Regulasi OJK hanya memiliki hak baca (Read-Only Audit).', 'error');
+      return;
+    }
+
     setRules({
       riskThreshold: localThreshold,
       dailyLimit: localLimit,
@@ -2249,6 +2466,27 @@ export function RulesView({ rules, setRules, addToast }) {
 
   return (
     <div className="rules-view">
+      {/* Supervisory Read-Only Banner */}
+      {isReadOnly && (
+        <div style={{
+          marginBottom: 16,
+          padding: '12px 18px',
+          background: 'rgba(124, 58, 237, 0.1)',
+          border: '1px solid rgba(124, 58, 237, 0.35)',
+          borderRadius: 10,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          color: '#c4b5fd'
+        }}>
+          <Shield size={20} style={{ color: '#a78bfa', flexShrink: 0 }} />
+          <div style={{ fontSize: '0.82rem', lineHeight: 1.4 }}>
+            <strong style={{ color: '#ffffff', display: 'block' }}>🔒 MODE PENGAWAS REGULASI (OJK / BI) — READ-ONLY AUDIT</strong>
+            Sesuai prinsip independensi pengawasan (<em>Anti-Conflict of Interest</em>), pengawas berhak mengaudit kalibrasi tanpa mengubah parameter risiko bank internal.
+          </div>
+        </div>
+      )}
+
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Kalibrasi Kebijakan FDS & Risk Appetite Bank</h2>
@@ -2416,21 +2654,36 @@ export function RulesView({ rules, setRules, addToast }) {
               </div>
             </div>
 
-            <button
-              className="btn btn-primary"
-              style={{
-                width: '100%',
-                justifyContent: 'center',
+            {isReadOnly ? (
+              <div style={{
                 padding: '12px',
-                fontWeight: 700,
-                fontSize: '0.88rem',
-                background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                boxShadow: '0 4px 14px rgba(79, 70, 229, 0.35)'
-              }}
-              onClick={handleSave}
-            >
-              <Save size={17} /> Simpan & Terapkan Kalibrasi (Approval Pejabat Kepatuhan)
-            </button>
+                background: 'rgba(124, 58, 237, 0.08)',
+                border: '1px solid rgba(124, 58, 237, 0.25)',
+                borderRadius: 8,
+                textAlign: 'center',
+                fontSize: '0.8rem',
+                color: '#a78bfa',
+                fontWeight: 700
+              }}>
+                🔒 Mode Pengawasan OJK: Konfigurasi Parameter Bank Terkunci (Read-Only)
+              </div>
+            ) : (
+              <button
+                className="btn btn-primary"
+                style={{
+                  width: '100%',
+                  justifyContent: 'center',
+                  padding: '12px',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                  boxShadow: '0 4px 14px rgba(79, 70, 229, 0.35)'
+                }}
+                onClick={handleSave}
+              >
+                <Save size={17} /> Simpan &amp; Terapkan Kalibrasi (Approval Pejabat Kepatuhan)
+              </button>
+            )}
           </div>
         </div>
 

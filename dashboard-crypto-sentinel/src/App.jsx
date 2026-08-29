@@ -250,7 +250,11 @@ function DashboardLayout({ onBackToLanding }) {
                   alerts={alerts} 
                   setAlerts={setAlerts} 
                   addToast={addToast} 
-                  setBlockedEntities={setBlockedEntities} 
+                  setBlockedEntities={setBlockedEntities}
+                  onNavigateToGNN={(alert) => {
+                    setActivePage('analysis');
+                    if (addToast) addToast(`🧠 Membuka Subgraf Penjelas GNN untuk ${alert?.title || 'Kasus'}`, 'info');
+                  }}
                 />
               )}
 
@@ -258,11 +262,19 @@ function DashboardLayout({ onBackToLanding }) {
                   4. DYNAMIC THRESHOLD & RISK APPETITE POLICIES (POJK 8/2023)
               ---------------------------------------------------- */}
               {activePage === 'rules' && (
-                <RulesView 
-                  rules={rules} 
-                  setRules={setRules} 
-                  addToast={addToast} 
-                />
+                !can('viewRules') ? (
+                  <AccessDenied 
+                    permission="Kalibrasi Ambang Batas FDS & Risk Appetite Bank"
+                    requiredRole="Pejabat Kepatuhan (Compliance Officer / MLRO)"
+                  />
+                ) : (
+                  <RulesView 
+                    rules={rules} 
+                    setRules={setRules} 
+                    addToast={addToast}
+                    isReadOnly={!can('editRules')}
+                  />
+                )
               )}
 
               {/* ----------------------------------------------------

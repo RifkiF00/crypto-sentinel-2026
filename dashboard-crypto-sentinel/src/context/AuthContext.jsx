@@ -14,62 +14,77 @@ import { createContext, useContext, useState } from 'react';
 export const ROLES = {
   admin_regulator: {
     label: 'Pengawas Regulasi (OJK / BI)',
-    sublabel: 'OJK — Supervisory Access',
+    sublabel: 'OJK — Supervisory / Read-Only Audit',
     avatar: 'AR',
     badge: 'SUPERVISORY',
     badgeColor: '#7c3aed',
-    level: 'LEVEL 3 — Full Read',
+    level: 'LEVEL 3 — Supervisory Audit',
+    description: 'Audit kepatuhan sistem, pengawasan independen, validasi transparansi model AI & audit log tanpa intervensi operasional.',
     permissions: {
       viewDashboard: true,
       viewLiveMonitoring: true,
       viewGNN: true,
       viewAlerts: true,
-      resolveAlert: false,       // OJK tidak boleh resolve tiket bank
-      generateLTKM: false,       // Hanya pejabat bank yang generate
-      viewRules: true,
-      editRules: false,          // OJK tidak mengubah threshold bank
-      viewCompliance: true,
-      downloadLTKM: true,        // Bisa unduh untuk audit
+      triageAlert: false,        // OJK tidak melakukan triage operasional
+      addNotes: false,           // Read-only
+      executeBlock: false,       // TIDAK BOLEH memblokir transaksi (mencegah conflict of interest)
+      resolveAlert: false,       // TIDAK BOLEH menutup kasus bank
+      generateLTKM: false,       // Hanya bank yang submit SAR ke PPATK
+      viewRules: true,           // Bisa audit kalibrasi & transparansi AI (Read-Only)
+      editRules: false,          // TIDAK BOLEH mengubah ambang batas bank
+      viewCompliance: true,      // Mengakses Immutable Audit Log & Timestamp LTKM
+      downloadLTKM: true,        // Bisa unduh dokumen untuk audit pengawasan
+      manageGovernance: false,
     }
   },
   compliance_officer: {
-    label: 'Pejabat Kepatuhan (Compliance Officer)',
+    label: 'Pejabat Kepatuhan (Compliance Officer / MLRO)',
     sublabel: 'Unit APU-PPT & Kepatuhan Bank',
     avatar: 'PK',
     badge: 'FULL ACCESS',
     badgeColor: '#059669',
-    level: 'LEVEL 2 — Operator',
+    level: 'LEVEL 3 — MLRO / Full Access',
+    description: 'Pengambilan keputusan akhir pemblokiran, kalibrasi kebijakan risiko POJK 8/2023, dan persetujuan pelaporan resmi PPATK.',
     permissions: {
       viewDashboard: true,
       viewLiveMonitoring: true,
       viewGNN: true,
       viewAlerts: true,
-      resolveAlert: true,        // Bisa resolve & tutup kasus
-      generateLTKM: true,        // Bisa generate laporan LTKM ke PPATK
+      triageAlert: true,
+      addNotes: true,
+      executeBlock: true,        // Menyetujui eskalasi Freeze / Unfreeze
+      resolveAlert: true,        // Memutuskan status akhir: Resolved - Valid Threat vs False Positive
+      generateLTKM: true,        // Menyetujui & ekspor draft LTKM/SAR langsung ke standar PPATK goAML
       viewRules: true,
-      editRules: true,           // Bisa kalibrasi threshold FDS
+      editRules: true,           // Mengubah ambang batas skor risiko & bobot hibrida GNN
       viewCompliance: true,
       downloadLTKM: true,
+      manageGovernance: true,    // Mengatur hak akses tim dan kriteria Travel Rule
     }
   },
   analyst: {
-    label: 'Analis AML & Investigasi Fraud',
+    label: 'Analis AML / Fraud Investigator',
     sublabel: 'Unit Forensik & Triage Transaksi',
     avatar: 'AA',
     badge: 'READ + TRIAGE',
     badgeColor: '#0284c7',
-    level: 'LEVEL 1 — Analyst',
+    level: 'LEVEL 1 — Read + Triage',
+    description: 'Deteksi cepat, investigasi transaksi harian, analisis graf relasi GNN, dan eskalasi indikasi ancaman ke Pejabat Kepatuhan.',
     permissions: {
       viewDashboard: true,
       viewLiveMonitoring: true,
       viewGNN: true,
       viewAlerts: true,
-      resolveAlert: true,        // Bisa triage (tandai untuk review)
-      generateLTKM: false,       // Tidak bisa generate LTKM — harus ke Compliance Officer
-      viewRules: true,
-      editRules: false,          // Tidak bisa ubah threshold
-      viewCompliance: true,
+      triageAlert: true,         // Mengubah status triage: Unassigned -> In Review -> Escalated
+      addNotes: true,            // Menambahkan catatan investigasi forensik
+      executeBlock: false,       // TIDAK BISA memblokir langsung (harus eskalasi ke MLRO)
+      resolveAlert: false,       // Tidak bisa menutup kasus secara final tanpa sign-off
+      generateLTKM: false,       // TIDAK BISA kirim laporan ke PPATK tanpa sign-off Pejabat Kepatuhan
+      viewRules: false,          // TIDAK BISA mengakses menu Kalibrasi FDS (SoD)
+      editRules: false,          // TIDAK BISA mengubah parameter skor risiko
+      viewCompliance: true,      // Bisa melihat regulasi terkait
       downloadLTKM: false,
+      manageGovernance: false,
     }
   }
 };
