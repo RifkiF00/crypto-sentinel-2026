@@ -1383,6 +1383,8 @@ export default function LandingPage({ onEnter }) {
         .lp-footer-right p {
           font-size: 0.78rem; color: #bbbbbb;
           font-family: 'Plus Jakarta Sans', sans-serif; line-height: 1.6;
+        }
+
         .lp-mobile-toggle {
           display: none;
           background: #ffffff;

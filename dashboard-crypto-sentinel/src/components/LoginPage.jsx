@@ -59,18 +59,27 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
 
   return (
     <div
+      className="login-root"
       style={{
         minHeight: '100vh',
         width: '100%',
         position: 'relative',
         background: '#03081e',
         display: 'flex',
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
         boxSizing: 'border-box',
         overflowX: 'hidden'
       }}
     >
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+
+        .login-root, .login-root * {
+          font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
         @media (max-width: 900px) {
           .login-right-bg {
             display: none !important;
