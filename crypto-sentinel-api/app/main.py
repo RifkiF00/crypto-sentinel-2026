@@ -76,11 +76,11 @@ for _, row in df.iterrows():
 print(f"[FDS API OK] Graph loaded with {len(G.nodes):,} nodes and {len(G.edges):,} edges.")
 
 KNOWN_NAMES = {
-    "1234567890": "Billy Jonathan",
-    "0123456789": "Rifki Firmansyah",
-    "1122334455": "Desta Erlangga",
-    "5544332211": "Aam Setiana",
-    "9876543210": "Siti Rahma",
+    "1234567890": "Budi Santoso",
+    "0123456789": "Ahmad Faisal",
+    "1122334455": "Hendro Wijaya",
+    "5544332211": "Doni Prasetyo",
+    "9876543210": "Siti Rahmawati",
     "9012666666": "PT Indodax Nasional Indonesia",
     "9012999999": "PT Tokocrypto Indonesia",
     "9012123456": "PT Binance Exchange Indonesia",
@@ -390,7 +390,7 @@ def download_str_ppatk(transaction_id: str):
             "transaction_id": transaction_id,
             "timestamp": datetime.now().isoformat(),
             "senderAccount": "1234567890",
-            "senderName": "Billy Jonathan",
+            "senderName": "Budi Santoso",
             "national_id": "3171092802092101",
             "transaction": {"amount": 15000000.0, "destinationAccount": "9012666666", "type": "TRANSFER"},
             "risk_score": 100,
