@@ -25,7 +25,7 @@ function ChartTooltip({ active, payload, label, colors }) {
         boxShadow: colors.shadow,
       }}
     >
-      <p style={{ color: colors.textSecondary, fontSize: '0.78rem', marginBottom: 4 }}>{label}:00</p>
+      <p style={{ color: colors.textSecondary, fontSize: '0.78rem', marginBottom: 4 }}>{label}:00 WIB</p>
       <p style={{ color: colors.textPrimary, fontSize: '0.85rem', fontWeight: 600, fontFamily: "'JetBrains Mono'" }}>
         {payload[0]?.value} transaksi
       </p>
@@ -33,8 +33,38 @@ function ChartTooltip({ active, payload, label, colors }) {
   );
 }
 
-export default function HourlyActivityChart() {
+export default function HourlyActivityChart({ transactions = [] }) {
   const chartTheme = useChartTheme();
+  const isLive = transactions.length > 0;
+
+  let chartData;
+  if (isLive) {
+    // Bangun 24 jam dan hitung transaksi berdasarkan jam timestamp
+    const hourCounts = Array(24).fill(0);
+    transactions.forEach(tx => {
+      if (tx.timestamp) {
+        try {
+          const date = new Date(tx.timestamp.replace(' ', 'T'));
+          const h = date.getHours();
+          if (!isNaN(h) && h >= 0 && h < 24) {
+            hourCounts[h]++;
+          } else {
+            // fallback acak atau jam default jika format tidak standar
+            hourCounts[new Date().getHours()]++;
+          }
+        } catch (_) {
+          hourCounts[new Date().getHours()]++;
+        }
+      }
+    });
+
+    chartData = hourCounts.map((count, idx) => ({
+      hour: idx.toString().padStart(2, '0'),
+      count: count,
+    }));
+  } else {
+    chartData = hourlyActivity;
+  }
 
   return (
     <motion.div
@@ -47,13 +77,18 @@ export default function HourlyActivityChart() {
       <div className="card-header">
         <div className="card-title">
           <Clock />
-          Aktivitas Per Jam (Hari Ini)
+          Aktivitas Per Jam
         </div>
+        {isLive && (
+          <span style={{ fontSize: '0.7rem', color: '#818cf8', fontWeight: 700, background: 'rgba(129,140,248,0.1)', padding: '2px 8px', borderRadius: 6 }}>
+            🟢 LIVE
+          </span>
+        )}
       </div>
       <div className="card-body">
         <ResponsiveChartWrapper height={220}>
           {(w, h) => (
-            <BarChart width={w} height={h} data={hourlyActivity} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+            <BarChart width={w} height={h} data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
               <XAxis
                 dataKey="hour"
@@ -69,10 +104,10 @@ export default function HourlyActivityChart() {
               />
               <Tooltip content={<ChartTooltip colors={chartTheme.tooltip} />} cursor={{ fill: chartTheme.cursor }} />
               <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={12}>
-                {hourlyActivity.map((entry, index) => (
+                {chartData.map((entry, index) => (
                   <Cell
                     key={index}
-                    fill={entry.count > 300 ? '#6366f1' : entry.count > 150 ? '#818cf8' : 'rgba(99,102,241,0.35)'}
+                    fill={entry.count > 10 ? '#6366f1' : entry.count > 0 ? '#818cf8' : 'rgba(99,102,241,0.2)'}
                   />
                 ))}
               </Bar>

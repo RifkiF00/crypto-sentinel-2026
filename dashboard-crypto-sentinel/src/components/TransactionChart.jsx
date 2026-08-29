@@ -56,9 +56,37 @@ function ChartTooltip({ active, payload, label, colors }) {
   );
 }
 
-export default function TransactionChart() {
+export default function TransactionChart({ transactions = [] }) {
   const [timeRange, setTimeRange] = useState('30d');
   const chartTheme = useChartTheme();
+  const isLive = transactions.length > 0;
+
+  let chartData;
+  if (isLive && transactions.length >= 5) {
+    // Kelompokkan transaksi per tanggal
+    const dateMap = {};
+    transactions.forEach(tx => {
+      let dateKey = 'Hari Ini';
+      if (tx.timestamp && tx.timestamp.includes('-')) {
+        dateKey = tx.timestamp.substring(5, 10); // MM-DD
+      }
+      if (!dateMap[dateKey]) {
+        dateMap[dateKey] = { date: dateKey, approved: 0, flagged: 0, blocked: 0 };
+      }
+      if (tx.status === 'blocked' || tx.status === 'BLOCK') dateMap[dateKey].blocked++;
+      else if (tx.status === 'flagged' || tx.status === 'REVIEW') dateMap[dateKey].flagged++;
+      else dateMap[dateKey].approved++;
+    });
+
+    const grouped = Object.values(dateMap);
+    if (grouped.length > 2) {
+      chartData = grouped;
+    } else {
+      chartData = transactionTrend;
+    }
+  } else {
+    chartData = transactionTrend;
+  }
 
   return (
     <motion.div
@@ -74,6 +102,11 @@ export default function TransactionChart() {
           Tren Transaksi & Pemblokiran
         </div>
         <div className="card-actions">
+          {isLive && (
+            <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 700, background: 'rgba(16,185,129,0.1)', padding: '4px 8px', borderRadius: 6, marginRight: 8 }}>
+              🟢 LIVE STREAM
+            </span>
+          )}
           {['7d', '14d', '30d'].map((range) => (
             <button
               key={range}
@@ -88,7 +121,7 @@ export default function TransactionChart() {
       <div className="card-body">
         <ResponsiveChartWrapper height={260}>
           {(w, h) => (
-            <AreaChart width={w} height={h} data={transactionTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <AreaChart width={w} height={h} data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="gradientApproved" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
@@ -116,13 +149,14 @@ export default function TransactionChart() {
                 axisLine={{ stroke: chartTheme.axisLine }}
               />
               <Tooltip content={<ChartTooltip colors={chartTheme.tooltip} />} />
-              <Legend wrapperStyle={{ fontSize: '0.78rem', color: chartTheme.axis }} />
+              <Legend wrapperStyle={{ fontSize: '0.8rem', paddingTop: 8 }} />
               <Area
                 type="monotone"
                 dataKey="approved"
                 name="Disetujui"
                 stroke="#10b981"
                 strokeWidth={2}
+                fillOpacity={1}
                 fill="url(#gradientApproved)"
               />
               <Area
@@ -131,6 +165,7 @@ export default function TransactionChart() {
                 name="Ditandai"
                 stroke="#f59e0b"
                 strokeWidth={2}
+                fillOpacity={1}
                 fill="url(#gradientFlagged)"
               />
               <Area
@@ -139,6 +174,7 @@ export default function TransactionChart() {
                 name="Diblokir"
                 stroke="#ef4444"
                 strokeWidth={2}
+                fillOpacity={1}
                 fill="url(#gradientBlocked)"
               />
             </AreaChart>

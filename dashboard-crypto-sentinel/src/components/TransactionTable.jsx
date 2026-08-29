@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { List, Eye, ShieldBan, X, Clock, User, Wallet, AlertTriangle, Building2 } from 'lucide-react';
+import { List, Eye, ShieldBan, X, Clock, User, Wallet, AlertTriangle, Building2, Lock } from 'lucide-react';
 import { recentTransactions, formatCurrency } from '../data/mockData';
+import ShapExplanation from './ShapExplanation';
 
 const statusConfig = {
   blocked: { label: 'Diblokir', class: 'badge-blocked' },
@@ -10,10 +11,22 @@ const statusConfig = {
   pending: { label: 'Pending', class: 'badge-pending' },
 };
 
-function TransactionDetail({ transaction, onClose }) {
+export function maskName(name, isMasked = false) {
+  if (!isMasked || !name) return name;
+  const parts = name.split(' ');
+  return parts.map(p => p.length > 2 ? p[0] + '*'.repeat(p.length - 2) + p[p.length - 1] : p[0] + '*').join(' ');
+}
+
+export function maskAccount(acc, isMasked = false) {
+  if (!isMasked || !acc) return acc;
+  if (acc.length <= 4) return '***' + acc;
+  return acc.slice(0, 3) + '****' + acc.slice(-3);
+}
+
+function TransactionDetail({ transaction, onClose, isMasked = false }) {
   const [showStrModal, setShowStrModal] = useState(false);
   if (!transaction) return null;
-  const status = statusConfig[transaction.status];
+  const status = statusConfig[transaction.status] || { label: transaction.status, class: 'badge-approved' };
 
   return (
     <>
@@ -26,6 +39,7 @@ function TransactionDetail({ transaction, onClose }) {
       >
         <motion.div
           className="modal"
+          style={{ maxWidth: 680, maxHeight: '90vh', overflowY: 'auto' }}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -53,16 +67,16 @@ function TransactionDetail({ transaction, onClose }) {
               style={{
                 background: 'var(--bg-elevated)',
                 borderRadius: 14,
-                padding: 24,
-                marginBottom: 20,
+                padding: 20,
+                marginBottom: 16,
                 textAlign: 'center',
                 border: '1px solid var(--border-color)',
               }}
             >
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 8 }}>Skor Risiko</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 6 }}>Skor Risiko (FDS AI)</div>
               <div
                 style={{
-                  fontSize: '3rem',
+                  fontSize: '2.8rem',
                   fontWeight: 900,
                   fontFamily: "'JetBrains Mono', monospace",
                   color:
@@ -75,7 +89,7 @@ function TransactionDetail({ transaction, onClose }) {
                   marginBottom: 8,
                 }}
               >
-                {transaction.riskScore}
+                {transaction.riskScore}%
               </div>
               <div className="risk-meter" style={{ maxWidth: 200, margin: '0 auto' }}>
                 <div className="risk-bar" style={{ height: 8 }}>
@@ -90,17 +104,27 @@ function TransactionDetail({ transaction, onClose }) {
             </div>
 
             {/* Details Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-              <DetailItem icon={User} label="Pengirim" value={transaction.senderName} sub={`${transaction.senderBank} • ${transaction.senderAccount}`} />
-              <DetailItem icon={Building2} label="Tujuan" value={transaction.destination} sub={transaction.destinationType} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+              <DetailItem
+                icon={User}
+                label="Pengirim"
+                value={maskName(transaction.senderName, isMasked)}
+                sub={`${transaction.senderBank} • ${maskAccount(transaction.senderAccount, isMasked)}`}
+              />
+              <DetailItem
+                icon={Building2}
+                label="Tujuan"
+                value={maskName(transaction.destination, isMasked)}
+                sub={transaction.destinationType}
+              />
               <DetailItem icon={Wallet} label="Jumlah" value={formatCurrency(transaction.amount)} />
               <DetailItem icon={Clock} label="Waktu" value={transaction.timestamp} />
             </div>
 
             {/* Wallet Address */}
             {transaction.walletAddress && (
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 6 }}>Wallet Address</div>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 6 }}>Wallet Address Kripto</div>
                 <div className="wallet-address" style={{ maxWidth: '100%' }}>
                   {transaction.walletAddress}
                 </div>
@@ -109,8 +133,8 @@ function TransactionDetail({ transaction, onClose }) {
 
             {/* Reason */}
             {transaction.reason && (
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 6 }}>Alasan</div>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 6 }}>Alasan Deteksi FDS</div>
                 <div
                   style={{
                     background: 'var(--status-danger-bg)',
@@ -132,7 +156,7 @@ function TransactionDetail({ transaction, onClose }) {
 
             {/* Flagged Rules */}
             {transaction.flaggedRules && transaction.flaggedRules.length > 0 && (
-              <div>
+              <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 8 }}>Aturan Yang Terpicu</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {transaction.flaggedRules.map((rule) => (
@@ -155,9 +179,12 @@ function TransactionDetail({ transaction, onClose }) {
               </div>
             )}
 
+            {/* Visualisasi Explainable AI (SHAP TreeExplainer) */}
+            <ShapExplanation transaction={transaction} riskScore={transaction.riskScore} />
+
             {/* Actions */}
-            <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
-              {(transaction.status === 'blocked' || transaction.status === 'flagged') && (
+            <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+              {(transaction.status === 'blocked' || transaction.status === 'BLOCK' || transaction.status === 'flagged' || transaction.status === 'REVIEW') && (
                 <button
                   className="btn btn-sm"
                   onClick={() => setShowStrModal(true)}
@@ -169,14 +196,14 @@ function TransactionDetail({ transaction, onClose }) {
                     color: 'white',
                     border: 'none',
                     borderRadius: 8,
-                    padding: '6px 14px',
-                    fontSize: '0.8rem',
+                    padding: '8px 16px',
+                    fontSize: '0.82rem',
                     fontWeight: 'bold',
                     cursor: 'pointer'
                   }}
                 >
                   <AlertTriangle size={14} />
-                  Preview Draf STR PPATK (AI)
+                  Draf LTKM PPATK (AI)
                 </button>
               )}
               <button className="btn btn-ghost btn-sm" onClick={onClose}>Tutup</button>
@@ -207,7 +234,7 @@ function TransactionDetail({ transaction, onClose }) {
               <div className="modal-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(239, 68, 68, 0.08)' }}>
                 <div className="modal-title" style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 800 }}>
                   <ShieldBan size={20} />
-                  DRAF LAPORAN STR PPATK (AUTOMATED AI)
+                  DRAF LAPORAN LTKM / STR PPATK (AUTOMATED AI)
                 </div>
                 <button className="modal-close" onClick={() => setShowStrModal(false)}>
                   <X size={18} />
@@ -217,29 +244,27 @@ function TransactionDetail({ transaction, onClose }) {
               <div className="modal-body" style={{ padding: 24, fontSize: '0.85rem', color: '#cbd5e1' }}>
                 <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: 16, marginBottom: 18 }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: '0.8rem' }}>
-                    <div><span style={{ color: '#64748b' }}>No. Referensi STR:</span> <strong style={{ color: 'white', fontFamily: 'monospace' }}>STR-PPATK-2026-{transaction.id}</strong></div>
-                    <div><span style={{ color: '#64748b' }}>Tanggal Pembuatan:</span> <strong style={{ color: 'white' }}>Hari Ini (Real-Time)</strong></div>
-                    <div><span style={{ color: '#64748b' }}>Pelapor:</span> <strong style={{ color: 'white' }}>Bank Kuningan (Compliance Div.)</strong></div>
-                    <div><span style={{ color: '#64748b' }}>Status Sistem FDS:</span> <strong style={{ color: '#ef4444' }}>AUTO-BLOCKED (95% RISK)</strong></div>
+                    <div><span style={{ color: '#64748b' }}>No. Referensi:</span> <strong style={{ color: 'white', fontFamily: 'monospace' }}>LTKM-PPATK-{transaction.id}</strong></div>
+                    <div><span style={{ color: '#64748b' }}>Format Regulasi:</span> <strong style={{ color: 'white' }}>UU No. 8/2010 (goAML)</strong></div>
+                    <div><span style={{ color: '#64748b' }}>Pelapor:</span> <strong style={{ color: 'white' }}>{transaction.senderBank || 'Bank bjb / Bank Kuningan'}</strong></div>
+                    <div><span style={{ color: '#64748b' }}>Keputusan FDS:</span> <strong style={{ color: '#ef4444' }}>BLOCKED / CIRCUIT BREAKER</strong></div>
                   </div>
                 </div>
 
                 <h4 style={{ color: 'white', marginBottom: 8, fontSize: '0.95rem' }}>1. Subjek Terlapor (Pengirim)</h4>
                 <div style={{ marginBottom: 16, lineHeight: 1.5, background: 'rgba(0,0,0,0.3)', padding: 12, borderRadius: 8 }}>
-                  Nama: <strong>{transaction.senderName || 'Rifki Firmansyah'}</strong><br />
-                  Rekening: <code>{transaction.senderAccount || '0123456789'}</code> ({transaction.senderBank || 'Bank Kuningan'})<br />
-                  NIK: <code>3171092802092102</code> • Device: <code>DEV-ANDROID-S24-ULTRA</code>
+                  Nama: <strong>{maskName(transaction.senderName, isMasked)}</strong><br />
+                  Rekening: <code>{maskAccount(transaction.senderAccount, isMasked)}</code> ({transaction.senderBank})<br />
+                  NIK Terenkripsi: <code>3208************</code> (Sesuai UU PDP No. 27/2022)
                 </div>
 
-                <h4 style={{ color: 'white', marginBottom: 8, fontSize: '0.95rem' }}>2. Ringkasan Kasus (Dibuat Otomatis oleh AI)</h4>
+                <h4 style={{ color: 'white', marginBottom: 8, fontSize: '0.95rem' }}>2. Narasi Kronologi Transaksi Mencurigakan</h4>
                 <div style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: 14, borderRadius: 10, lineHeight: 1.6, color: '#f8fafc', marginBottom: 20 }}>
                   <p>
-                    Mesin <strong>Crypto-Sentinel Explainable AI (XAI)</strong> mendeteksi skenario pencucian uang tingkat tinggi (<em>Smurfing / Structuring Pattern</em>). 
-                    Terlapor melakukan pengiriman dana sebesar <strong>{formatCurrency(transaction.amount)}</strong> secara beruntun ke beberapa akun rekening penampung (mule) di bank lain.
+                    Sistem <strong>Crypto-Sentinel Hybrid AI Engine</strong> mendeteksi transaksi transfer senilai <strong>{formatCurrency(transaction.amount)}</strong> menuju rekening perantara/bursa kripto.
                   </p>
                   <p style={{ marginTop: 8 }}>
-                    <strong>Analisis Graf GNN:</strong> Aliran dana bermuara ke dompet crypto on-chain <code>0xbf6665...</code> yang terhubung langsung ke bursa pertukaran <strong>Indodax / Binance</strong> untuk proses pencairan (cash-out). 
-                    Sistem <em>Circuit Breaker</em> telah memicu pemblokiran otomatis pada transaksi ke-4 dan menghentikan mutasi saldo.
+                    <strong>Hasil Penilaian Risiko:</strong> Skor risiko <strong>{transaction.riskScore}%</strong>. Alasan: <em>{transaction.reason || 'Pola Structuring dan Aliran Dana Tidak Wajar'}</em>. Mekanisme <em>Pre-Commit Circuit Breaker (18ms)</em> telah berhasil mencegah mutasi saldo.
                   </p>
                 </div>
 
@@ -251,16 +276,16 @@ function TransactionDetail({ transaction, onClose }) {
                     className="btn btn-sm"
                     style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 700, textDecoration: 'none' }}
                   >
-                    Unduh PDF Resmi STR
+                    Buka / Cetak Dokumen Resmi PPATK
                   </a>
                   <button
                     className="btn btn-primary btn-sm"
                     onClick={() => {
-                      alert('✓ Laporan STR PPATK berhasil dikirim ke gateway Sistem Informasi Terpadu (SIPENDAR) PPATK!');
+                      alert('✓ Draf LTKM PPATK siap dikirim ke portal goAML PPATK!');
                       setShowStrModal(false);
                     }}
                   >
-                    Kirim Langsung ke PPATK
+                    Kirim ke goAML
                   </button>
                 </div>
               </div>
@@ -299,7 +324,7 @@ function DetailItem({ icon: Icon, label, value, sub }) {
   );
 }
 
-export default function TransactionTable({ transactions: propTransactions }) {
+export default function TransactionTable({ transactions: propTransactions, isMasked = false }) {
   const [selectedTx, setSelectedTx] = useState(null);
   const [filter, setFilter] = useState('all');
 
@@ -308,7 +333,6 @@ export default function TransactionTable({ transactions: propTransactions }) {
   const filtered = filter === 'all'
     ? activeTransactions
     : activeTransactions.filter((t) => t.status === filter);
-
 
   return (
     <>
@@ -322,7 +346,7 @@ export default function TransactionTable({ transactions: propTransactions }) {
         <div className="card-header">
           <div className="card-title">
             <List />
-            Transaksi Terbaru
+            Transaksi Live Stream (Core Banking & FDS)
           </div>
           <div className="card-actions">
             <div className="tabs" id="transaction-filters">
@@ -361,13 +385,13 @@ export default function TransactionTable({ transactions: propTransactions }) {
               </thead>
               <tbody>
                 {filtered.map((tx, index) => {
-                  const status = statusConfig[tx.status];
+                  const status = statusConfig[tx.status] || { label: tx.status, class: 'badge-approved' };
                   return (
                     <motion.tr
                       key={tx.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.9 + index * 0.05 }}
+                      transition={{ delay: 0.2 + index * 0.03 }}
                     >
                       <td>
                         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.78rem', color: 'var(--accent-primary)' }}>
@@ -375,15 +399,30 @@ export default function TransactionTable({ transactions: propTransactions }) {
                         </span>
                       </td>
                       <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.78rem' }}>
-                        {tx.timestamp.split(' ')[1]}
+                        {tx.timestamp ? (tx.timestamp.includes(' ') ? tx.timestamp.split(' ')[1] : tx.timestamp.substring(11, 19)) : '-'}
                       </td>
                       <td>
                         <div>
-                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{tx.senderName}</div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{tx.senderAccount}</div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                            {maskName(tx.senderName, isMasked)}
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            {maskAccount(tx.senderAccount, isMasked)}
+                          </div>
                         </div>
                       </td>
-                      <td>{tx.senderBank}</td>
+                      <td>
+                        <span style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          padding: '2px 6px',
+                          borderRadius: 4,
+                          background: tx.senderBank?.includes('bjb') ? 'rgba(59,130,246,0.1)' : 'rgba(16,185,129,0.1)',
+                          color: tx.senderBank?.includes('bjb') ? '#3b82f6' : '#10b981',
+                        }}>
+                          {tx.senderBank || 'Bank bjb'}
+                        </span>
+                      </td>
                       <td>
                         <span
                           className={`amount ${
@@ -399,12 +438,14 @@ export default function TransactionTable({ transactions: propTransactions }) {
                       </td>
                       <td>
                         <div>
-                          <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{tx.destination}</div>
+                          <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                            {maskName(tx.destination, isMasked)}
+                          </div>
                           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{tx.destinationType}</div>
                         </div>
                       </td>
                       <td>
-                        <div className="risk-meter" style={{ minWidth: 100 }}>
+                        <div className="risk-meter" style={{ minWidth: 90 }}>
                           <div className="risk-bar">
                             <div
                               className={`risk-bar-fill ${
@@ -424,7 +465,7 @@ export default function TransactionTable({ transactions: propTransactions }) {
                                   : 'var(--status-success)',
                             }}
                           >
-                            {tx.riskScore}
+                            {tx.riskScore}%
                           </span>
                         </div>
                       </td>
@@ -440,6 +481,7 @@ export default function TransactionTable({ transactions: propTransactions }) {
                           onClick={() => setSelectedTx(tx)}
                           id={`btn-view-${tx.id}`}
                           style={{ padding: '4px 8px' }}
+                          title="Lihat Detail & SHAP Explainability"
                         >
                           <Eye size={14} />
                         </button>
@@ -458,6 +500,7 @@ export default function TransactionTable({ transactions: propTransactions }) {
           <TransactionDetail
             transaction={selectedTx}
             onClose={() => setSelectedTx(null)}
+            isMasked={isMasked}
           />
         )}
       </AnimatePresence>

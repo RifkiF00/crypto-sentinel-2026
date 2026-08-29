@@ -39,8 +39,40 @@ function ChartTooltip({ active, payload, label, colors }) {
   );
 }
 
-export default function BankDistribution() {
+export default function BankDistribution({ transactions = [] }) {
   const chartTheme = useChartTheme();
+  const isLive = transactions.length > 0;
+
+  let chartData;
+  if (isLive) {
+    // Kelompokkan secara dinamis dari transaksi live
+    const banks = ['Bank bjb', 'Bank Kuningan', 'Bank Lain'];
+    const counts = {
+      'Bank bjb': { total: 0, flagged: 0, blocked: 0 },
+      'Bank Kuningan': { total: 0, flagged: 0, blocked: 0 },
+      'Bank Lain': { total: 0, flagged: 0, blocked: 0 }
+    };
+
+    transactions.forEach(tx => {
+      let b = tx.senderBank || 'Bank bjb';
+      if (b.includes('bjb')) b = 'Bank bjb';
+      else if (b.includes('Kuningan')) b = 'Bank Kuningan';
+      else b = 'Bank Lain';
+
+      counts[b].total++;
+      if (tx.status === 'blocked' || tx.status === 'BLOCK') counts[b].blocked++;
+      else if (tx.status === 'flagged' || tx.status === 'REVIEW') counts[b].flagged++;
+    });
+
+    chartData = banks.map(b => ({
+      bank: b,
+      total: counts[b].total,
+      flagged: counts[b].flagged,
+      blocked: counts[b].blocked,
+    }));
+  } else {
+    chartData = bankDistribution;
+  }
 
   return (
     <motion.div
@@ -55,11 +87,16 @@ export default function BankDistribution() {
           <Building2 />
           Distribusi Per Bank
         </div>
+        {isLive && (
+          <span style={{ fontSize: '0.7rem', color: '#6366f1', fontWeight: 700, background: 'rgba(99,102,241,0.1)', padding: '2px 8px', borderRadius: 6 }}>
+            🟢 LIVE MULTI-BANK
+          </span>
+        )}
       </div>
       <div className="card-body">
         <ResponsiveChartWrapper height={220}>
           {(w, h) => (
-            <BarChart width={w} height={h} data={bankDistribution} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <BarChart width={w} height={h} data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
               <XAxis
                 dataKey="bank"

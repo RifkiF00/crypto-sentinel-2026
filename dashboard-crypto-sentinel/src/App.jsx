@@ -147,6 +147,8 @@ function DashboardLayout({ onBackToLanding, currentUser }) {
     }, 3500);
   }, []);
 
+  const [privacyMasking, setPrivacyMasking] = useState(false);
+
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
   }, []);
@@ -175,7 +177,14 @@ function DashboardLayout({ onBackToLanding, currentUser }) {
       />
 
       <main className="main-content">
-        <Header onMenuToggle={toggleSidebar} apiOnline={apiOnline} onBackToLanding={onBackToLanding} addToast={addToast} />
+        <Header
+          onMenuToggle={toggleSidebar}
+          apiOnline={apiOnline}
+          onBackToLanding={onBackToLanding}
+          addToast={addToast}
+          privacyMasking={privacyMasking}
+          setPrivacyMasking={setPrivacyMasking}
+        />
         
         <div className="page-content">
           <AnimatePresence mode="wait">
@@ -191,22 +200,22 @@ function DashboardLayout({ onBackToLanding, currentUser }) {
               ---------------------------------------------------- */}
               {activePage === 'dashboard' && (
                 <>
-                  <StatsGrid />
-                  <TransactionChart />
+                  <StatsGrid transactions={transactions} />
+                  <TransactionChart transactions={transactions} />
                   <div className="content-grid-3" style={{ marginTop: 24 }}>
-                    <RiskDistribution />
+                    <RiskDistribution transactions={transactions} />
                     <AlertFeed alerts={alerts} />
                     <CryptoExchangeList />
                   </div>
-                  <TransactionTable transactions={transactions} />
+                  <TransactionTable transactions={transactions} isMasked={privacyMasking} />
                   <div className="content-grid-3" style={{ marginTop: 24 }}>
-                    <BlockedPatterns />
-                    <HourlyActivity />
-                    <BankDistribution />
+                    <BlockedPatterns transactions={transactions} />
+                    <HourlyActivity transactions={transactions} />
+                    <BankDistribution transactions={transactions} />
                   </div>
                   <div className="content-grid" style={{ marginTop: 24 }}>
-                    <ActivityTimeline />
-                    <WeeklyComparison />
+                    <ActivityTimeline transactions={transactions} />
+                    <WeeklyComparison transactions={transactions} />
                   </div>
                 </>
               )}

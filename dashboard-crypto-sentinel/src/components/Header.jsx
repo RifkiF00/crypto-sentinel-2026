@@ -1,9 +1,16 @@
-import { Bell, Sun, Moon, Filter, Menu, Zap, Home } from 'lucide-react';
+import { Bell, Sun, Moon, Filter, Menu, Zap, Home, EyeOff, Eye, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { triggerSmurfingSimulation } from '../services/api';
 
-export default function Header({ onMenuToggle, apiOnline = false, onBackToLanding, addToast }) {
+export default function Header({
+  onMenuToggle,
+  apiOnline = false,
+  onBackToLanding,
+  addToast,
+  privacyMasking = false,
+  setPrivacyMasking,
+}) {
   const { theme, toggleTheme } = useTheme();
   const [isSimulating, setIsSimulating] = useState(false);
 
@@ -19,6 +26,19 @@ export default function Header({ onMenuToggle, apiOnline = false, onBackToLandin
       if (addToast) addToast(`⚠️ Gagal menjalankan simulasi: ${e.message}`, 'error');
     } finally {
       setIsSimulating(false);
+    }
+  };
+
+  const toggleMasking = () => {
+    const next = !privacyMasking;
+    if (setPrivacyMasking) setPrivacyMasking(next);
+    if (addToast) {
+      addToast(
+        next
+          ? '🔒 Mode Sensor Privasi (UU PDP No. 27/2022) DIAKTIFKAN'
+          : '🔓 Mode Sensor Privasi DINONAKTIFKAN (Tampilkan Data Lengkap)',
+        next ? 'success' : 'warning'
+      );
     }
   };
 
@@ -44,6 +64,27 @@ export default function Header({ onMenuToggle, apiOnline = false, onBackToLandin
             <span>Landing Page</span>
           </button>
         )}
+
+        {/* Toggle Masking UU PDP */}
+        <button
+          className="btn btn-ghost btn-sm tooltip"
+          data-tooltip={privacyMasking ? 'Matikan Sensor Privasi' : 'Aktifkan Sensor UU PDP'}
+          onClick={toggleMasking}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: '0.78rem',
+            background: privacyMasking ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
+            color: privacyMasking ? '#10b981' : 'var(--text-secondary)',
+            border: `1px solid ${privacyMasking ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255,255,255,0.1)'}`,
+            borderRadius: 'var(--radius-md)',
+            padding: '5px 12px',
+          }}
+        >
+          {privacyMasking ? <EyeOff size={15} /> : <Eye size={15} />}
+          <span>{privacyMasking ? 'UU PDP: AKTIF' : 'Sensor Data'}</span>
+        </button>
 
         <button
           className="btn btn-sm"
