@@ -67,17 +67,36 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
         display: 'flex',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
         boxSizing: 'border-box',
-        overflow: 'hidden'
+        overflowX: 'hidden'
       }}
     >
+      <style>{`
+        @media (max-width: 900px) {
+          .login-right-bg {
+            display: none !important;
+          }
+          .login-left-col {
+            max-width: 100% !important;
+            width: 100% !important;
+            padding: 28px 16px !important;
+            justify-content: center !important;
+          }
+          .login-card {
+            padding: 24px 18px !important;
+            border-radius: 20px !important;
+          }
+        }
+      `}</style>
+
       {/* Right Column: High-Res Crisp Visual Image Container */}
       <div
+        className="login-right-bg"
         style={{
           position: 'absolute',
           top: 0,
           right: 0,
           bottom: 0,
-          width: '68%',
+          width: '64%',
           minWidth: '500px',
           overflow: 'hidden',
           zIndex: 1
@@ -105,73 +124,74 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
         />
       </div>
 
-      {/* Top Floating Back Button */}
-      <button
-        onClick={onBackToLanding}
-        style={{
-          position: 'absolute',
-          top: 28,
-          left: 'clamp(40px, 5.5vw, 84px)',
-          background: 'rgba(255, 255, 255, 0.92)',
-          border: '1px solid rgba(255, 255, 255, 0.85)',
-          color: '#0f172a',
-          padding: '8px 18px',
-          borderRadius: 9999,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          fontSize: '0.82rem',
-          fontWeight: 700,
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
-          backdropFilter: 'blur(10px)',
-          transition: 'all 0.2s ease',
-          zIndex: 30
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = '#ffffff';
-          e.currentTarget.style.transform = 'translateX(-3px)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.92)';
-          e.currentTarget.style.transform = 'none';
-        }}
-      >
-        <ArrowLeft size={16} /> Kembali ke Beranda
-      </button>
-
       {/* Left Column: Fixed / Fluid Glassmorphic Login Card */}
       <div
+        className="login-left-col"
         style={{
           position: 'relative',
           zIndex: 10,
           width: '100%',
-          maxWidth: '620px',
+          maxWidth: '580px',
           minHeight: '100vh',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '40px 32px 40px clamp(40px, 5.5vw, 84px)',
+          padding: '40px 24px 40px clamp(32px, 5vw, 72px)',
           boxSizing: 'border-box'
         }}
       >
-        <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-          style={{
-            width: '100%',
-            maxWidth: 440,
-            background: 'rgba(255, 255, 255, 0.94)',
-            backdropFilter: 'blur(28px)',
-            WebkitBackdropFilter: 'blur(28px)',
-            border: '1px solid rgba(255, 255, 255, 0.95)',
-            borderRadius: 28,
-            padding: '36px 32px',
-            boxShadow: '0 25px 60px rgba(0, 10, 30, 0.35), 0 0 35px rgba(255, 255, 255, 0.4)',
-            boxSizing: 'border-box'
-          }}
-        >
+        <div style={{ width: '100%', maxWidth: 440, display: 'flex', flexDirection: 'column' }}>
+          {/* Top Floating Back Button (Natural Flow - Never Collides) */}
+          <button
+            onClick={onBackToLanding}
+            style={{
+              alignSelf: 'flex-start',
+              marginBottom: 14,
+              background: 'rgba(255, 255, 255, 0.92)',
+              border: '1px solid rgba(255, 255, 255, 0.85)',
+              color: '#0f172a',
+              padding: '7px 16px',
+              borderRadius: 9999,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.12)',
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#ffffff';
+              e.currentTarget.style.transform = 'translateX(-3px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.92)';
+              e.currentTarget.style.transform = 'none';
+            }}
+          >
+            <ArrowLeft size={15} /> Kembali ke Beranda
+          </button>
+
+          <motion.div
+            className="login-card"
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            style={{
+              width: '100%',
+              background: 'rgba(255, 255, 255, 0.94)',
+              backdropFilter: 'blur(28px)',
+              WebkitBackdropFilter: 'blur(28px)',
+              border: '1px solid rgba(255, 255, 255, 0.95)',
+              borderRadius: 24,
+              padding: '32px 28px',
+              boxShadow: '0 25px 60px rgba(0, 10, 30, 0.35), 0 0 35px rgba(255, 255, 255, 0.4)',
+              boxSizing: 'border-box'
+            }}
+          >
         {/* Brand Logo */}
         <div style={{ marginBottom: 20 }}>
           <img
@@ -521,5 +541,6 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
       </motion.div>
     </div>
   </div>
+</div>
 );
 }
