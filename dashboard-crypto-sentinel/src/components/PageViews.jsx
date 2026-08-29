@@ -132,6 +132,28 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
     return () => clearInterval(interval);
   }, [isLive]);
 
+  // Real live polling: Fetch fresh transactions from database every 4 seconds
+  useEffect(() => {
+    if (!isLive) return;
+    const pollTimer = setInterval(async () => {
+      try {
+        const fresh = await fetchTransactions();
+        if (fresh && fresh.length > 0) {
+          setTransactions(prev => {
+            if (fresh.length !== prev.length || fresh[0]?.id !== prev[0]?.id) {
+              return fresh;
+            }
+            return prev;
+          });
+        }
+      } catch (err) {
+        // silent catch during polling
+      }
+    }, 4000);
+
+    return () => clearInterval(pollTimer);
+  }, [isLive, setTransactions]);
+
   return (
     <div className="monitoring-view">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -314,6 +336,29 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
   const [showFullModal, setShowFullModal] = useState(false);
   const [modalTab, setModalTab] = useState('gnn');
   const [mulesList, setMulesList] = useState(muleAccountsData);
+  const [showLtkmModal, setShowLtkmModal] = useState(false);
+  const [ltkmHtml, setLtkmHtml] = useState('');
+  const [isGeneratingLtkm, setIsGeneratingLtkm] = useState(false);
+
+  const handleGenerateLtkm = async (alert) => {
+    setIsGeneratingLtkm(true);
+    try {
+      const txnId = alert.transaction_id || alert.id || 'TXN-9901';
+      const res = await fetch(`http://localhost:8000/api/v1/sentinel/str/download/${txnId}`);
+      if (res.ok) {
+        const html = await res.text();
+        setLtkmHtml(html);
+        setShowLtkmModal(true);
+        addToast('📄 Draf Laporan LTKM Resmi PPATK (goAML) berhasil dikompilasi!', 'success');
+      } else {
+        addToast('Gagal memuat format LTKM dari API', 'error');
+      }
+    } catch (e) {
+      addToast('Koneksi ke backend API terputus', 'error');
+    } finally {
+      setIsGeneratingLtkm(false);
+    }
+  };
 
   const filteredAlerts = alerts.filter(alert => {
     const matchesSearch = alert.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -628,6 +673,21 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
                         onClick={() => handleResolveAlert(selectedAlert.id, 'block')}
                       >
                         🛡️ Blokir Rekening & Wallet Crypto
+                      </button>
+
+                      {/* Official LTKM Report Generation Button */}
+                      <button
+                        className="btn btn-primary"
+                        style={{
+                          background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                          justifyContent: 'center',
+                          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
+                        }}
+                        disabled={isGeneratingLtkm}
+                        onClick={() => handleGenerateLtkm(selectedAlert)}
+                      >
+                        <FileText size={16} />
+                        <span>{isGeneratingLtkm ? 'Mengompilasi Dokumen...' : '📄 Terbitkan Draf LTKM PPATK (goAML)'}</span>
                       </button>
 
                       <button
@@ -1010,6 +1070,105 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities }) 
               ) : (
                 <MuleAccountAnalysis addToast={addToast} />
               )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Official PPATK LTKM Document Preview Modal */}
+      {showLtkmModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(3, 7, 18, 0.88)',
+          backdropFilter: 'blur(16px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999999,
+          padding: 20
+        }}>
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              maxWidth: '960px',
+              width: '100%',
+              height: '90vh',
+              background: '#ffffff',
+              borderRadius: 16,
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '14px 20px',
+              background: '#0f172a',
+              color: 'white',
+              borderBottom: '1px solid #334155'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Shield size={20} style={{ color: '#10b981' }} />
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800 }}>
+                    Draf Laporan Transaksi Keuangan Mencurigakan (LTKM / goAML PPATK)
+                  </h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.72rem', color: '#94a3b8' }}>
+                    Standar Format Resmi PPATK RI &amp; UU No. 8 Tahun 2010 Pasal 23
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  className="btn btn-sm"
+                  onClick={() => {
+                    const printWin = window.open('', '_blank');
+                    printWin.document.write(ltkmHtml);
+                    printWin.document.close();
+                    printWin.focus();
+                    setTimeout(() => printWin.print(), 300);
+                  }}
+                  style={{
+                    background: '#2563eb',
+                    color: 'white',
+                    border: 'none',
+                    fontSize: '0.76rem',
+                    padding: '6px 14px',
+                    borderRadius: 6,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                >
+                  <Download size={14} /> Cetak / Unduh PDF
+                </button>
+                <button
+                  className="modal-close"
+                  onClick={() => setShowLtkmModal(false)}
+                  style={{ color: '#94a3b8', background: 'transparent', border: 'none', cursor: 'pointer', padding: 4 }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', background: '#f8fafc', padding: 12 }}>
+              <iframe
+                title="LTKM Document Preview"
+                srcDoc={ltkmHtml}
+                style={{ width: '100%', height: '100%', border: 'none', minHeight: '650px', background: '#ffffff', borderRadius: 8 }}
+              />
             </div>
           </motion.div>
         </div>

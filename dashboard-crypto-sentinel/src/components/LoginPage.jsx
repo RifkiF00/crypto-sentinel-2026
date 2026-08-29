@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Shield, Check } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Shield, Check, Users } from 'lucide-react';
+import { DEMO_USERS, ROLES } from '../context/AuthContext';
 
 export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
   const [email, setEmail] = useState('compliance@bankkuningan.co.id');
@@ -8,20 +9,33 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [selectedQuickUser, setSelectedQuickUser] = useState(null);
+
+  const handleQuickSelect = (user) => {
+    setEmail(user.email);
+    setPassword(user.password);
+    setSelectedQuickUser(user.id);
+    setLoginError('');
+  };
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
+    setLoginError('');
     setIsLoading(true);
 
     setTimeout(() => {
       setIsLoading(false);
-      onLoginSuccess({
-        email: email || 'compliance@bankkuningan.co.id',
-        name: 'Rifki Firmansyah, S.Kom',
-        role: 'compliance',
-        roleLabel: 'Compliance Officer (PPATK/OJK)'
-      });
-    }, 500);
+      // Validate against DEMO_USERS
+      const matched = DEMO_USERS.find(
+        u => u.email === email && u.password === password
+      );
+      if (matched) {
+        onLoginSuccess(matched);
+      } else {
+        setLoginError('Email atau password tidak valid. Gunakan akun demo di bawah.');
+      }
+    }, 700);
   };
 
   return (
@@ -181,21 +195,69 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
 
         {/* Login Form */}
         <form onSubmit={handleSubmit}>
+
+          {/* ── Quick Login Role Selector ───────────────────────────── */}
+          <div style={{ marginBottom: 18 }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#334155', marginBottom: 8, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              Pilih Akun Demo Sesuai Peran Anda
+            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {DEMO_USERS.map(u => {
+                const roleConfig = ROLES[u.role];
+                const isSelected = selectedQuickUser === u.id;
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => handleQuickSelect(u)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '9px 12px',
+                      background: isSelected ? 'rgba(37, 99, 235, 0.06)' : '#f8fafc',
+                      border: isSelected ? '1.5px solid #2563eb' : '1.5px solid #e2e8f0',
+                      borderRadius: 10,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease',
+                      width: '100%'
+                    }}
+                  >
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 8,
+                      background: roleConfig?.badgeColor + '22',
+                      border: `1.5px solid ${roleConfig?.badgeColor}55`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.62rem', fontWeight: 800, color: roleConfig?.badgeColor,
+                      flexShrink: 0
+                    }}>
+                      {roleConfig?.avatar}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>{u.name}</div>
+                      <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: 1 }}>{roleConfig?.sublabel}</div>
+                    </div>
+                    <span style={{
+                      fontSize: '0.6rem', fontWeight: 800, padding: '2px 7px',
+                      borderRadius: 5, background: roleConfig?.badgeColor + '22',
+                      color: roleConfig?.badgeColor, flexShrink: 0
+                    }}>
+                      {roleConfig?.badge}
+                    </span>
+                    {isSelected && <Check size={14} color="#2563eb" style={{ flexShrink: 0 }} />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Email Field */}
           <div style={{ marginBottom: 16 }}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                color: '#334155',
-                marginBottom: 6
-              }}
-            >
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>
               Email
             </label>
-            <div
-              style={{
+            <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 background: '#ffffff',
@@ -337,6 +399,22 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
             </a>
           </div>
 
+          {/* Error message */}
+          {loginError && (
+            <div style={{
+              marginBottom: 14,
+              padding: '10px 14px',
+              background: 'rgba(239,68,68,0.08)',
+              border: '1px solid rgba(239,68,68,0.25)',
+              borderRadius: 10,
+              color: '#dc2626',
+              fontSize: '0.8rem',
+              fontWeight: 600
+            }}>
+              ❌ {loginError}
+            </div>
+          )}
+
           {/* Primary Submit Button */}
           <button
             type="submit"
@@ -366,7 +444,7 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
               <span>Mengotentikasi...</span>
             ) : (
               <>
-                <span>Masuk</span>
+                <span>Masuk ke Dashboard</span>
                 <ArrowRight size={18} />
               </>
             )}

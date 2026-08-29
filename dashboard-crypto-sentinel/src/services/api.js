@@ -580,3 +580,16 @@ export async function gnnInference() {
   }
 }
 
+// Fetch Live 3-Hop GNN Neighborhood Subgraph & GNNExplainer attribution
+export async function fetchGnnNeighborhood(accountId = '1234567890', hops = 3, scenario = 'smurfing_crypto') {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/sentinel/gnn/neighborhood/${accountId}?hops=${hops}&scenario=${scenario}`);
+    if (!res.ok) throw new Error('GNN Neighborhood fetch failed');
+    return await res.json();
+  } catch (err) {
+    console.warn('Fallback to local GNN topology:', err);
+    return null;
+  }
+}
+
+

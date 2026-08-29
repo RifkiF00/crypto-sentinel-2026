@@ -686,12 +686,17 @@ export default function GNNVisualization({ addToast }) {
 
   // Filter & Layer Controls
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'crypto' | 'mule' | 'device'
+  const [temporalStep, setTemporalStep] = useState(0); // 0: Semua, 1: 09:01 WIB (Fan-Out), 2: 09:07 WIB (Transit), 3: 09:16 WIB (Crypto)
+  const [isXaiExplainerActive, setIsXaiExplainerActive] = useState(true);
   const [selectedNode, setSelectedNode] = useState(null);
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
   const [isAnimationPlaying, setIsAnimationPlaying] = useState(true);
   const [isAutoLayout, setIsAutoLayout] = useState(true);
   const [showMetricsDrawer, setShowMetricsDrawer] = useState(true);
   const [showSummaryDrawer, setShowSummaryDrawer] = useState(true);
+
+  // Minimal explanatory subgraph nodes identified by GNNExplainer (Mutual Info Optimization)
+  const XAI_MINIMAL_SUBGRAPH_NODES = useMemo(() => ['A1', 'B1', 'B3', 'M1', 'C2', 'C4'], []);
 
   const containerRef = useRef(null);
   const svgRef = useRef(null);
@@ -1029,6 +1034,62 @@ export default function GNNVisualization({ addToast }) {
             >
               Device &amp; IP Linkage
             </button>
+
+            {/* GNNExplainer XAI Toggle Button */}
+            <button
+              className="btn btn-sm"
+              onClick={() => {
+                setIsXaiExplainerActive(!isXaiExplainerActive);
+                if (addToast) addToast(isXaiExplainerActive ? 'Subgraf penjelas GNNExplainer dinonaktifkan.' : '✨ Subgraf penjelas GNNExplainer diaktifkan (Mutual Info Max).', 'info');
+              }}
+              style={{
+                fontSize: '0.74rem',
+                height: 28,
+                padding: '0 12px',
+                borderRadius: 6,
+                background: isXaiExplainerActive ? 'linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(249, 115, 22, 0.2) 100%)' : 'var(--bg-card-subtle)',
+                border: isXaiExplainerActive ? '1px solid #f59e0b' : '1px solid var(--border-color)',
+                color: isXaiExplainerActive ? '#f59e0b' : 'var(--text-muted)',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5
+              }}
+            >
+              <Sparkles size={13} />
+              <span>GNNExplainer XAI ({isXaiExplainerActive ? 'AKTIF' : 'OFF'})</span>
+            </button>
+          </div>
+
+          {/* Temporal Slider Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-card-subtle)', padding: '3px 8px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)' }}>⏱️ Temporal Slider:</span>
+            {[
+              { step: 0, label: 'Semua (Full)' },
+              { step: 1, label: '09:01 (Fan-Out)' },
+              { step: 2, label: '09:07 (Transit)' },
+              { step: 3, label: '09:16 (Crypto)' },
+            ].map(s => (
+              <button
+                key={s.step}
+                onClick={() => {
+                  setTemporalStep(s.step);
+                  if (addToast && s.step > 0) addToast(`Rekonstruksi Temporal: Tahap ${s.step} (${s.label})`, 'info');
+                }}
+                style={{
+                  fontSize: '0.7rem',
+                  padding: '3px 8px',
+                  borderRadius: 5,
+                  border: temporalStep === s.step ? '1px solid #38bdf8' : 'none',
+                  background: temporalStep === s.step ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
+                  color: temporalStep === s.step ? '#38bdf8' : 'var(--text-muted)',
+                  fontWeight: temporalStep === s.step ? 800 : 500,
+                  cursor: 'pointer'
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
           </div>
 
           {/* Interactive Navigation Tools */}
@@ -1549,24 +1610,32 @@ export default function GNNVisualization({ addToast }) {
               const midY = srcPos.y + dy * 0.5 + (Math.abs(dx) > 150 ? (dy > 0 ? 10 : -10) : 0);
 
               const isHighlighted = hoveredNodeId === edge.from || hoveredNodeId === edge.to;
+              const isXaiEdge = XAI_MINIMAL_SUBGRAPH_NODES.includes(edge.from) && XAI_MINIMAL_SUBGRAPH_NODES.includes(edge.to);
+              
+              const isTemporalEdge = temporalStep === 0
+                || (temporalStep === 1 && edge.flow === 'smurfing')
+                || (temporalStep === 2 && edge.flow === 'transit')
+                || (temporalStep === 3 && (edge.flow === 'crypto_outflow' || edge.type === 'crypto'));
+
+              const edgeEffectiveOpacity = !isTemporalEdge ? 0.08 : (isXaiExplainerActive && !isXaiEdge && !isHighlighted ? 0.3 : (isHighlighted ? 1 : 0.85));
               const markerId = edge.type === 'crypto' ? 'url(#arrow-red)' : edge.type === 'device' ? 'url(#arrow-cyan)' : edge.flow === 'transit' ? 'url(#arrow-amber)' : edge.flow === 'payroll' ? 'url(#arrow-green)' : 'url(#arrow-blue)';
 
               return (
-                <g key={`edge-${edge.from}-${edge.to}-${idx}`}>
+                <g key={`edge-${edge.from}-${edge.to}-${idx}`} opacity={edgeEffectiveOpacity} style={{ transition: 'opacity 0.3s ease' }}>
                   {/* Outer Glow Line */}
                   <path
                     d={`M ${srcPos.x} ${srcPos.y} Q ${midX} ${midY} ${tgtPos.x} ${tgtPos.y}`}
-                    stroke={edgeStyle.glow}
-                    strokeWidth={edgeStyle.width + 4}
+                    stroke={isXaiEdge && isXaiExplainerActive ? '#f59e0b' : edgeStyle.glow}
+                    strokeWidth={isXaiEdge && isXaiExplainerActive ? edgeStyle.width + 6 : edgeStyle.width + 4}
                     fill="none"
-                    opacity={isHighlighted ? 0.8 : 0.3}
+                    opacity={isHighlighted || (isXaiEdge && isXaiExplainerActive) ? 0.85 : 0.3}
                   />
 
                   {/* Main Dashed Flow Line */}
                   <path
                     d={`M ${srcPos.x} ${srcPos.y} Q ${midX} ${midY} ${tgtPos.x} ${tgtPos.y}`}
-                    stroke={edgeStyle.stroke}
-                    strokeWidth={isHighlighted ? edgeStyle.width + 1.5 : edgeStyle.width}
+                    stroke={isXaiEdge && isXaiExplainerActive ? '#f59e0b' : edgeStyle.stroke}
+                    strokeWidth={isHighlighted || (isXaiEdge && isXaiExplainerActive) ? edgeStyle.width + 1.8 : edgeStyle.width}
                     strokeDasharray={edgeStyle.dash}
                     fill="none"
                     markerEnd={markerId}
@@ -1621,6 +1690,19 @@ export default function GNNVisualization({ addToast }) {
               const pos = nodePositions[node.id] || { x: node.x, y: node.y };
               const isSelected = selectedNode?.id === node.id;
               const isHovered = hoveredNodeId === node.id;
+              const isXaiNode = XAI_MINIMAL_SUBGRAPH_NODES.includes(node.id);
+
+              const isTemporalActiveNode = temporalStep === 0 
+                || (temporalStep === 1 && (node.stage === 1 || node.stage === 2))
+                || (temporalStep === 2 && (node.stage === 2 || node.stage === 3))
+                || (temporalStep === 3 && (node.stage === 3 || node.stage === 4));
+
+              const nodeEffectiveOpacity = !isTemporalActiveNode 
+                ? 0.12 
+                : (isXaiExplainerActive && !isXaiNode && node.type !== 'source' && !isSelected && !isHovered) 
+                ? 0.3 
+                : 1;
+
               const col = getNodeColor(node.type, node.riskScore);
               const nodeRadius = node.type === 'source' ? 26 : node.type === 'crypto' ? 24 : node.type === 'transit' ? 22 : 20;
 
@@ -1628,17 +1710,18 @@ export default function GNNVisualization({ addToast }) {
                 <g
                   key={node.id}
                   transform={`translate(${pos.x}, ${pos.y})`}
+                  opacity={nodeEffectiveOpacity}
                   onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
                   onMouseEnter={() => setHoveredNodeId(node.id)}
                   onMouseLeave={() => setHoveredNodeId(null)}
                   onClick={() => setSelectedNode(node)}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: 'pointer', transition: 'opacity 0.3s ease' }}
                 >
-                  {/* Pulse wave for high-risk or selected node */}
-                  {(node.riskScore >= 85 || isSelected) && (
-                    <circle r={nodeRadius + 8} fill="none" stroke={col.border} strokeWidth="1.5" opacity="0.6">
-                      <animate attributeName="r" values={`${nodeRadius + 4};${nodeRadius + 16};${nodeRadius + 4}`} dur="2s" repeatCount="indefinite" />
-                      <animate attributeName="opacity" values="0.6;0;0.6" dur="2s" repeatCount="indefinite" />
+                  {/* Pulse wave for high-risk, XAI highlighted, or selected node */}
+                  {(node.riskScore >= 85 || isSelected || (isXaiNode && isXaiExplainerActive)) && (
+                    <circle r={nodeRadius + 8} fill="none" stroke={isXaiNode && isXaiExplainerActive ? '#f59e0b' : col.border} strokeWidth="1.5" opacity="0.7">
+                      <animate attributeName="r" values={`${nodeRadius + 4};${nodeRadius + 18};${nodeRadius + 4}`} dur="2s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.7;0;0.7" dur="2s" repeatCount="indefinite" />
                     </circle>
                   )}
 
@@ -1646,9 +1729,9 @@ export default function GNNVisualization({ addToast }) {
                   <circle
                     r={nodeRadius}
                     fill={col.bg}
-                    stroke={col.border}
-                    strokeWidth={isSelected ? 3.5 : 2.2}
-                    filter={isSelected ? 'url(#glow-red)' : 'none'}
+                    stroke={isXaiNode && isXaiExplainerActive ? '#f59e0b' : col.border}
+                    strokeWidth={isSelected ? 3.5 : (isXaiNode && isXaiExplainerActive ? 3 : 2.2)}
+                    filter={isSelected || (isXaiNode && isXaiExplainerActive) ? 'url(#glow-red)' : 'none'}
                   />
 
                   {/* Node Icon or Code */}

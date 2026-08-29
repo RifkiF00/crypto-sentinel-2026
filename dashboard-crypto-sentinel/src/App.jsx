@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider, useAuth, ROLES, AccessDenied } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
@@ -36,7 +37,9 @@ import {
 // Initial Mock Data
 import { recentTransactions, alertFeed } from './data/mockData';
 
-function DashboardLayout({ onBackToLanding, currentUser }) {
+function DashboardLayout({ onBackToLanding }) {
+  const { currentUser, can } = useAuth();
+  const activatedRoleConfig = ROLES[currentUser?.role] || ROLES.compliance_officer;
   const [activePage, setActivePage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [apiOnline, setApiOnline] = useState(false);
@@ -103,11 +106,16 @@ function DashboardLayout({ onBackToLanding, currentUser }) {
     smurfingCheckEnabled: true
   });
 
-  const [adminProfile, setAdminProfile] = useState({
-    name: 'Admin Regulator',
-    role: 'OJK - Compliance Div.',
-    avatar: 'AR'
-  });
+  const adminProfile = {
+    name: currentUser?.name || 'Admin Regulator',
+    role: activatedRoleConfig?.sublabel || 'Compliance Officer',
+    avatar: activatedRoleConfig?.avatar || 'AR',
+    badge: activatedRoleConfig?.badge || 'FULL ACCESS',
+    badgeColor: activatedRoleConfig?.badgeColor || '#059669',
+    level: activatedRoleConfig?.level || 'LEVEL 2',
+    bank: currentUser?.bank || 'Bank Kuningan',
+    nip: currentUser?.nip || '-',
+  };
 
   const [toasts, setToasts] = useState([]);
 
@@ -331,79 +339,83 @@ function DashboardLayout({ onBackToLanding, currentUser }) {
 }
 
 export default function App() {
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <AppInner />
+      </ThemeProvider>
+    </AuthProvider>
+  );
+}
+
+function AppInner() {
   // viewMode: 'landing' | 'loading' | 'login' | 'dashboard'
   const [viewMode, setViewMode] = useState('landing');
-  const [currentUser, setCurrentUser] = useState({
-    nip: 'ADM-882910',
-    role: 'compliance',
-    name: 'Rifki Firmansyah, S.Kom',
-    roleLabel: 'Compliance Officer (PPATK/OJK)'
-  });
+  const { login } = useAuth();
+
+  const handleLoginSuccess = (user) => {
+    login(user); // Register user into AuthContext (sets role + permissions)
+    setViewMode('dashboard');
+  };
 
   return (
-    <ThemeProvider>
-      <AnimatePresence mode="wait">
-        {viewMode === 'landing' && (
-          <motion.div
-            key="landing"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.35 }}
-            style={{ width: '100%' }}
-          >
-            <LandingPage onEnter={() => setViewMode('loading')} />
-          </motion.div>
-        )}
+    <AnimatePresence mode="wait">
+      {viewMode === 'landing' && (
+        <motion.div
+          key="landing"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.35 }}
+          style={{ width: '100%' }}
+        >
+          <LandingPage onEnter={() => setViewMode('loading')} />
+        </motion.div>
+      )}
 
-        {viewMode === 'loading' && (
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            transition={{ duration: 0.35 }}
-            style={{ width: '100%' }}
-          >
-            <AuthLoadingScreen onFinished={() => setViewMode('login')} />
-          </motion.div>
-        )}
+      {viewMode === 'loading' && (
+        <motion.div
+          key="loading"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, scale: 1.05 }}
+          transition={{ duration: 0.35 }}
+          style={{ width: '100%' }}
+        >
+          <AuthLoadingScreen onFinished={() => setViewMode('login')} />
+        </motion.div>
+      )}
 
-        {viewMode === 'login' && (
-          <motion.div
-            key="login"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.35 }}
-            style={{ width: '100%' }}
-          >
-            <LoginPage
-              onLoginSuccess={(user) => {
-                if (user) setCurrentUser(user);
-                setViewMode('dashboard');
-              }}
-              onBackToLanding={() => setViewMode('landing')}
-            />
-          </motion.div>
-        )}
+      {viewMode === 'login' && (
+        <motion.div
+          key="login"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.35 }}
+          style={{ width: '100%' }}
+        >
+          <LoginPage
+            onLoginSuccess={handleLoginSuccess}
+            onBackToLanding={() => setViewMode('landing')}
+          />
+        </motion.div>
+      )}
 
-        {viewMode === 'dashboard' && (
-          <motion.div
-            key="dashboard"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.4 }}
-            style={{ width: '100%' }}
-          >
-            <DashboardLayout
-              currentUser={currentUser}
-              onBackToLanding={() => setViewMode('landing')}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </ThemeProvider>
+      {viewMode === 'dashboard' && (
+        <motion.div
+          key="dashboard"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.4 }}
+          style={{ width: '100%' }}
+        >
+          <DashboardLayout
+            onBackToLanding={() => setViewMode('landing')}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
