@@ -117,11 +117,12 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
     if (!isLive) return;
     const interval = setInterval(() => {
       const msgs = [
-        'Memindai transaksi m-banking Bank Mandiri...',
-        'Memindai transaksi ATM BCA...',
-        'Pemeriksaan kepatuhan OJK aman untuk transaksi domestik.',
-        'Sistem memverifikasi dompet crypto tujuan Indodax / Tokocrypto...',
-        'Memindai transaksi m-banking Bank BRI...'
+        'Memvalidasi digital signature SNAP BI HMAC-SHA256 pada APEX Gateway...',
+        'Memeriksa rekening tujuan pada database Threat Intelligence VASP Bappebti...',
+        'Mengevaluasi latensi Pre-Commit Circuit Breaker (18ms)...',
+        'Sinkronisasi telemetry transaksi APEX Bank bjb -> BPR Bank Kuningan...',
+        'Pemeriksaan topologi GNN: In-Degree & PageRank akun penerima aman...',
+        'Memindai indikator anomali POJK No. 8/2023 & UU TPPU No. 8/2010...'
       ];
       const randomMsg = msgs[Math.floor(Math.random() * msgs.length)];
       const now = new Date().toLocaleTimeString();

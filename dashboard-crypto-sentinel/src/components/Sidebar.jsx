@@ -15,29 +15,29 @@ import {
 export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile, alertsCount }) {
   const navSections = [
     {
-      title: 'Utama',
+      title: 'Monitoring Utama',
       items: [
-        { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
-        { icon: Activity, label: 'Live Monitoring', id: 'monitoring', badge: 'LIVE' },
-        { icon: ShieldAlert, label: 'Alert & Ancaman', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
+        { icon: LayoutDashboard, label: 'Dashboard Overview', id: 'dashboard' },
+        { icon: Activity, label: 'Live Sentinel Stream', id: 'monitoring', badge: 'LIVE' },
+        { icon: ShieldAlert, label: 'Investigasi Alert (CMS)', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
       ],
     },
     {
-      title: 'Analisis',
+      title: 'Intelijen & Forensik AI',
       items: [
-        { icon: BarChart3, label: 'Analisis Transaksi', id: 'analysis' },
-        { icon: Globe, label: 'Crypto Exchange', id: 'exchange' },
-        { icon: FileWarning, label: 'Pola Mencurigakan', id: 'patterns' },
-        { icon: Users, label: 'Profil Risiko', id: 'risk-profiles' },
+        { icon: BarChart3, label: 'Analisis Relasi Graf (GNN)', id: 'analysis' },
+        { icon: Globe, label: 'Direktori VASP & Kripto', id: 'exchange' },
+        { icon: FileWarning, label: 'Indikator & Pola Fraud', id: 'patterns' },
+        { icon: Users, label: 'Profil Risiko Nasabah', id: 'risk-profiles' },
       ],
     },
     {
-      title: 'Sistem',
+      title: 'Kepatuhan & Regulasi',
       items: [
-        { icon: Database, label: 'Database Blocklist', id: 'blocklist' },
-        { icon: BookOpen, label: 'Aturan & Kebijakan', id: 'rules' },
-        { icon: Shield, label: 'Compliance', id: 'compliance' },
-        { icon: Settings, label: 'Pengaturan', id: 'settings' },
+        { icon: Database, label: 'Database Blocklist OJK', id: 'blocklist' },
+        { icon: BookOpen, label: 'Aturan & Kebijakan FDS', id: 'rules' },
+        { icon: Shield, label: 'Kepatuhan & Audit PPATK', id: 'compliance' },
+        { icon: Settings, label: 'Pengaturan Sistem', id: 'settings' },
       ],
     },
   ];

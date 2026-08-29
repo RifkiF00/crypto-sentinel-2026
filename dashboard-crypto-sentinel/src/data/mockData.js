@@ -182,12 +182,11 @@ export const alertFeed = [
 ];
 
 export const cryptoExchangeData = [
-  { name: 'Binance', transactions: 156, amount: 12500000000, percentage: 35, risk: 'high' },
-  { name: 'Indodax', transactions: 89, amount: 4200000000, percentage: 22, risk: 'medium' },
-  { name: 'Tokocrypto', transactions: 67, amount: 3100000000, percentage: 18, risk: 'medium' },
-  { name: 'Pintu', transactions: 45, amount: 1800000000, percentage: 12, risk: 'low' },
-  { name: 'Luno', transactions: 32, amount: 2100000000, percentage: 8, risk: 'high' },
-  { name: 'Zipmex', transactions: 18, amount: 950000000, percentage: 5, risk: 'low' },
+  { name: 'PT Indodax Nasional Indonesia', code: 'INDODAX', type: 'VASP Berizin Bappebti', transactions: 142, amount: 8400000000, percentage: 32, risk: 'low', status: 'Regulated Domestic VASP' },
+  { name: 'PT Tokocrypto Indonesia', code: 'TOKOCRYPTO', type: 'VASP Berizin Bappebti', transactions: 98, amount: 5600000000, percentage: 24, risk: 'low', status: 'Regulated Domestic VASP' },
+  { name: 'PT Pintu Kemakmuran Bersama', code: 'PINTU', type: 'VASP Berizin Bappebti', transactions: 65, amount: 3200000000, percentage: 16, risk: 'low', status: 'Regulated Domestic VASP' },
+  { name: 'PT Rekeningku Dotcom (Reku)', code: 'REKU', type: 'VASP Berizin Bappebti', transactions: 38, amount: 1950000000, percentage: 10, risk: 'low', status: 'Regulated Domestic VASP' },
+  { name: 'Binance Global Exchange', code: 'BINANCE', type: 'Offshore (Non-Bappebti)', transactions: 85, amount: 9800000000, percentage: 18, risk: 'high', status: 'High-Risk Watchlist / Auto-Block' },
 ];
 
 export const transactionTrend = [
@@ -251,12 +250,12 @@ export const topBlockedPatterns = [
 ];
 
 export const bankDistribution = [
-  { bank: 'BCA', total: 3820, blocked: 98, flagged: 245, color: '#3b82f6' },
-  { bank: 'Mandiri', total: 3210, blocked: 82, flagged: 198, color: '#f59e0b' },
-  { bank: 'BRI', total: 2890, blocked: 67, flagged: 172, color: '#06d6a0' },
-  { bank: 'BNI', total: 1650, blocked: 45, flagged: 134, color: '#ec4899' },
-  { bank: 'CIMB', total: 890, blocked: 32, flagged: 89, color: '#a855f7' },
-  { bank: 'Lainnya', total: 387, blocked: 18, flagged: 53, color: '#64748b' },
+  { bank: 'Bank bjb', total: 3820, blocked: 98, flagged: 245, color: '#3b82f6' },
+  { bank: 'Bank Kuningan', total: 3210, blocked: 82, flagged: 198, color: '#10b981' },
+  { bank: 'Bank Mandiri', total: 1650, blocked: 45, flagged: 134, color: '#f59e0b' },
+  { bank: 'BCA', total: 1890, blocked: 52, flagged: 142, color: '#6366f1' },
+  { bank: 'BRI', total: 1420, blocked: 38, flagged: 95, color: '#06d6a0' },
+  { bank: 'BNI', total: 980, blocked: 28, flagged: 65, color: '#ec4899' },
 ];
 
 export const timelineData = [
