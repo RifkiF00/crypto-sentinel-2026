@@ -2008,13 +2008,16 @@ export default function LandingPage({ onEnter }) {
                       e.preventDefault();
                       setContactSubmitted(true);
                       const waText = encodeURIComponent(
-                        `*KONFIRMASI KONSULTASI KEMITRAAN BANK*\n\n` +
-                        `👤 *Nama PIC:* ${contactForm.name}\n` +
-                        `🏦 *Institusi / Bank:* ${contactForm.institution}\n` +
-                        `✉️ *Email Bisnis:* ${contactForm.email}\n` +
-                        `🎯 *Fokus Integrasi:* ${contactForm.need}\n` +
-                        `📝 *Catatan / Kebutuhan:* ${contactForm.message || '-'}\n\n` +
-                        `_Dikirim via Formulir Portal Crypto-Sentinel 2026_`
+                        `*PERMOHONAN KONSULTASI & SANDBOX FDS*\n` +
+                        `*Crypto-Sentinel 2026 — BI Innovation Hub*\n\n` +
+                        `Halo Tim Crypto-Sentinel 2026, kami mengajukan permohonan konsultasi teknis:\n\n` +
+                        `• *Nama PIC:* ${contactForm.name}\n` +
+                        `• *Institusi / Bank:* ${contactForm.institution}\n` +
+                        `• *Email Bisnis:* ${contactForm.email}\n` +
+                        `• *Fokus Kebutuhan:* ${contactForm.need}\n` +
+                        `• *Catatan / Kebutuhan:* ${contactForm.message || '-'}\n\n` +
+                        `Portal Resmi: https://innovation.pidi.id/inovasi/crypto-sentinel-2026\n` +
+                        `Mohon koordinasi jadwal demo lebih lanjut. Terima kasih.`
                       );
                       window.open(`https://wa.me/6281280851615?text=${waText}`, '_blank');
                     }}
@@ -2159,7 +2162,7 @@ export default function LandingPage({ onEnter }) {
                   {/* Direct Contact Cards */}
                   <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #f1f5f9', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     <a
-                      href="https://wa.me/6281280851615?text=Halo%20Tim%20Crypto-Sentinel%202026,%20saya%20tertarik%20untuk%20konsultasi%20kemitraan%20dan%20uji%20coba%20Sandbox%20FDS."
+                      href="https://wa.me/6281280851615?text=Halo%20Tim%20Crypto-Sentinel%202026,%20saya%20tertarik%20untuk%20konsultasi%20kemitraan%20dan%20uji%20coba%20Sandbox%20FDS.%0A%0APortal%20Resmi:%20https://innovation.pidi.id/inovasi/crypto-sentinel-2026"
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ background: '#f8fafc', padding: 12, borderRadius: 12, border: '1px solid #e2e8f0', fontSize: '0.74rem', textDecoration: 'none', display: 'block', transition: 'all 0.2s ease' }}
