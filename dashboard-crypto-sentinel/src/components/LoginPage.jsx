@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Shield, Check, Users } from 'lucide-react';
+import {
+  Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Shield, Check, Users,
+  ShieldCheck, Landmark, UserCheck, CheckCircle2, ShieldAlert
+} from 'lucide-react';
 import { DEMO_USERS, ROLES } from '../context/AuthContext';
 
 export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
@@ -10,7 +13,23 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const [selectedQuickUser, setSelectedQuickUser] = useState(null);
+  const [selectedQuickUser, setSelectedQuickUser] = useState('u1');
+
+  const getRoleIcon = (role, isSelected) => {
+    if (role === 'compliance_officer') {
+      return <ShieldCheck size={18} color={isSelected ? '#ffffff' : '#1e3a8a'} />;
+    }
+    if (role === 'admin_regulator') {
+      return <Landmark size={18} color={isSelected ? '#ffffff' : '#0f172a'} />;
+    }
+    return <UserCheck size={18} color={isSelected ? '#ffffff' : '#0369a1'} />;
+  };
+
+  const getRoleTierBadge = (role) => {
+    if (role === 'compliance_officer') return 'LEVEL 3 · MLRO';
+    if (role === 'admin_regulator') return 'SUPERVISORY AUDIT';
+    return 'LEVEL 1 · FORENSIK';
+  };
 
   const handleQuickSelect = (user) => {
     setEmail(user.email);
@@ -197,11 +216,14 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
         <form onSubmit={handleSubmit}>
 
           {/* ── Quick Login Role Selector ───────────────────────────── */}
-          <div style={{ marginBottom: 18 }}>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#334155', marginBottom: 8, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              Pilih Akun Demo Sesuai Peran Anda
-            </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#475569', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                Pilih Akun Demo Perbankan
+              </label>
+              <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>Otentikasi Instan</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {DEMO_USERS.map(u => {
                 const roleConfig = ROLES[u.role];
                 const isSelected = selectedQuickUser === u.id;
@@ -213,39 +235,64 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 10,
-                      padding: '9px 12px',
-                      background: isSelected ? 'rgba(37, 99, 235, 0.06)' : '#f8fafc',
-                      border: isSelected ? '1.5px solid #2563eb' : '1.5px solid #e2e8f0',
-                      borderRadius: 10,
+                      gap: 12,
+                      padding: '11px 14px',
+                      background: isSelected ? '#ffffff' : '#ffffff',
+                      border: isSelected ? '1.5px solid #1e3a8a' : '1px solid #e2e8f0',
+                      borderRadius: 12,
                       cursor: 'pointer',
                       textAlign: 'left',
-                      transition: 'all 0.15s ease',
-                      width: '100%'
+                      transition: 'all 0.18s ease',
+                      width: '100%',
+                      boxShadow: isSelected ? '0 4px 14px rgba(30, 58, 138, 0.12)' : '0 1px 2px rgba(0, 0, 0, 0.02)',
+                      position: 'relative'
                     }}
                   >
+                    {/* Role Icon Box */}
                     <div style={{
-                      width: 32, height: 32, borderRadius: 8,
-                      background: roleConfig?.badgeColor + '22',
-                      border: `1.5px solid ${roleConfig?.badgeColor}55`,
+                      width: 36, height: 36, borderRadius: 10,
+                      background: isSelected ? '#1e3a8a' : '#f1f5f9',
+                      border: isSelected ? '1px solid #1e3a8a' : '1px solid #e2e8f0',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '0.62rem', fontWeight: 800, color: roleConfig?.badgeColor,
-                      flexShrink: 0
+                      flexShrink: 0,
+                      transition: 'all 0.18s ease'
                     }}>
-                      {roleConfig?.avatar}
+                      {getRoleIcon(u.role, isSelected)}
                     </div>
+
+                    {/* Role Name & Unit */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>{u.name}</div>
-                      <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: 1 }}>{roleConfig?.sublabel}</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.25 }}>
+                        {u.name}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2, fontWeight: 500 }}>
+                        {roleConfig?.sublabel}
+                      </div>
                     </div>
+
+                    {/* Tier Badge */}
                     <span style={{
-                      fontSize: '0.6rem', fontWeight: 800, padding: '2px 7px',
-                      borderRadius: 5, background: roleConfig?.badgeColor + '22',
-                      color: roleConfig?.badgeColor, flexShrink: 0
+                      fontSize: '0.62rem',
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: 6,
+                      background: isSelected ? 'rgba(30, 58, 138, 0.08)' : '#f8fafc',
+                      color: isSelected ? '#1e3a8a' : '#64748b',
+                      border: isSelected ? '1px solid rgba(30, 58, 138, 0.25)' : '1px solid #e2e8f0',
+                      flexShrink: 0,
+                      letterSpacing: '0.02em'
                     }}>
-                      {roleConfig?.badge}
+                      {getRoleTierBadge(u.role)}
                     </span>
-                    {isSelected && <Check size={14} color="#2563eb" style={{ flexShrink: 0 }} />}
+
+                    {/* Radio Indicator */}
+                    <div style={{
+                      width: 16, height: 16, borderRadius: '50%',
+                      border: isSelected ? '5px solid #1e3a8a' : '1.5px solid #cbd5e1',
+                      background: '#ffffff',
+                      flexShrink: 0,
+                      transition: 'all 0.15s ease'
+                    }} />
                   </button>
                 );
               })}
@@ -422,106 +469,53 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
             style={{
               width: '100%',
               height: 46,
-              background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
+              background: 'linear-gradient(135deg, #09132e 0%, #1e3a8a 100%)',
               border: 'none',
               borderRadius: 12,
               color: '#ffffff',
-              fontSize: '0.92rem',
+              fontSize: '0.9rem',
               fontWeight: 700,
               cursor: isLoading ? 'wait' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 8,
-              boxShadow: '0 8px 20px rgba(37, 99, 235, 0.35)',
+              boxShadow: '0 4px 14px rgba(15, 23, 42, 0.25)',
               transition: 'all 0.2s ease',
-              marginBottom: 18
+              marginBottom: 16
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 10px 25px rgba(37, 99, 235, 0.5)')}
-            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 8px 20px rgba(37, 99, 235, 0.35)')}
+            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 6px 20px rgba(15, 23, 42, 0.35)')}
+            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(15, 23, 42, 0.25)')}
           >
             {isLoading ? (
-              <span>Mengotentikasi...</span>
+              <span>Mengotentikasi Sesi...</span>
             ) : (
               <>
                 <span>Masuk ke Dashboard</span>
-                <ArrowRight size={18} />
+                <ArrowRight size={17} />
               </>
             )}
           </button>
 
-          {/* Divider */}
+          {/* Security Compliance Footer Badge */}
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              margin: '18px 0',
-              color: '#94a3b8',
-              fontSize: '0.74rem'
-            }}
-          >
-            <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
-            <span style={{ padding: '0 12px' }}>atau masuk dengan</span>
-            <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
-          </div>
-
-          {/* Secondary SSO Button */}
-          <button
-            type="button"
-            onClick={() => handleSubmit()}
-            style={{
-              width: '100%',
-              height: 44,
-              background: '#f8fafc',
-              border: '1.5px solid #e2e8f0',
-              borderRadius: 12,
-              color: '#1e293b',
-              fontSize: '0.84rem',
-              fontWeight: 700,
-              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 8,
-              transition: 'all 0.2s ease',
-              marginBottom: 22
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#f1f5f9';
-              e.currentTarget.style.borderColor = '#cbd5e1';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#f8fafc';
-              e.currentTarget.style.borderColor = '#e2e8f0';
+              gap: 6,
+              padding: '8px 12px',
+              borderRadius: 8,
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              fontSize: '0.72rem',
+              color: '#64748b',
+              fontWeight: 600,
+              textAlign: 'center'
             }}
           >
-            <Shield size={18} color="#2563eb" />
-            <span>SSO Perusahaan</span>
-          </button>
-
-          {/* Footer Text */}
-          <div
-            style={{
-              textAlign: 'center',
-              fontSize: '0.78rem',
-              color: '#64748b'
-            }}
-          >
-            Belum memiliki akun?{' '}
-            <a
-              href="#kontak"
-              onClick={(e) => {
-                e.preventDefault();
-                alert('Silakan hubungi IT Security Administrator Bank Kuningan / Tim EXPRESSO.');
-              }}
-              style={{
-                color: '#2563eb',
-                fontWeight: 700,
-                textDecoration: 'underline'
-              }}
-            >
-              Hubungi administrator
-            </a>
+            <Shield size={14} color="#059669" />
+            <span>Sistem Kepatuhan Terenkripsi SNAP BI &amp; POJK 8/2023</span>
           </div>
         </form>
       </motion.div>
