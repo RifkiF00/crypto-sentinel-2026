@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { List, Eye, ShieldBan, X, Clock, User, Wallet, AlertTriangle, Building2, Lock } from 'lucide-react';
+import { List, Eye, ShieldBan, X, Clock, User, Wallet, AlertTriangle, Building2, Search, Zap } from 'lucide-react';
 import { recentTransactions, formatCurrency } from '../data/mockData';
 import ShapExplanation from './ShapExplanation';
 
@@ -327,12 +327,34 @@ function DetailItem({ icon: Icon, label, value, sub }) {
 export default function TransactionTable({ transactions: propTransactions, isMasked = false }) {
   const [selectedTx, setSelectedTx] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const activeTransactions = propTransactions || recentTransactions;
 
-  const filtered = filter === 'all'
-    ? activeTransactions
-    : activeTransactions.filter((t) => t.status === filter);
+  const filtered = useMemo(() => {
+    return activeTransactions.filter((tx) => {
+      // Filter tab
+      if (filter === 'blocked' && !(tx.status === 'blocked' || tx.status === 'BLOCK')) return false;
+      if (filter === 'flagged' && !(tx.status === 'flagged' || tx.status === 'REVIEW')) return false;
+      if (filter === 'approved' && !(tx.status === 'approved' || tx.status === 'ALLOW')) return false;
+      if (filter === 'bjb' && !tx.senderBank?.includes('bjb')) return false;
+      if (filter === 'kng' && !tx.senderBank?.includes('Kuningan')) return false;
+      if (filter === 'crypto' && !(tx.destinationType === 'Crypto Exchange' || tx.destination?.toLowerCase().includes('indodax') || tx.destination?.toLowerCase().includes('binance') || tx.destination?.toLowerCase().includes('tokocrypto'))) return false;
+
+      // Filter search
+      if (searchQuery.trim() !== '') {
+        const q = searchQuery.toLowerCase();
+        const idMatch = (tx.id || '').toLowerCase().includes(q);
+        const nameMatch = (tx.senderName || '').toLowerCase().includes(q);
+        const accMatch = (tx.senderAccount || '').toLowerCase().includes(q);
+        const destMatch = (tx.destination || '').toLowerCase().includes(q);
+        const bankMatch = (tx.senderBank || '').toLowerCase().includes(q);
+        return idMatch || nameMatch || accMatch || destMatch || bankMatch;
+      }
+
+      return true;
+    });
+  }, [activeTransactions, filter, searchQuery]);
 
   return (
     <>
@@ -343,23 +365,63 @@ export default function TransactionTable({ transactions: propTransactions, isMas
         transition={{ delay: 0.8, duration: 0.5 }}
         id="transaction-table-card"
       >
-        <div className="card-header">
-          <div className="card-title">
-            <List />
-            Transaksi Live Stream (Core Banking & FDS)
+        <div className="card-header" style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'stretch' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <List size={20} />
+              <span>Transaksi Live Stream (Core Banking & FDS)</span>
+              <span style={{ fontSize: '0.7rem', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: 6, fontWeight: 700 }}>
+                {filtered.length} TRANSAKSI
+              </span>
+            </div>
+
+            {/* Search Input */}
+            <div style={{ position: 'relative', minWidth: 260 }}>
+              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                placeholder="Cari ID, Rekening, Nasabah, Bank..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '7px 12px 7px 34px',
+                  borderRadius: 10,
+                  fontSize: '0.8rem',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
           </div>
-          <div className="card-actions">
+
+          {/* Filter Tabs */}
+          <div className="card-actions" style={{ overflowX: 'auto', paddingBottom: 4 }}>
             <div className="tabs" id="transaction-filters">
               {[
-                { key: 'all', label: 'Semua' },
-                { key: 'blocked', label: 'Diblokir' },
-                { key: 'flagged', label: 'Ditandai' },
-                { key: 'approved', label: 'Disetujui' },
+                { key: 'all', label: 'Semua Transaksi' },
+                { key: 'bjb', label: 'Bank bjb (BPD)' },
+                { key: 'kng', label: 'Bank Kuningan (BPR)' },
+                { key: 'crypto', label: 'Crypto Outflow (VASP)' },
+                { key: 'blocked', label: 'Diblokir (BLOCK)' },
+                { key: 'flagged', label: 'Ditandai (REVIEW)' },
+                { key: 'approved', label: 'Disetujui (ALLOW)' },
               ].map((f) => (
                 <button
                   key={f.key}
                   className={`tab ${filter === f.key ? 'active' : ''}`}
                   onClick={() => setFilter(f.key)}
+                  style={{ whiteSpace: 'nowrap' }}
                 >
                   {f.label}
                 </button>
@@ -367,46 +429,61 @@ export default function TransactionTable({ transactions: propTransactions, isMas
             </div>
           </div>
         </div>
+
         <div className="card-body" style={{ padding: 0 }}>
           <div className="table-container">
             <table className="data-table" id="transactions-table">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th>ID Transaksi</th>
                   <th>Waktu</th>
                   <th>Pengirim</th>
-                  <th>Bank</th>
-                  <th>Jumlah</th>
-                  <th>Tujuan</th>
-                  <th>Risiko</th>
-                  <th>Status</th>
+                  <th>Bank Pengirim</th>
+                  <th>Jumlah Nominal</th>
+                  <th>Penerima / Tujuan</th>
+                  <th>Skor Risiko</th>
+                  <th>Keputusan FDS</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((tx, index) => {
                   const status = statusConfig[tx.status] || { label: tx.status, class: 'badge-approved' };
+                  const isBjb = tx.senderBank?.includes('bjb');
+                  const isKng = tx.senderBank?.includes('Kuningan');
+                  const isLatest = index === 0;
+
                   return (
                     <motion.tr
                       key={tx.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.2 + index * 0.03 }}
+                      transition={{ delay: Math.min(0.05 * index, 0.3) }}
+                      style={{
+                        background: isLatest ? 'rgba(99, 102, 241, 0.04)' : undefined,
+                      }}
                     >
                       <td>
-                        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.78rem', color: 'var(--accent-primary)' }}>
-                          {tx.id}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.78rem', color: 'var(--accent-primary)', fontWeight: 700 }}>
+                            {tx.id}
+                          </span>
+                          {isLatest && (
+                            <span style={{ fontSize: '0.65rem', background: '#6366f1', color: 'white', padding: '1px 5px', borderRadius: 4, fontWeight: 800 }}>
+                              LIVE
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.78rem' }}>
                         {tx.timestamp ? (tx.timestamp.includes(' ') ? tx.timestamp.split(' ')[1] : tx.timestamp.substring(11, 19)) : '-'}
                       </td>
                       <td>
                         <div>
-                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                          <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
                             {maskName(tx.senderName, isMasked)}
                           </div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>
                             {maskAccount(tx.senderAccount, isMasked)}
                           </div>
                         </div>
@@ -414,34 +491,43 @@ export default function TransactionTable({ transactions: propTransactions, isMas
                       <td>
                         <span style={{
                           fontSize: '0.75rem',
-                          fontWeight: 600,
-                          padding: '2px 6px',
-                          borderRadius: 4,
-                          background: tx.senderBank?.includes('bjb') ? 'rgba(59,130,246,0.1)' : 'rgba(16,185,129,0.1)',
-                          color: tx.senderBank?.includes('bjb') ? '#3b82f6' : '#10b981',
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: 6,
+                          background: isBjb
+                            ? 'rgba(59,130,246,0.15)'
+                            : isKng
+                            ? 'rgba(16,185,129,0.15)'
+                            : 'rgba(168,85,247,0.15)',
+                          color: isBjb ? '#3b82f6' : isKng ? '#10b981' : '#a855f7',
+                          border: `1px solid ${isBjb ? 'rgba(59,130,246,0.3)' : isKng ? 'rgba(16,185,129,0.3)' : 'rgba(168,85,247,0.3)'}`,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4
                         }}>
                           {tx.senderBank || 'Bank bjb'}
                         </span>
                       </td>
                       <td>
                         <span
-                          className={`amount ${
-                            tx.amount >= 500000000
-                              ? 'amount-large'
-                              : tx.amount >= 100000000
-                              ? 'amount-medium'
-                              : 'amount-small'
-                          }`}
+                          className="amount"
+                          style={{
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontWeight: 800,
+                            color: tx.amount >= 500000000 ? '#ef4444' : tx.amount >= 100000000 ? '#f59e0b' : 'var(--text-primary)',
+                          }}
                         >
                           {formatCurrency(tx.amount)}
                         </span>
                       </td>
                       <td>
                         <div>
-                          <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                             {maskName(tx.destination, isMasked)}
                           </div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{tx.destinationType}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            {tx.destinationType || 'Transfer Bank'}
+                          </div>
                         </div>
                       </td>
                       <td>
@@ -463,6 +549,7 @@ export default function TransactionTable({ transactions: propTransactions, isMas
                                   : tx.riskScore >= 40
                                   ? 'var(--status-warning)'
                                   : 'var(--status-success)',
+                              fontWeight: 800
                             }}
                           >
                             {tx.riskScore}%
@@ -480,10 +567,10 @@ export default function TransactionTable({ transactions: propTransactions, isMas
                           className="btn btn-ghost btn-sm"
                           onClick={() => setSelectedTx(tx)}
                           id={`btn-view-${tx.id}`}
-                          style={{ padding: '4px 8px' }}
+                          style={{ padding: '5px 10px', borderRadius: 8 }}
                           title="Lihat Detail & SHAP Explainability"
                         >
-                          <Eye size={14} />
+                          <Eye size={15} />
                         </button>
                       </td>
                     </motion.tr>
