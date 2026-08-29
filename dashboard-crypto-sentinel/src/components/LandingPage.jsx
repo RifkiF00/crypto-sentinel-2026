@@ -1456,7 +1456,7 @@ export default function LandingPage({ onEnter }) {
                 Crypto-Sentinel 2026 adalah middleware AI cerdas yang bertindak sebagai <strong>Smart Circuit Breaker</strong>, mendeteksi dan menghentikan transaksi berisiko dalam hitungan milidetik sebelum kerugian terjadi.
               </p>
               <div className="lp-hero-btns">
-                <button className="lp-btn-primary" onClick={() => scrollToSection('solusi')}>
+                <button className="lp-btn-primary" onClick={() => scrollToSection('skema-gnn')}>
                   Pelajari Solusi Kami <ArrowRight size={16} />
                 </button>
                 <button className="lp-btn-secondary" onClick={onEnter}>
@@ -1710,7 +1710,7 @@ export default function LandingPage({ onEnter }) {
       </section>
 
       {/* FULL-WIDTH GNN EXPLAINABLE SHOWCASE */}
-      <section className="lp-section" style={{ paddingTop: 20, paddingBottom: 60 }}>
+      <section className="lp-section" id="skema-gnn" style={{ paddingTop: 20, paddingBottom: 60 }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 28 }}>
             <span className="lp-section-tag" style={{ background: '#faf5ff', color: '#7c3aed', borderColor: '#e9d5ff' }}>
