@@ -1246,3 +1246,76 @@ Untuk mengeliminasi false positive tanpa menurunkan *recall fraud*, 4 fitur baru
 ---
 
 *Laporan Diperbarui: 19 Agustus 2026 13:30 WIB — Rifki Firmansyah (AI Architect & Team Lead EXPRESSO)*
+
+---
+
+## 🔄 Update Sesi — 29 Agustus 2026
+
+> Sesi post-pitch: fokus stabilisasi infrastruktur, konektivitas mobile, dan persiapan sprint fitur lanjutan.
+
+### ✅ Yang Diselesaikan Hari Ini
+
+| # | Perbaikan | File | Hasil |
+|---|---|---|---|
+| 1 | **Fix host binding uvicorn** — kedua API sebelumnya bind ke `127.0.0.1` (localhost only), HP Android tidak bisa konek | `expresso-api/main.py`, terminal flags | 🟢 Sekarang `0.0.0.0:8080` & `0.0.0.0:8000` — HP bisa konek |
+| 2 | **Embed `host=0.0.0.0` permanen** — tambah `if __name__ == "__main__": uvicorn.run(...)` agar tidak perlu ketik flag manual setiap kali | `expresso-api/main.py` | 🟢 Permanent fix |
+| 3 | **START-ALL.bat** — script satu klik untuk jalankan semua 4 service (Sentinel AI, Expresso API, Dashboard, Flutter) lengkap dengan `--host 0.0.0.0` | `START-ALL.bat` (root project) | 🟢 Tersedia di root folder |
+| 4 | **Verifikasi AI Engine** — konfirmasi GNN + ML + SHAP loaded sempurna tanpa error saat startup | Log server | 🟢 562.239 nodes, 308.213 edges, SHAP OK |
+
+### ⚠️ Isu Aktif
+
+| Isu | Dampak | Fix |
+|---|---|---|
+| `sklearn 1.6.1 → 1.7.2` version mismatch | Model bisa hasil tidak akurat | `pip install scikit-learn==1.6.1` lalu restart |
+
+### 📊 Status Sistem Saat Ini (29 Agustus 2026 — 17:30 WIB)
+
+| Komponen | Status | Binding | Keterangan |
+|---|---|---|---|
+| 🤖 Crypto-Sentinel AI Engine | ✅ Running | `0.0.0.0:8000` | GNN 562K nodes, SHAP aktif |
+| 🏦 Expresso Core Banking API | ✅ Running | `0.0.0.0:8080` | Multi-partner KNG + BJB |
+| 📊 Dashboard React/Vite | ✅ Running | `localhost:5173` | Auto-refresh transaksi |
+| 📱 Mobile Banking bjb DIGI | ✅ Running | Flutter Android | Endpoint `/bjb/transfer` |
+
+---
+
+## 🗓️ Rencana Pengerjaan Selanjutnya
+
+### Prioritas Tinggi 🔴
+
+| # | Fitur | Estimasi | Keterangan |
+|---|---|---|---|
+| 1 | **Fix sklearn version mismatch** | 30 menit | `pip install scikit-learn==1.6.1` + restart API |
+| 2 | **Verifikasi end-to-end AI blocking** | 1 jam | Transfer dari HP ke `9012xxxx`, pastikan BLOCK muncul di dashboard |
+| 3 | **SHAP Visualization di Dashboard** | 2–3 jam | Bar chart horizontal alasan AI per transaksi di modal detail |
+
+### Prioritas Sedang 🟡
+
+| # | Fitur | Estimasi | Keterangan |
+|---|---|---|---|
+| 4 | **Notifikasi real-time WebSocket** | 2 jam | Push alert ke dashboard saat ada transaksi BLOCK tanpa refresh |
+| 5 | **Detail modal transaksi** | 1 jam | Klik baris tabel → lihat SHAP score + GNN score + alasan AI |
+| 6 | **Data masking PDP** | 1 jam | Sensor nomor rekening `1234****5678` di semua tampilan |
+
+### Prioritas Rendah / Opsional 🟢
+
+| # | Fitur | Estimasi | Keterangan |
+|---|---|---|---|
+| 7 | **CMS Investigasi (Case Management)** | 3–4 jam | Status OPEN → IN_REVIEW → RESOLVED per kasus BLOCK |
+| 8 | **Export laporan PDF** | 2 jam | Download rekap transaksi flagged per hari |
+| 9 | **Cloud Deployment (Render)** | 4–6 jam | Deploy semua service agar bisa diakses tanpa lokal |
+
+---
+
+### 🧪 Quick Test AI Setelah Fix
+
+| Nomor Tujuan | Ekspektasi | Alasan |
+|---|---|---|
+| `9012000001` | 🔴 BLOCK | Crypto mule prefix |
+| `1234567890` | 🟢 ALLOW | Nasabah normal |
+
+Cek di: **`http://localhost:5173`** → Live Monitoring
+
+---
+
+*Laporan Diperbarui: 29 Agustus 2026 17:30 WIB — Rifki Firmansyah (AI Architect & Team Lead EXPRESSO)*

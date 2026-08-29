@@ -24,6 +24,7 @@ class BjbApiService {
     final String timestamp = DateTime.now().toUtc().toIso8601String();
     const String secret = 'BJB_SECRET_DIGDAYA_2026';
 
+    // Gunakan formula HMAC dengan method (sesuai backend PARTNER_SECRETS BJB)
     final String message = '$partnerId|$timestamp|$senderAccount|$receiverAccount|$amount|$method';
     final keyBytes = utf8.encode(secret);
     final messageBytes = utf8.encode(message);
@@ -43,13 +44,37 @@ class BjbApiService {
           'sender_account': senderAccount,
           'receiver_account': receiverAccount,
           'amount': amount.toString(),
-          'method': method,
-          'latitude': '-6.9175', // Bandung / Jawa Barat
+          'method': method,          // ← WAJIB: dikirim ke server agar HMAC-SHA256 cocok
+          'latitude': '-6.9175',    // Koordinat Bandung / Jawa Barat
           'longitude': '107.6191',
         },
       ).timeout(const Duration(seconds: 8));
 
-      final data = json.decode(response.body);
+      // Guard: parse JSON aman — backend kadang return HTML saat 500
+      Map<String, dynamic> data;
+      try {
+        data = json.decode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        // Server return HTML/plain-text (mis. 500 Internal Server Error)
+        final statusCode = response.statusCode;
+        String errMsg;
+        if (statusCode == 500) {
+          errMsg = 'Server backend mengalami kesalahan internal (500).\n'
+              'Pastikan Crypto-Sentinel AI Engine (port 8000) sudah berjalan.';
+        } else if (statusCode == 502 || statusCode == 503) {
+          errMsg = 'Server tidak dapat dihubungi (${statusCode}).\n'
+              'Pastikan semua service sudah aktif via START-ALL.bat.';
+        } else {
+          errMsg = 'Response tidak valid dari server (HTTP $statusCode).\n'
+              'Body: ${response.body.length > 100 ? response.body.substring(0, 100) : response.body}';
+        }
+        return {
+          'success': false,
+          'isBlocked': false,
+          'status': 'SERVER_ERROR',
+          'message': errMsg,
+        };
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return {
@@ -60,10 +85,11 @@ class BjbApiService {
         };
       } else {
         // Transaksi diblokir Sentinel FDS atau error saldo
-        final detailMsg = data['detail'] ?? 'Transaksi Gagal Diproses';
+        final detailMsg = data['detail'] ?? data['message'] ?? 'Transaksi Gagal Diproses';
         final isBlocked = response.statusCode == 403 ||
             detailMsg.toString().toLowerCase().contains('blokir') ||
-            detailMsg.toString().toLowerCase().contains('sentinel');
+            detailMsg.toString().toLowerCase().contains('sentinel') ||
+            detailMsg.toString().toLowerCase().contains('diblokir');
 
         return {
           'success': false,
@@ -74,15 +100,13 @@ class BjbApiService {
         };
       }
     } catch (e) {
-      // Koneksi ke backend gagal — jangan pura-pura berhasil!
-      // Ini memastikan semua transaksi benar-benar melalui Sentinel FDS
+      // Koneksi ke backend gagal — tampilkan error yang jelas
       return {
         'success': false,
         'isBlocked': false,
         'status': 'CONNECTION_ERROR',
-        'message': 'Tidak dapat terhubung ke server Bank bjb.\n'
-            'Pastikan jaringan aktif dan server berjalan.\n'
-            'Error: ${e.runtimeType}',
+        'message': 'Gagal terhubung ke Server Core Banking (8080).\n'
+            'Pastikan jaringan aktif dan server berjalan.\nError: $e',
       };
     }
   }

@@ -48,7 +48,25 @@ class BankKuninganApiService {
         },
       ).timeout(const Duration(seconds: 8));
 
-      final data = json.decode(response.body);
+      // Guard: parse JSON aman jika backend return non-JSON / error
+      Map<String, dynamic> data;
+      try {
+        data = json.decode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        final statusCode = response.statusCode;
+        String errMsg = 'Response tidak valid dari server (HTTP $statusCode).';
+        if (statusCode == 500) {
+          errMsg = 'Server backend mengalami kesalahan internal (500).\nPastikan Core Banking & AI Engine berjalan.';
+        } else if (statusCode == 502 || statusCode == 503) {
+          errMsg = 'Server tidak dapat dihubungi ($statusCode).\nPastikan semua service aktif via START-ALL.bat.';
+        }
+        return {
+          'success': false,
+          'isBlocked': false,
+          'status': 'SERVER_ERROR',
+          'message': errMsg,
+        };
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return {
@@ -59,8 +77,11 @@ class BankKuninganApiService {
         };
       } else {
         // Transaksi diblokir atau error saldo/akun
-        final detailMsg = data['detail'] ?? 'Transaksi Gagal Diproses';
-        final isBlocked = response.statusCode == 403 || detailMsg.toString().toLowerCase().contains('blokir') || detailMsg.toString().toLowerCase().contains('sentinel');
+        final detailMsg = data['detail'] ?? data['message'] ?? 'Transaksi Gagal Diproses';
+        final isBlocked = response.statusCode == 403 ||
+            detailMsg.toString().toLowerCase().contains('blokir') ||
+            detailMsg.toString().toLowerCase().contains('sentinel') ||
+            detailMsg.toString().toLowerCase().contains('diblokir');
 
         return {
           'success': false,
@@ -105,4 +126,47 @@ class BankKuninganApiService {
       'isBlocked': false,
     };
   }
+
+  /// Ambil riwayat transaksi live dari Core Banking API
+  static Future<List<Map<String, dynamic>>> getTransactions({
+    String? accountId,
+    int limit = 10,
+  }) async {
+    final uri = Uri.parse('$baseUrl/bri/transactions?limit=$limit');
+    try {
+      final response = await http.get(uri).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final List<dynamic> raw = json.decode(response.body);
+        final filtered = raw.where((tx) {
+          if (accountId == null) return true;
+          final sender = tx['sender_account']?.toString() ?? '';
+          final receiver = tx['receiver_account']?.toString() ?? '';
+          return sender == accountId || receiver == accountId;
+        }).take(limit).toList();
+
+        return filtered.map<Map<String, dynamic>>((tx) {
+          final sender = tx['sender_account']?.toString() ?? '';
+          final isOutgoing = sender == accountId;
+          final amount = tx['amount'] ?? 0;
+          final status = tx['sentinel_decision'] ?? tx['status'] ?? 'BERHASIL';
+          final receiver = tx['receiver_account']?.toString() ?? '';
+          final txType = tx['method'] ?? tx['type'] ?? 'TRANSFER';
+
+          return {
+            'id': tx['transaction_id'] ?? tx['id'] ?? '-',
+            'title': isOutgoing ? 'Transfer ke $receiver' : 'Transfer dari $sender',
+            'category': txType,
+            'date': tx['timestamp'] ?? tx['created_at'] ?? '-',
+            'amount': isOutgoing ? '- Rp $amount' : '+ Rp $amount',
+            'isIncoming': !isOutgoing,
+            'status': status == 'BLOCK' ? 'DIBLOKIR FDS' : 'BERHASIL',
+            'refNumber': tx['transaction_id'] ?? 'REF-KNG-2026',
+            'isBlocked': status == 'BLOCK',
+          };
+        }).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
 }
+

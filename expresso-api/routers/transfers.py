@@ -151,10 +151,13 @@ async def bri_transfer(
     sender_bank_name = "Bank bjb" if is_bjb else "Bank Kuningan"
 
     tx_id            = "TXN-" + datetime.now(timezone.utc).strftime("%Y%m%d") + "-" + str(uuid.uuid4())[:6].upper()
-    purpose_code     = "SALA"
-    description      = f"[{sender_bank_name}] Transfer via API Gateway"
-    destination_type = "DOMESTIC"
+    is_crypto_dest   = receiver_account.startswith("9012") or receiver_account.startswith("0x")
+    purpose_code     = "CRYP" if is_crypto_dest else (method if method else "TRANSFER")
+    description      = f"[{sender_bank_name}] Transfer via API Gateway ({purpose_code})"
+    destination_type = "CRYPTO_VASP" if is_crypto_dest else "DOMESTIC"
     country_code     = "ID"
+
+
 
 
     with Session(engine) as db:
@@ -165,9 +168,11 @@ async def bri_transfer(
             raise HTTPException(status_code=404, detail="Akun pengirim tidak ditemukan")
         if not receiver:
             # If destination is external bank or crypto wallet, create temporary entity in session
+            # Gunakan suffix account agar national_id UNIQUE tidak conflict
+            ext_national_id = f"EXT{receiver_account[-13:].zfill(13)}"
             receiver = Account(
                 account_id=receiver_account,
-                national_id="9999999999999999",
+                national_id=ext_national_id,
                 owner_name=f"External / Crypto Entity ({receiver_account[:12]})",
                 balance=0,
                 risk_profile="HIGH" if receiver_account.startswith("9012") or receiver_account.startswith("0x") else "MEDIUM",

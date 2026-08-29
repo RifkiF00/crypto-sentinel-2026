@@ -39,10 +39,18 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
   ];
 
   final List<Map<String, String>> _favorites = [
-    {'name': 'Siti Rahma', 'account': '9876543210', 'bank': 'Bank Kuningan'},
-    {'name': 'Budi Santoso', 'account': '987654', 'bank': 'Bank Kuningan'},
-    {'name': 'PT Indodax Nasional Indonesia', 'account': '9012666666', 'bank': 'BCA'},
-    {'name': 'PT Binance Exchange Indonesia', 'account': '9012123456', 'bank': 'CIMB Niaga'},
+    {'name': 'Billy Jonathan',               'account': '1234567890',    'bank': 'Bank Kuningan'},
+    {'name': 'Rifki Firmansyah',             'account': '0123456789',    'bank': 'Bank bjb'},
+    {'name': 'Desta Erlangga',               'account': '1122334455',    'bank': 'Bank bjb'},
+    {'name': 'Aam Setiana',                  'account': '5544332211',    'bank': 'Bank Mandiri'},
+    {'name': 'Siti Rahma',                   'account': '9876543210',    'bank': 'Bank Kuningan'},
+    {'name': 'Budi Santoso',                 'account': '8820192831',    'bank': 'Bank Central Asia (BCA)'},
+    {'name': 'PT Indodax Nasional Indonesia','account': '9012666666',    'bank': 'Bank Central Asia (BCA)'},
+    {'name': 'PT Binance Exchange Indonesia','account': '9012123456',    'bank': 'Bank CIMB Niaga'},
+    {'name': 'PT Tokocrypto Indonesia',      'account': '9012999999',    'bank': 'Bank Mandiri'},
+    {'name': 'PT Pintu Kemakmuran Bersama',  'account': '9012888888',    'bank': 'Bank Negara Indonesia (BNI)'},
+    {'name': 'Indodax Fraud Receiver',       'account': '9012777777',    'bank': 'Bank Rakyat Indonesia (BRI)'},
+    {'name': 'Mule Transit Ring L1',         'account': '9012000001',    'bank': 'Bank Central Asia (BCA)'},
   ];
 
   @override
@@ -123,6 +131,12 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
       name = 'Billy Jonathan';
     } else if (acc == '0123456789') {
       name = 'Rifki Firmansyah';
+    } else if (acc == '1122334455') {
+      name = 'Desta Erlangga';
+    } else if (acc == '5544332211') {
+      name = 'Aam Setiana';
+    } else if (acc == '8820192831') {
+      name = 'Budi Santoso';
     } else if (acc == '9012666666') {
       name = 'PT Indodax Nasional Indonesia';
     } else if (acc == '9012999999') {
@@ -133,6 +147,8 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
       name = 'Indodax Fraud Receiver';
     } else if (acc == '9012888888') {
       name = 'PT Pintu Kemakmuran Bersama';
+    } else if (acc == '9012000001') {
+      name = 'Mule Transit Ring L1';
     } else {
       name = 'Rekening ${_accountController.text} (${_tabController.index == 0 ? "Bank Kuningan" : detectedBank})';
     }

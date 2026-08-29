@@ -83,13 +83,20 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     '50.000', '100.000', '200.000', '500.000', '1.000.000', '2.000.000', '5.000.000',
   ];
 
-  /// Favorit tersimpan
+  /// Favorit tersimpan dari Database Cloud & Crypto Watchlist
   final List<Map<String, String>> _favorites = const [
-    {'name': 'Siti Rahmawati',               'account': '9876543210',    'bank': 'Bank bjb'},
-    {'name': 'Budi Santoso',                 'account': '8820192831',    'bank': 'Bank Central Asia (BCA)'},
+    {'name': 'Billy Jonathan',               'account': '1234567890',    'bank': 'Bank Kuningan'},
+    {'name': 'Rifki Firmansyah',             'account': '0123456789',    'bank': 'Bank bjb'},
     {'name': 'Desta Erlangga',               'account': '1122334455',    'bank': 'Bank bjb'},
-    {'name': 'Aam Setiana',                  'account': '1310029384912', 'bank': 'Bank Mandiri'},
+    {'name': 'Aam Setiana',                  'account': '5544332211',    'bank': 'Bank Mandiri'},
+    {'name': 'Siti Rahma',                   'account': '9876543210',    'bank': 'Bank bjb'},
+    {'name': 'Budi Santoso',                 'account': '8820192831',    'bank': 'Bank Central Asia (BCA)'},
     {'name': 'PT Indodax Nasional Indonesia','account': '9012666666',    'bank': 'Bank Central Asia (BCA)'},
+    {'name': 'PT Binance Exchange Indonesia','account': '9012123456',    'bank': 'Bank CIMB Niaga'},
+    {'name': 'PT Tokocrypto Indonesia',      'account': '9012999999',    'bank': 'Bank Mandiri'},
+    {'name': 'PT Pintu Kemakmuran Bersama',  'account': '9012888888',    'bank': 'Bank Negara Indonesia (BNI)'},
+    {'name': 'Indodax Fraud Receiver',       'account': '9012777777',    'bank': 'Bank Rakyat Indonesia (BRI)'},
+    {'name': 'Mule Transit Ring L1',         'account': '9012000001',    'bank': 'Bank Central Asia (BCA)'},
   ];
 
   // ── Lifecycle ───────────────────────────────────────────────────────────────
@@ -121,19 +128,8 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
   // ── Helper ──────────────────────────────────────────────────────────────────
 
   String? _validateAccountLength(String acc, {bool isSesama = false}) {
-    if (isSesama) {
-      if (acc.length != 14) return 'Nomor rekening bjb harus 14 digit';
-      return null;
-    }
-    final bank = _bankList.firstWhere(
-      (b) => b['name'] == _selectedBank,
-      orElse: () => {'digits': <int>[]},
-    );
-    final allowed = List<int>.from(bank['digits'] as List);
-    if (allowed.isEmpty) return null;
-    if (!allowed.contains(acc.length)) {
-      return 'Panjang rekening ${_selectedBank.split(' ').first}: ${allowed.join(' atau ')} digit';
-    }
+    if (acc.isEmpty) return 'Nomor rekening tidak boleh kosong';
+    if (acc.length < 5) return 'Nomor rekening minimal 5 digit';
     return null;
   }
 
@@ -158,23 +154,40 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
 
     setState(() => _isVerifying = true);
 
-    // Simulasi Inquiry API Core Banking (~300ms)
-    await Future.delayed(const Duration(milliseconds: 350));
-    if (!mounted) return;
+    // Coba ambil nama live dari Core Banking API
+    try {
+      final res = await BjbApiService.getAccountInfo(acc);
+      if (res['success'] == true && res['ownerName'] != null) {
+        if (!mounted) return;
+        setState(() {
+          _isVerifying = false;
+          _isAccountVerified = true;
+          _verifiedName = res['ownerName'];
+        });
+        _snack('Rekening valid: ${res['ownerName']}');
+        return;
+      }
+    } catch (_) {}
 
-    // Nama mock — di produksi hit GET /bjb/account/{acc}
+    // Fallback dictionary nama lengkap untuk demo
     final mockNames = {
-      '98765432100001': 'Siti Rahmawati',
-      '11223344551234': 'Desta Erlangga',
-      '9876543210':     'Siti Rahmawati',
-      '8820192831':     'Budi Santoso',
+      '1234567890':     'Billy Jonathan',
+      '0123456789':     'Rifki Firmansyah',
       '1122334455':     'Desta Erlangga',
-      '1310029384912':  'Aam Setiana',
+      '5544332211':     'Aam Setiana',
+      '9876543210':     'Siti Rahma',
+      '8820192831':     'Budi Santoso',
       '9012666666':     'PT Indodax Nasional Indonesia',
+      '9012123456':     'PT Binance Exchange Indonesia',
+      '9012999999':     'PT Tokocrypto Indonesia',
+      '9012888888':     'PT Pintu Kemakmuran Bersama',
+      '9012777777':     'Indodax Fraud Receiver',
+      '9012000001':     'Mule Transit Ring L1',
     };
     final name = mockNames[acc] ??
         'Rekening $acc · ${isSesama ? "Bank bjb" : _selectedBank}';
 
+    if (!mounted) return;
     setState(() {
       _isVerifying       = false;
       _isAccountVerified = true;

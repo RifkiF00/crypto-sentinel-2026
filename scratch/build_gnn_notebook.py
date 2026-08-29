@@ -346,7 +346,7 @@ cells.append(code(
     '    history["train_acc"].append(train_acc)\n'
     '    history["val_loss"].append(val_loss)\n'
     '    history["val_auc"].append(val_auc)\n\n'
-    '    print(f"  Epoch {epoch:02d}/{EPOCHS} | Train Loss: {loss.item():.4f} | Train Acc: {train_acc*100:.2f}% | Val AUC: {val_auc:.4f}")\\n\\n'
+    '    print(f"  Epoch {epoch:02d}/{EPOCHS} | Train Loss: {loss.item():.4f} | Train Acc: {train_acc*100:.2f}% | Val AUC: {val_auc:.4f}")\n\n'
     'print("=" * 60)\n'
     'print(f"✅ Training selesai! Best Val AUC: {max(history[\'val_auc\']):.4f}")'
 ))

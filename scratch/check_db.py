@@ -1,0 +1,12 @@
+import sqlite3
+conn = sqlite3.connect('expresso-api/expresso.db')
+c = conn.cursor()
+c.execute("SELECT name FROM sqlite_master WHERE type='table'")
+print('Tables:', c.fetchall())
+c.execute('SELECT COUNT(*) FROM accounts')
+print('Accounts:', c.fetchone()[0])
+c.execute('SELECT COUNT(*) FROM transactions')
+print('Transactions:', c.fetchone()[0])
+c.execute('SELECT account_id, owner_name, balance FROM accounts LIMIT 5')
+print('Sample accounts:', c.fetchall())
+conn.close()
