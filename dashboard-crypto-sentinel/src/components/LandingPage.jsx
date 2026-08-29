@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, ArrowRight, Brain, Zap, FileText,
   ChevronDown, Radio, CheckCircle, Play, Check, Clock, Lock,
-  Send, Server, Cpu, Activity, RefreshCw, X, Mail, Phone, Building, MessageSquare, Calendar
+  Send, Server, Cpu, Activity, RefreshCw, X, Mail, Phone, Building, MessageSquare, Calendar, Menu
 } from 'lucide-react';
 
 // ---- Scroll reveal wrapper ----
@@ -389,6 +389,7 @@ function AnimatedFlowDiagram() {
 export default function LandingPage({ onEnter }) {
   const [activeDocTab, setActiveDocTab] = useState('tp');
   const [showContactModal, setShowContactModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [contactForm, setContactForm] = useState({
     name: '',
     institution: '',
@@ -1376,6 +1377,64 @@ export default function LandingPage({ onEnter }) {
         .lp-footer-right p {
           font-size: 0.78rem; color: #bbbbbb;
           font-family: 'Plus Jakarta Sans', sans-serif; line-height: 1.6;
+        .lp-mobile-toggle {
+          display: none;
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          cursor: pointer;
+          color: #0f172a;
+          padding: 7px;
+          border-radius: 10px;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+
+        .lp-mobile-drawer {
+          position: fixed;
+          top: 64px;
+          left: 0;
+          right: 0;
+          background: rgba(255, 255, 255, 0.98);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border-bottom: 1px solid #e2e8f0;
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+          padding: 16px 20px 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          z-index: 999;
+        }
+
+        .lp-mobile-drawer a {
+          font-size: 0.92rem;
+          font-weight: 700;
+          color: #1e293b;
+          padding: 10px 14px;
+          border-radius: 10px;
+          text-decoration: none;
+          transition: background 0.15s ease;
+        }
+
+        .lp-mobile-drawer a:hover {
+          background: #f1f5f9;
+        }
+
+        .lp-mobile-drawer-cta {
+          background: #09132e;
+          color: #ffffff;
+          border: none;
+          border-radius: 12px;
+          padding: 12px;
+          font-size: 0.9rem;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          cursor: pointer;
+          margin-top: 8px;
         }
 
         /* ---- RESPONSIVE MEDIA QUERIES ---- */
@@ -1394,19 +1453,23 @@ export default function LandingPage({ onEnter }) {
           .lp-footer-right { text-align: left; }
         }
 
+        @media (max-width: 768px) {
+          .lp-nav-links { display: none !important; }
+          .lp-nav-cta { display: none !important; }
+          .lp-mobile-toggle { display: flex !important; }
+        }
+
         @media (max-width: 640px) {
           .lp-nav-container { padding: 0 16px; height: 60px; }
-          .lp-nav-links { display: none; }
           .lp-nav-name { font-size: 1.05rem; }
-          .lp-nav-cta { padding: 8px 16px !important; font-size: 0.78rem !important; }
           .lp-hero-wrapper { padding: 80px 16px 30px; }
-          .lp-hero-title { font-size: 2.1rem; line-height: 1.2; }
-          .lp-hero-sub { font-size: 0.9rem; }
+          .lp-hero-title { font-size: 2.0rem; line-height: 1.2; }
+          .lp-hero-sub { font-size: 0.88rem; }
           .lp-hero-btns { flex-direction: column; width: 100%; gap: 10px; }
           .lp-btn-primary, .lp-btn-secondary { width: 100%; justify-content: center; }
           .lp-hero-strip { grid-template-columns: 1fr; padding: 16px; }
           .lp-section { padding: 50px 16px; }
-          .lp-section-title { font-size: 2.0rem; }
+          .lp-section-title { font-size: 1.85rem; }
           .lp-stats-grid { grid-template-columns: 1fr; gap: 14px; }
           .lp-stat-card { padding: 24px 16px; }
           .lp-stat-val { font-size: 2.2rem; }
@@ -1415,6 +1478,8 @@ export default function LandingPage({ onEnter }) {
           .lp-doc-img-grid { grid-template-columns: 1fr; }
           .lp-doc-img-card { padding: 14px; }
           .lp-team-card { flex-direction: column; gap: 14px; padding: 20px; }
+          .lp-modal-box { width: 94vw !important; max-width: 94vw !important; padding: 22px 16px !important; margin: 12px auto !important; max-height: 92vh !important; }
+          .lp-modal-2col { grid-template-columns: 1fr !important; gap: 10px !important; }
         }
       `}</style>
 
@@ -1434,10 +1499,47 @@ export default function LandingPage({ onEnter }) {
             <li><a href="#dampak" onClick={(e) => { e.preventDefault(); scrollToSection('dampak'); }}>Dampak</a></li>
             <li><a href="#tim" onClick={(e) => { e.preventDefault(); scrollToSection('tim'); }}>Tentang Kami</a></li>
           </ul>
-          <button className="lp-nav-cta" onClick={() => setShowContactModal(true)} style={{ background: '#09132e', borderRadius: '9999px', padding: '10px 24px' }}>
-            Hubungi Kami <ArrowRight size={15} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button className="lp-nav-cta" onClick={() => setShowContactModal(true)} style={{ background: '#09132e', borderRadius: '9999px', padding: '10px 24px' }}>
+              Hubungi Kami <ArrowRight size={15} />
+            </button>
+            <button
+              className="lp-mobile-toggle"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle Menu"
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              className="lp-mobile-drawer"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <a href="#beranda" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('beranda'); }}>Beranda</a>
+              <a href="#solusi" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('solusi'); }}>Solusi</a>
+              <a href="#teknologi" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('teknologi'); }}>Teknologi</a>
+              <a href="#dampak" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('dampak'); }}>Dampak</a>
+              <a href="#tim" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('tim'); }}>Tentang Kami</a>
+              <button
+                className="lp-mobile-drawer-cta"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setShowContactModal(true);
+                }}
+              >
+                Hubungi Kami <ArrowRight size={15} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* HERO SECTION MATCHING MOCKUP IMAGE */}
@@ -1945,6 +2047,7 @@ export default function LandingPage({ onEnter }) {
             onClick={() => setShowContactModal(false)}
           >
             <motion.div
+              className="lp-modal-box"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -2044,7 +2147,7 @@ export default function LandingPage({ onEnter }) {
                       />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                    <div className="lp-modal-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
                       <div>
                         <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>
                           Institusi / Bank / Regulator
@@ -2160,7 +2263,7 @@ export default function LandingPage({ onEnter }) {
                   </form>
 
                   {/* Direct Contact Cards */}
-                  <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #f1f5f9', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div className="lp-modal-2col" style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #f1f5f9', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     <a
                       href="https://wa.me/6281280851615?text=Halo%20Tim%20Crypto-Sentinel%202026,%20saya%20tertarik%20untuk%20konsultasi%20kemitraan%20dan%20uji%20coba%20Sandbox%20FDS.%0A%0APortal%20Resmi:%20https://innovation.pidi.id/inovasi/crypto-sentinel-2026"
                       target="_blank"
