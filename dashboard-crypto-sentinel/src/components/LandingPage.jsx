@@ -2007,6 +2007,16 @@ export default function LandingPage({ onEnter }) {
                     onSubmit={(e) => {
                       e.preventDefault();
                       setContactSubmitted(true);
+                      const waText = encodeURIComponent(
+                        `*KONFIRMASI KONSULTASI KEMITRAAN BANK*\n\n` +
+                        `👤 *Nama PIC:* ${contactForm.name}\n` +
+                        `🏦 *Institusi / Bank:* ${contactForm.institution}\n` +
+                        `✉️ *Email Bisnis:* ${contactForm.email}\n` +
+                        `🎯 *Fokus Integrasi:* ${contactForm.need}\n` +
+                        `📝 *Catatan / Kebutuhan:* ${contactForm.message || '-'}\n\n` +
+                        `_Dikirim via Formulir Portal Crypto-Sentinel 2026_`
+                      );
+                      window.open(`https://wa.me/6281280851615?text=${waText}`, '_blank');
                     }}
                   >
                     <div style={{ marginBottom: 14 }}>
@@ -2101,7 +2111,7 @@ export default function LandingPage({ onEnter }) {
                       </select>
                     </div>
 
-                    <div style={{ marginBottom: 20 }}>
+                    <div style={{ marginBottom: 18 }}>
                       <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>
                         Catatan / Waktu Konsultasi yang Diinginkan
                       </label>
@@ -2142,21 +2152,63 @@ export default function LandingPage({ onEnter }) {
                         boxShadow: '0 4px 14px rgba(30,58,138,0.3)'
                       }}
                     >
-                      <Send size={16} /> Kirim Permintaan Konsultasi
+                      <Send size={16} /> Kirim Permintaan via WhatsApp &amp; Email
                     </button>
                   </form>
 
                   {/* Direct Contact Cards */}
-                  <div style={{ marginTop: 22, paddingTop: 18, borderTop: '1px solid #f1f5f9', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    <div style={{ background: '#f8fafc', padding: 12, borderRadius: 12, border: '1px solid #e2e8f0', fontSize: '0.74rem' }}>
+                  <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #f1f5f9', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <a
+                      href="https://wa.me/6281280851615?text=Halo%20Tim%20Crypto-Sentinel%202026,%20saya%20tertarik%20untuk%20konsultasi%20kemitraan%20dan%20uji%20coba%20Sandbox%20FDS."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ background: '#f8fafc', padding: 12, borderRadius: 12, border: '1px solid #e2e8f0', fontSize: '0.74rem', textDecoration: 'none', display: 'block', transition: 'all 0.2s ease' }}
+                    >
                       <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>💬 WhatsApp Hotline PIC</div>
-                      <div style={{ color: '#2563eb', fontWeight: 600 }}>+62 812-8899-2026</div>
-                    </div>
-                    <div style={{ background: '#f8fafc', padding: 12, borderRadius: 12, border: '1px solid #e2e8f0', fontSize: '0.74rem' }}>
+                      <div style={{ color: '#16a34a', fontWeight: 700 }}>081280851615</div>
+                    </a>
+                    <a
+                      href="mailto:frifki971@gmail.com?subject=Konsultasi%20Kemitraan%20Bank%20-%20Crypto-Sentinel%202026"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ background: '#f8fafc', padding: 12, borderRadius: 12, border: '1px solid #e2e8f0', fontSize: '0.74rem', textDecoration: 'none', display: 'block', transition: 'all 0.2s ease' }}
+                    >
                       <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>✉️ Email Resmi Tim</div>
-                      <div style={{ color: '#2563eb', fontWeight: 600 }}>partnership@crypto-sentinel.id</div>
-                    </div>
+                      <div style={{ color: '#2563eb', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis' }}>frifki971@gmail.com</div>
+                    </a>
                   </div>
+
+                  {/* Official BI Innovation Hub Link */}
+                  <a
+                    href="https://innovation.pidi.id/inovasi/crypto-sentinel-2026"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'linear-gradient(135deg, rgba(37,99,235,0.07) 0%, rgba(124,58,237,0.07) 100%)',
+                      border: '1px solid rgba(37,99,235,0.25)',
+                      borderRadius: 12,
+                      padding: '10px 14px',
+                      marginTop: 12,
+                      textDecoration: 'none',
+                      color: '#1e3a8a'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ fontSize: '1.2rem' }}>🏛️</div>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e3a8a' }}>
+                          Crypto-Sentinel 2026 — BI Innovation Hub
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                          innovation.pidi.id/inovasi/crypto-sentinel-2026
+                        </div>
+                      </div>
+                    </div>
+                    <ArrowRight size={15} color="#2563eb" />
+                  </a>
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '24px 12px' }}>
@@ -2164,11 +2216,36 @@ export default function LandingPage({ onEnter }) {
                     <CheckCircle size={36} />
                   </div>
                   <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>
-                    Permintaan Konsultasi Diterima!
+                    Permintaan Konsultasi Terkirim!
                   </h3>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.6, maxWidth: 460, margin: '0 auto 24px' }}>
-                    Terima kasih, Bapak/Ibu <strong>{contactForm.name || 'PIC'}</strong> dari <strong>{contactForm.institution || 'Institusi Perbankan'}</strong>. Tim Kepatuhan &amp; Pengembang Crypto-Sentinel akan menghubungi Anda melalui email dalam 1x24 jam untuk koordinasi teknis.
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.6, maxWidth: 460, margin: '0 auto 20px' }}>
+                    Terima kasih, Bapak/Ibu <strong>{contactForm.name || 'PIC'}</strong> dari <strong>{contactForm.institution || 'Institusi Perbankan'}</strong>. Permintaan Anda telah diteruskan ke WhatsApp Hotline <strong>081280851615</strong> dan Email <strong>frifki971@gmail.com</strong>.
                   </p>
+
+                  {/* Official BI Innovation Hub Link in Success Screen */}
+                  <a
+                    href="https://innovation.pidi.id/inovasi/crypto-sentinel-2026"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      background: 'rgba(37,99,235,0.08)',
+                      border: '1px solid rgba(37,99,235,0.25)',
+                      borderRadius: 9999,
+                      padding: '8px 18px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      color: '#1e3a8a',
+                      textDecoration: 'none',
+                      marginBottom: 20
+                    }}
+                  >
+                    🏛️ Kunjungi Profil di BI Innovation Hub <ArrowRight size={14} />
+                  </a>
+                  <br />
+
                   <button
                     onClick={() => {
                       setContactSubmitted(false);
