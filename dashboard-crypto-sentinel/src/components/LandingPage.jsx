@@ -436,15 +436,15 @@ export default function LandingPage({ onEnter }) {
   return (
     <div className="lp">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800;1,900&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
         *, *::before, *::after { box-sizing: border-box; }
 
         .lp {
           background: #f0f5ff;
           min-height: 100vh;
-          color: #111111;
-          font-family: 'Outfit', sans-serif;
+          color: #0f172a;
+          font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         /* ---- NAV (FIXED STICKY HEADER) ---- */
@@ -455,11 +455,11 @@ export default function LandingPage({ onEnter }) {
           right: 0;
           z-index: 1000;
           width: 100%;
-          background: rgba(240,245,255,0.92);
+          background: rgba(240,245,255,0.94);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          border-bottom: 1px solid rgba(0,0,0,0.07);
-          box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+          border-bottom: 1px solid rgba(0,0,0,0.06);
+          box-shadow: 0 4px 20px rgba(0,0,0,0.02);
         }
 
         .lp-nav-container {
@@ -480,7 +480,7 @@ export default function LandingPage({ onEnter }) {
         }
 
         .lp-nav-logo {
-          width: 44px; height: 44px;
+          width: 42px; height: 42px;
           background: transparent;
           border: none;
           padding: 0;
@@ -492,46 +492,52 @@ export default function LandingPage({ onEnter }) {
         .lp-nav-logo img { width: 100%; height: 100%; object-fit: contain; }
 
         .lp-nav-name {
-          font-family: 'Playfair Display', serif;
-          font-size: 1.25rem;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-size: 1.22rem;
           font-weight: 800;
-          color: #111111;
-          letter-spacing: -0.3px;
+          color: #0f172a;
+          letter-spacing: -0.4px;
         }
 
         .lp-nav-name span { color: #1e3a8a; }
 
         .lp-nav-links {
-          display: flex; align-items: center; gap: 4px; list-style: none;
+          display: flex; align-items: center; gap: 28px; list-style: none;
         }
 
         .lp-nav-links a {
-          padding: 7px 16px;
-          font-size: 0.88rem; font-weight: 600;
-          color: #777777;
+          padding: 6px 0;
+          font-size: 0.94rem;
+          font-weight: 600;
+          color: #475569;
           text-decoration: none;
-          border-radius: 9999px;
-          transition: all 0.2s ease;
+          transition: color 0.15s ease;
           cursor: pointer;
+          font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+          letter-spacing: -0.01em;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
         }
 
-        .lp-nav-links a:hover { color: #111111; background: rgba(0,0,0,0.05); }
+        .lp-nav-links a:hover { color: #0f172a; }
+        .lp-nav-links a.active { color: #0f172a; font-weight: 700; }
 
         .lp-nav-cta {
           display: inline-flex; align-items: center; gap: 8px;
-          background: #1e3a8a;
+          background: #09132e;
           border: none; border-radius: 9999px;
-          padding: 10px 22px;
-          font-size: 0.88rem; font-weight: 700; color: white;
-          cursor: pointer; font-family: 'Outfit', sans-serif;
-          box-shadow: 0 4px 16px rgba(30,58,138,0.3);
-          transition: all 0.3s ease;
+          padding: 9px 20px;
+          font-size: 0.85rem; font-weight: 700; color: white;
+          cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+          box-shadow: 0 4px 14px rgba(9,19,46,0.25);
+          transition: all 0.2s ease;
         }
 
         .lp-nav-cta:hover {
-          background: #1e40af;
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(30,58,138,0.4);
+          background: #1e3a8a;
+          transform: translateY(-1px);
+          box-shadow: 0 6px 18px rgba(9,19,46,0.35);
         }
 
         /* ---- HERO MATCHING MOCKUP IMAGE ---- */
@@ -1493,11 +1499,18 @@ export default function LandingPage({ onEnter }) {
             <div className="lp-nav-name">Crypto<span>-Sentinel 2026</span></div>
           </div>
           <ul className="lp-nav-links">
-            <li><a href="#beranda" onClick={(e) => { e.preventDefault(); scrollToSection('beranda'); }}>Beranda</a></li>
-            <li><a href="#solusi" onClick={(e) => { e.preventDefault(); scrollToSection('solusi'); }}>Solusi</a></li>
-            <li><a href="#teknologi" onClick={(e) => { e.preventDefault(); scrollToSection('teknologi'); }}>Teknologi</a></li>
-            <li><a href="#dampak" onClick={(e) => { e.preventDefault(); scrollToSection('dampak'); }}>Dampak</a></li>
-            <li><a href="#tim" onClick={(e) => { e.preventDefault(); scrollToSection('tim'); }}>Tentang Kami</a></li>
+            <li><a href="#beranda" className="active" onClick={(e) => { e.preventDefault(); scrollToSection('beranda'); }}>Home</a></li>
+            <li><a href="#solusi" onClick={(e) => { e.preventDefault(); scrollToSection('skema-gnn'); }}>How We Work</a></li>
+            <li><a href="#tim" onClick={(e) => { e.preventDefault(); scrollToSection('tim'); }}>Research &amp; Team</a></li>
+            <li><a href="#dampak" onClick={(e) => { e.preventDefault(); scrollToSection('dampak'); }}>Privacy</a></li>
+            <li>
+              <a href="https://github.com/RifkiF00/crypto-sentinel-2026" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                </svg>
+                GitHub
+              </a>
+            </li>
           </ul>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button className="lp-nav-cta" onClick={() => setShowContactModal(true)} style={{ background: '#09132e', borderRadius: '9999px', padding: '10px 24px' }}>
@@ -1523,11 +1536,16 @@ export default function LandingPage({ onEnter }) {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              <a href="#beranda" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('beranda'); }}>Beranda</a>
-              <a href="#solusi" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('solusi'); }}>Solusi</a>
-              <a href="#teknologi" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('teknologi'); }}>Teknologi</a>
-              <a href="#dampak" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('dampak'); }}>Dampak</a>
-              <a href="#tim" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('tim'); }}>Tentang Kami</a>
+              <a href="#beranda" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('beranda'); }}>Home</a>
+              <a href="#solusi" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('skema-gnn'); }}>How We Work</a>
+              <a href="#tim" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('tim'); }}>Research &amp; Team</a>
+              <a href="#dampak" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); scrollToSection('dampak'); }}>Privacy</a>
+              <a href="https://github.com/RifkiF00/crypto-sentinel-2026" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                </svg>
+                GitHub
+              </a>
               <button
                 className="lp-mobile-drawer-cta"
                 onClick={() => {
