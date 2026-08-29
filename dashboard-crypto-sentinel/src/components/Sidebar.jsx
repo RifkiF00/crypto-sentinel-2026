@@ -1,43 +1,26 @@
 import {
   LayoutDashboard,
+  GitBranch,
   ShieldAlert,
-  Activity,
-  BarChart3,
-  FileWarning,
-  Settings,
-  Users,
-  Globe,
-  Database,
-  BookOpen,
+  Sliders,
   Shield,
 } from 'lucide-react';
 
 export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile, alertsCount }) {
   const navSections = [
     {
-      title: 'Monitoring Utama',
+      title: 'Operasional Utama',
       items: [
         { icon: LayoutDashboard, label: 'Dashboard Overview', id: 'dashboard' },
-        { icon: Activity, label: 'Live Sentinel Stream', id: 'monitoring', badge: 'LIVE' },
+        { icon: GitBranch, label: 'Analisis Graf Relasi (GNN)', id: 'analysis' },
         { icon: ShieldAlert, label: 'Investigasi Alert (CMS)', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
       ],
     },
     {
-      title: 'Intelijen & Forensik AI',
+      title: 'Tata Kelola & Regulasi',
       items: [
-        { icon: BarChart3, label: 'Analisis Relasi Graf (GNN)', id: 'analysis' },
-        { icon: Globe, label: 'Direktori VASP & Kripto', id: 'exchange' },
-        { icon: FileWarning, label: 'Indikator & Pola Fraud', id: 'patterns' },
-        { icon: Users, label: 'Profil Risiko Nasabah', id: 'risk-profiles' },
-      ],
-    },
-    {
-      title: 'Kepatuhan & Regulasi',
-      items: [
-        { icon: Database, label: 'Database Blocklist OJK', id: 'blocklist' },
-        { icon: BookOpen, label: 'Aturan & Kebijakan FDS', id: 'rules' },
+        { icon: Sliders, label: 'Kalibrasi FDS (POJK 8/2023)', id: 'rules' },
         { icon: Shield, label: 'Kepatuhan & Audit PPATK', id: 'compliance' },
-        { icon: Settings, label: 'Pengaturan Sistem', id: 'settings' },
       ],
     },
   ];

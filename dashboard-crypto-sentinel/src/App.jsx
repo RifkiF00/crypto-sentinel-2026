@@ -26,16 +26,10 @@ import WeeklyComparison from './components/WeeklyComparison';
 
 // Dynamic Sub-View Components
 import {
-  MonitoringView,
   AlertsView,
   AnalysisView,
-  ExchangeView,
-  PatternsView,
-  RiskProfilesView,
-  BlocklistView,
   RulesView,
-  ComplianceView,
-  SettingsView
+  ComplianceView
 } from './components/PageViews';
 
 // Initial Mock Data
@@ -221,19 +215,14 @@ function DashboardLayout({ onBackToLanding, currentUser }) {
               )}
 
               {/* ----------------------------------------------------
-                  2. LIVE MONITORING VIEW
+                  2. GRAPH RELATION FORENSICS (GNN GRAPH SAGE)
               ---------------------------------------------------- */}
-              {activePage === 'monitoring' && (
-                <MonitoringView 
-                  transactions={transactions} 
-                  setTransactions={setTransactions} 
-                  addToast={addToast} 
-                  rules={rules} 
-                />
+              {activePage === 'analysis' && (
+                <AnalysisView transactions={transactions} addToast={addToast} />
               )}
 
               {/* ----------------------------------------------------
-                  3. ALERTS AND THREATS VIEW
+                  3. ALERTS & CMS INVESTIGATION VIEW
               ---------------------------------------------------- */}
               {activePage === 'alerts' && (
                 <AlertsView 
@@ -245,46 +234,7 @@ function DashboardLayout({ onBackToLanding, currentUser }) {
               )}
 
               {/* ----------------------------------------------------
-                  4. TRANSACTION DEEP ANALYSIS
-              ---------------------------------------------------- */}
-              {activePage === 'analysis' && (
-                <AnalysisView transactions={transactions} addToast={addToast} />
-              )}
-
-              {/* ----------------------------------------------------
-                  5. CRYPTO EXCHANGES DIRECTORY
-              ---------------------------------------------------- */}
-              {activePage === 'exchange' && (
-                <ExchangeView addToast={addToast} />
-              )}
-
-              {/* ----------------------------------------------------
-                  6. DETECTED CRITICAL FRAUD PATTERNS
-              ---------------------------------------------------- */}
-              {activePage === 'patterns' && (
-                <PatternsView />
-              )}
-
-              {/* ----------------------------------------------------
-                  7. DETAILED CLIENT RISK PROFILES
-              ---------------------------------------------------- */}
-              {activePage === 'risk-profiles' && (
-                <RiskProfilesView addToast={addToast} />
-              )}
-
-              {/* ----------------------------------------------------
-                  8. DATABASE BLOCKLIST
-              ---------------------------------------------------- */}
-              {activePage === 'blocklist' && (
-                <BlocklistView 
-                  blockedEntities={blockedEntities} 
-                  setBlockedEntities={setBlockedEntities} 
-                  addToast={addToast} 
-                />
-              )}
-
-              {/* ----------------------------------------------------
-                  9. DYNAMIC THRESHOLD POLICIES & RULES
+                  4. DYNAMIC THRESHOLD & RISK APPETITE POLICIES (POJK 8/2023)
               ---------------------------------------------------- */}
               {activePage === 'rules' && (
                 <RulesView 
@@ -295,21 +245,10 @@ function DashboardLayout({ onBackToLanding, currentUser }) {
               )}
 
               {/* ----------------------------------------------------
-                  10. COMPLIANCE AUDITING VIEWS
+                  5. PPATK COMPLIANCE & FORMAL LTKM REPORT GENERATOR
               ---------------------------------------------------- */}
               {activePage === 'compliance' && (
                 <ComplianceView addToast={addToast} />
-              )}
-
-              {/* ----------------------------------------------------
-                  11. PREFERENCES & SETTINGS
-              ---------------------------------------------------- */}
-              {activePage === 'settings' && (
-                <SettingsView 
-                  adminProfile={adminProfile} 
-                  setAdminProfile={setAdminProfile} 
-                  addToast={addToast} 
-                />
               )}
             </motion.div>
           </AnimatePresence>
