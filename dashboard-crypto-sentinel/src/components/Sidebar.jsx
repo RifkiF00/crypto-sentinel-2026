@@ -75,9 +75,9 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
           alt="Crypto-Sentinel 2026"
           style={{
             width: '100%',
-            maxWidth: '210px',
+            maxWidth: '175px',
             height: 'auto',
-            maxHeight: '48px',
+            maxHeight: '44px',
             objectFit: 'contain',
             objectPosition: 'left center',
             display: 'block'
