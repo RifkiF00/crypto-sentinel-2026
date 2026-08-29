@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, ArrowRight, Brain, Zap, FileText,
   ChevronDown, Radio, CheckCircle, Play, Check, Clock, Lock,
-  Send, Server, Cpu, Activity, RefreshCw
+  Send, Server, Cpu, Activity, RefreshCw, X, Mail, Phone, Building, MessageSquare, Calendar
 } from 'lucide-react';
 
 // ---- Scroll reveal wrapper ----
@@ -388,6 +388,23 @@ function AnimatedFlowDiagram() {
 
 export default function LandingPage({ onEnter }) {
   const [activeDocTab, setActiveDocTab] = useState('tp');
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    institution: '',
+    email: '',
+    need: 'Integrasi Core Banking (SNAP BI)',
+    message: ''
+  });
+  const [contactSubmitted, setContactSubmitted] = useState(false);
+
+  const scrollToSection = (id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const [tickerLogs, setTickerLogs] = useState([
     { id: 1, time: '07:41:02', msg: 'FDS Engine v3.2 initialized. 15 detection rules loaded.', type: 'info' },
     { id: 2, time: '07:41:09', msg: '[ALLOW] TXN-20260810-0021 | Rp 500.000 → Siti Rahma | Score: 12% | 17ms', type: 'success' },
@@ -1404,20 +1421,20 @@ export default function LandingPage({ onEnter }) {
       {/* NAV */}
       <nav className="lp-nav">
         <div className="lp-nav-container">
-          <div className="lp-nav-brand">
+          <div className="lp-nav-brand" onClick={() => scrollToSection('beranda')} style={{ cursor: 'pointer' }}>
             <div className="lp-nav-logo">
               <img src="/img/logo_transparent.png" alt="Logo" />
             </div>
             <div className="lp-nav-name">Crypto<span>-Sentinel 2026</span></div>
           </div>
           <ul className="lp-nav-links">
-            <li><a href="#beranda" style={{ color: '#2563eb', borderBottom: '2px solid #2563eb', paddingBottom: 4 }}>Beranda</a></li>
-            <li><a href="#solusi">Solusi</a></li>
-            <li><a href="#teknologi">Teknologi</a></li>
-            <li><a href="#dampak">Dampak</a></li>
-            <li><a href="#tim">Tentang Kami</a></li>
+            <li><a href="#beranda" onClick={(e) => { e.preventDefault(); scrollToSection('beranda'); }}>Beranda</a></li>
+            <li><a href="#solusi" onClick={(e) => { e.preventDefault(); scrollToSection('solusi'); }}>Solusi</a></li>
+            <li><a href="#teknologi" onClick={(e) => { e.preventDefault(); scrollToSection('teknologi'); }}>Teknologi</a></li>
+            <li><a href="#dampak" onClick={(e) => { e.preventDefault(); scrollToSection('dampak'); }}>Dampak</a></li>
+            <li><a href="#tim" onClick={(e) => { e.preventDefault(); scrollToSection('tim'); }}>Tentang Kami</a></li>
           </ul>
-          <button className="lp-nav-cta" onClick={onEnter} style={{ background: '#09132e', borderRadius: '9999px', padding: '10px 24px' }}>
+          <button className="lp-nav-cta" onClick={() => setShowContactModal(true)} style={{ background: '#09132e', borderRadius: '9999px', padding: '10px 24px' }}>
             Hubungi Kami <ArrowRight size={15} />
           </button>
         </div>
@@ -1439,7 +1456,7 @@ export default function LandingPage({ onEnter }) {
                 Crypto-Sentinel 2026 adalah middleware AI cerdas yang bertindak sebagai <strong>Smart Circuit Breaker</strong>, mendeteksi dan menghentikan transaksi berisiko dalam hitungan milidetik sebelum kerugian terjadi.
               </p>
               <div className="lp-hero-btns">
-                <button className="lp-btn-primary" onClick={onEnter}>
+                <button className="lp-btn-primary" onClick={() => scrollToSection('solusi')}>
                   Pelajari Solusi Kami <ArrowRight size={16} />
                 </button>
                 <button className="lp-btn-secondary" onClick={onEnter}>
@@ -1619,11 +1636,11 @@ export default function LandingPage({ onEnter }) {
       </section>
 
       {/* LETTER — dark section */}
-      <div className="lp-letter-section" id="teknologi">
+      <div className="lp-letter-section" id="dampak">
         <div className="lp-letter">
           <Reveal>
             <div className="lp-letter-text">
-              <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 3, color: '#2563eb', display: 'block', marginBottom: 14 }}>Masalah yang Kami Selesaikan</span>
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 3, color: '#2563eb', display: 'block', marginBottom: 14 }}>Dampak Finansial &amp; Masalah Nyata</span>
               <h2>Rp 9,1 Triliun<br /><em>Raib dari Penipuan Digital.</em></h2>
               <p>OJK mencatat akumulasi kerugian masyarakat akibat <strong>penipuan keuangan digital mencapai Rp 9,1 Triliun</strong> dari 432.637 laporan (IASC OJK, Januari 2026). PPATK mendeteksi transaksi mencurigakan terkait <strong>aset kripto senilai lebih dari Rp 800 Miliar</strong> sepanjang 2022–2024. Celah utamanya selalu sama: <strong>tidak ada intersepsi real-time</strong> sebelum dana keluar ke bursa kripto.</p>
               <p>Sistem FDS konvensional bekerja <em>post-facto</em> — mendeteksi setelah dana berpindah. Crypto-Sentinel membalik paradigma ini: setiap transaksi dianalisis oleh mesin AI <strong>sebelum saldo berubah</strong>, dalam waktu kurang dari 18ms, menggunakan <strong>13 sub-indikator</strong> behavioral dan graph topology GNN.</p>
@@ -1641,7 +1658,7 @@ export default function LandingPage({ onEnter }) {
       </div>
 
       {/* FEATURES */}
-      <section className="lp-section">
+      <section className="lp-section" id="teknologi">
         <Reveal>
           <span className="lp-section-tag">Fitur Unggulan</span>
           <h2 className="lp-section-title">Tiga Pilar <span className="crimson-it">Pertahanan</span><br />Keuangan Digital</h2>
@@ -1903,6 +1920,279 @@ export default function LandingPage({ onEnter }) {
           </div>
         </div>
       </footer>
+
+      {/* ========================================================
+          INTERACTIVE CONTACT & BANKING PARTNERSHIP MODAL
+      ======================================================== */}
+      <AnimatePresence>
+        {showContactModal && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(11, 19, 41, 0.75)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20
+            }}
+            onClick={() => setShowContactModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.25 }}
+              style={{
+                background: '#ffffff',
+                borderRadius: 24,
+                maxWidth: 620,
+                width: '100%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+                padding: '32px 36px',
+                position: 'relative',
+                border: '1px solid rgba(0,0,0,0.08)'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowContactModal(false)}
+                style={{
+                  position: 'absolute',
+                  top: 20,
+                  right: 20,
+                  background: '#f1f5f9',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: 36,
+                  height: 36,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#64748b'
+                }}
+              >
+                <X size={18} />
+              </button>
+
+              {!contactSubmitted ? (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(37,99,235,0.1)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Building size={20} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0b1329', margin: 0 }}>
+                        Konsultasi Kemitraan Bank
+                      </h3>
+                      <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0 }}>
+                        Jadwalkan Sandbox Testing FDS Terintegrasi POJK No. 8/2023
+                      </p>
+                    </div>
+                  </div>
+
+                  <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '16px 0 20px' }} />
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      setContactSubmitted(true);
+                    }}
+                  >
+                    <div style={{ marginBottom: 14 }}>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                        Nama Lengkap PIC / Pejabat Bank
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Contoh: Budi Santoso, S.E. (Kepala Divisi APU-PPT)"
+                        value={contactForm.name}
+                        onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: 10,
+                          border: '1px solid #cbd5e1',
+                          fontSize: '0.85rem',
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                          Institusi / Bank / Regulator
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Misal: PT Bank BJB Tbk / BPR"
+                          value={contactForm.institution}
+                          onChange={(e) => setContactForm({ ...contactForm, institution: e.target.value })}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: 10,
+                            border: '1px solid #cbd5e1',
+                            fontSize: '0.85rem',
+                            outline: 'none',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                          Email Kantor / Bisnis
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="compliance@bank.co.id"
+                          value={contactForm.email}
+                          onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: 10,
+                            border: '1px solid #cbd5e1',
+                            fontSize: '0.85rem',
+                            outline: 'none',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: 14 }}>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                        Fokus Kebutuhan Integrasi
+                      </label>
+                      <select
+                        value={contactForm.need}
+                        onChange={(e) => setContactForm({ ...contactForm, need: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: 10,
+                          border: '1px solid #cbd5e1',
+                          fontSize: '0.85rem',
+                          outline: 'none',
+                          background: '#ffffff',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <option value="Integrasi Core Banking (SNAP BI)">Integrasi Core Banking (SNAP BI Open API)</option>
+                        <option value="Uji Coba GNN AI Engine & Circuit Breaker">Uji Coba GNN AI Engine &amp; Circuit Breaker</option>
+                        <option value="Kepatuhan POJK No. 8/2023 & goAML PPATK">Kepatuhan POJK No. 8/2023 &amp; goAML PPATK</option>
+                        <option value="Demo Khusus Direksi & Komite Risiko">Demo Khusus Direksi &amp; Komite Risiko Bank</option>
+                      </select>
+                    </div>
+
+                    <div style={{ marginBottom: 20 }}>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                        Catatan / Waktu Konsultasi yang Diinginkan
+                      </label>
+                      <textarea
+                        rows={3}
+                        placeholder="Contoh: Kami ingin menjadwalkan demo teknis integrasi API SNAP BI untuk Bank BPD kami minggu depan."
+                        value={contactForm.message}
+                        onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: 10,
+                          border: '1px solid #cbd5e1',
+                          fontSize: '0.85rem',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          resize: 'vertical'
+                        }}
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: 12,
+                        background: 'linear-gradient(135deg, #09132e 0%, #1e3a8a 100%)',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontSize: '0.9rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 8,
+                        boxShadow: '0 4px 14px rgba(30,58,138,0.3)'
+                      }}
+                    >
+                      <Send size={16} /> Kirim Permintaan Konsultasi
+                    </button>
+                  </form>
+
+                  {/* Direct Contact Cards */}
+                  <div style={{ marginTop: 22, paddingTop: 18, borderTop: '1px solid #f1f5f9', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div style={{ background: '#f8fafc', padding: 12, borderRadius: 12, border: '1px solid #e2e8f0', fontSize: '0.74rem' }}>
+                      <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>💬 WhatsApp Hotline PIC</div>
+                      <div style={{ color: '#2563eb', fontWeight: 600 }}>+62 812-8899-2026</div>
+                    </div>
+                    <div style={{ background: '#f8fafc', padding: 12, borderRadius: 12, border: '1px solid #e2e8f0', fontSize: '0.74rem' }}>
+                      <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>✉️ Email Resmi Tim</div>
+                      <div style={{ color: '#2563eb', fontWeight: 600 }}>partnership@crypto-sentinel.id</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '24px 12px' }}>
+                  <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34,197,94,0.12)', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                    <CheckCircle size={36} />
+                  </div>
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>
+                    Permintaan Konsultasi Diterima!
+                  </h3>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.6, maxWidth: 460, margin: '0 auto 24px' }}>
+                    Terima kasih, Bapak/Ibu <strong>{contactForm.name || 'PIC'}</strong> dari <strong>{contactForm.institution || 'Institusi Perbankan'}</strong>. Tim Kepatuhan &amp; Pengembang Crypto-Sentinel akan menghubungi Anda melalui email dalam 1x24 jam untuk koordinasi teknis.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setContactSubmitted(false);
+                      setShowContactModal(false);
+                    }}
+                    style={{
+                      padding: '10px 28px',
+                      borderRadius: 9999,
+                      background: '#09132e',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Tutup &amp; Kembali ke Halaman Utama
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
