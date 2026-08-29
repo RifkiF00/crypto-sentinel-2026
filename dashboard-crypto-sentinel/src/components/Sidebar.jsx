@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  Activity,
   GitBranch,
   ShieldAlert,
   Sliders,
@@ -12,6 +13,7 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
       title: 'Operasional Utama',
       items: [
         { icon: LayoutDashboard, label: 'Dashboard Overview', id: 'dashboard' },
+        { icon: Activity, label: 'Live Sentinel Stream', id: 'monitoring', badge: 'LIVE' },
         { icon: GitBranch, label: 'Analisis Graf Relasi (GNN)', id: 'analysis' },
         { icon: ShieldAlert, label: 'Investigasi Alert (CMS)', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
       ],

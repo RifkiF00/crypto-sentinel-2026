@@ -26,6 +26,7 @@ import WeeklyComparison from './components/WeeklyComparison';
 
 // Dynamic Sub-View Components
 import {
+  MonitoringView,
   AlertsView,
   AnalysisView,
   RulesView,
@@ -215,7 +216,19 @@ function DashboardLayout({ onBackToLanding, currentUser }) {
               )}
 
               {/* ----------------------------------------------------
-                  2. GRAPH RELATION FORENSICS (GNN GRAPH SAGE)
+                  2. LIVE MONITORING & SENTINEL TERMINAL VIEW
+              ---------------------------------------------------- */}
+              {activePage === 'monitoring' && (
+                <MonitoringView 
+                  transactions={transactions} 
+                  setTransactions={setTransactions} 
+                  addToast={addToast} 
+                  rules={rules} 
+                />
+              )}
+
+              {/* ----------------------------------------------------
+                  3. GRAPH RELATION FORENSICS (GNN GRAPH SAGE)
               ---------------------------------------------------- */}
               {activePage === 'analysis' && (
                 <AnalysisView transactions={transactions} addToast={addToast} />
