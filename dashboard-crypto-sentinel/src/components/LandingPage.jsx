@@ -507,16 +507,16 @@ export default function LandingPage({ onEnter }) {
 
         .lp-nav-links a {
           padding: 7px 16px;
-          font-size: 0.88rem;
-          font-weight: 600;
-          color: #777777;
+          font-size: 0.90rem;
+          font-weight: 700;
+          color: #0f172a;
           text-decoration: none;
           border-radius: 9999px;
           transition: all 0.2s ease;
           cursor: pointer;
         }
 
-        .lp-nav-links a:hover { color: #111111; background: rgba(0,0,0,0.05); }
+        .lp-nav-links a:hover { color: #1e3a8a; background: rgba(30, 58, 138, 0.06); }
 
         .lp-nav-cta {
           display: inline-flex; align-items: center; gap: 8px;
