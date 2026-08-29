@@ -21,13 +21,13 @@ start "Dashboard :5173" cmd /k "cd /d d:\Crypto-Sentinel 2026\dashboard-crypto-s
 
 timeout /t 2 /nobreak >nul
 
-echo [4/5] Starting Flutter 1: Bank bjb DIGI...
-start "Flutter bjb DIGI" cmd /k "cd /d d:\Crypto-Sentinel 2026\mobile-banking-bjb && flutter run"
+echo [4/5] Starting Flutter 1: Bank bjb DIGI (Target: HP Android)...
+start "Flutter bjb DIGI (Android)" cmd /k "cd /d d:\Crypto-Sentinel 2026\mobile-banking-bjb && flutter run"
 
 timeout /t 2 /nobreak >nul
 
-echo [5/5] Starting Flutter 2: Bank Kuningan...
-start "Flutter Bank Kuningan" cmd /k "cd /d d:\Crypto-Sentinel 2026\crypto-sentinel-bank-kng && flutter run"
+echo [5/5] Starting Flutter 2: Bank Kuningan (Target: Chrome Browser :8082)...
+start "Flutter Bank Kuningan (Chrome)" cmd /k "cd /d d:\Crypto-Sentinel 2026\crypto-sentinel-bank-kng && flutter run -d chrome --web-port 8082"
 
 echo.
 echo ============================================================
