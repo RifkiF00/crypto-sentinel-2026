@@ -1,11 +1,14 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:crypto/crypto.dart';
 
 /// Service Integrasi API Core Banking bjb & Crypto-Sentinel FDS Engine (Port 8080)
 class BjbApiService {
-  // Base URL Core Banking API
-  static const String baseUrl = 'http://192.168.100.8:8080/api/v1';
+  // Auto-detect: localhost saat di Web/Chrome, IP LAN saat di HP Android
+  static String get baseUrl => kIsWeb
+      ? 'http://localhost:8080/api/v1'
+      : 'http://192.168.100.8:8080/api/v1';
 
   /// Kirim transaksi transfer (Dukungan Sesama bjb Rp 0, RTOL via APEX bjb, & SKNBI)
   static Future<Map<String, dynamic>> sendTransfer({
