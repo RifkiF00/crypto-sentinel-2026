@@ -69,15 +69,15 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`} id="sidebar-nav">
-      <div className="sidebar-header" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', minHeight: '68px' }}>
+      <div className="sidebar-header" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', minHeight: '68px' }}>
         <img
-          src="/img/Logo3_transparent.png"
-          alt="Crypto - Sentinel"
+          src="/img/logo_dashboard.png"
+          alt="Crypto-Sentinel 2026"
           style={{
             width: '100%',
-            maxWidth: '195px',
+            maxWidth: '210px',
             height: 'auto',
-            maxHeight: '44px',
+            maxHeight: '48px',
             objectFit: 'contain',
             objectPosition: 'left center',
             display: 'block'
