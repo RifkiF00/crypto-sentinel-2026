@@ -73,31 +73,46 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
   const [isLive, setIsLive] = useState(true);
   const [autoBlock] = useState(rules.autoBlockEnabled);
   const [timeFilter, setTimeFilter] = useState('1day'); // '1day' | '7days' | 'all'
+  const [tenantFilter, setTenantFilter] = useState('all'); // 'all' (Apex) | 'kuningan' | 'bjb'
   const [tickerLogs, setTickerLogs] = useState([
     { time: new Date().toLocaleTimeString(), text: 'Real-time WebSocket connection established with Bank API Gateways.' },
     { time: new Date().toLocaleTimeString(), text: 'Active scanning enabled. Compliance database connected.' }
   ]);
 
-  // Filter transactions by selected time range (Default: 1 Hari Terakhir)
+  // Filter transactions by selected time range and tenant filter
   const filteredTransactions = useMemo(() => {
-    if (timeFilter === 'all') return transactions;
-
     const now = new Date();
     const cutoffDays = timeFilter === '1day' ? 1 : 7;
     const cutoffTime = new Date(now.getTime() - cutoffDays * 24 * 60 * 60 * 1000);
 
     return transactions.filter(t => {
-      if (!t.timestamp) return true;
-      try {
-        const cleanTs = t.timestamp.replace(' ', 'T');
-        const txDate = new Date(cleanTs);
-        if (isNaN(txDate.getTime())) return true;
-        return txDate >= cutoffTime;
-      } catch (e) {
-        return true;
+      // 1. Time range filter
+      if (timeFilter !== 'all') {
+        if (t.timestamp) {
+          try {
+            const cleanTs = t.timestamp.replace(' ', 'T');
+            const txDate = new Date(cleanTs);
+            if (!isNaN(txDate.getTime()) && txDate < cutoffTime) return false;
+          } catch (e) {}
+        }
       }
+
+      // 2. Tenant Filter (Bank Kuningan, Bank bjb, Apex Gabungan)
+      if (tenantFilter === 'kuningan') {
+        const isKng = (t.senderBank || '').toLowerCase().includes('kuningan') || 
+                      (t.destinationBank || '').toLowerCase().includes('kuningan') ||
+                      (t.destination || '').toLowerCase().includes('kuningan');
+        return isKng;
+      }
+      if (tenantFilter === 'bjb') {
+        const isBjb = (t.senderBank || '').toLowerCase().includes('bjb') || 
+                     (t.destinationBank || '').toLowerCase().includes('bjb') ||
+                     (t.destination || '').toLowerCase().includes('bjb');
+        return isBjb;
+      }
+      return true;
     });
-  }, [transactions, timeFilter]);
+  }, [transactions, timeFilter, tenantFilter]);
 
   // Combine real historical transactions with scanner ticker logs
   const consoleLogs = useMemo(() => {
@@ -210,6 +225,35 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
             <div className="card-header" style={{ flexWrap: 'wrap', gap: 12 }}>
               <h3 className="card-title"><Activity /> Aliran Transaksi Terakhir</h3>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                {/* Filter Tenant (Bank Kuningan, Bank bjb, Apex Gabungan) */}
+                <div style={{ display: 'flex', gap: 4, background: 'rgba(37, 99, 235, 0.08)', padding: 3, borderRadius: 'var(--radius-md)', border: '1px solid rgba(37, 99, 235, 0.25)' }}>
+                  <button
+                    className={`btn btn-sm ${tenantFilter === 'all' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => setTenantFilter('all')}
+                    style={{ fontSize: '0.72rem', padding: '3px 9px', height: 26, borderRadius: 'var(--radius-sm)' }}
+                    title="Pantau antrean gabungan seluruh ekosistem Apex Bank"
+                  >
+                    🏛️ Apex View
+                  </button>
+                  <button
+                    className={`btn btn-sm ${tenantFilter === 'kuningan' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => setTenantFilter('kuningan')}
+                    style={{ fontSize: '0.72rem', padding: '3px 9px', height: 26, borderRadius: 'var(--radius-sm)' }}
+                    title="Fokus pantau Bank Kuningan saja"
+                  >
+                    🏦 Bank Kuningan
+                  </button>
+                  <button
+                    className={`btn btn-sm ${tenantFilter === 'bjb' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => setTenantFilter('bjb')}
+                    style={{ fontSize: '0.72rem', padding: '3px 9px', height: 26, borderRadius: 'var(--radius-sm)' }}
+                    title="Fokus pantau Bank BJB saja"
+                  >
+                    🏦 Bank BJB
+                  </button>
+                </div>
+
+                {/* Time Range Filter */}
                 <div style={{ display: 'flex', gap: 4, background: 'var(--bg-card-subtle)', padding: 3, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
                   <button
                     className={`btn btn-sm ${timeFilter === '1day' ? 'btn-primary' : 'btn-ghost'}`}
@@ -230,7 +274,7 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
                     onClick={() => setTimeFilter('all')}
                     style={{ fontSize: '0.72rem', padding: '3px 10px', height: 26, borderRadius: 'var(--radius-sm)' }}
                   >
-                    🌐 Semua ({transactions.length})
+                    🌐 Semua
                   </button>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
@@ -3332,6 +3376,196 @@ export function SettingsView({ adminProfile, setAdminProfile, addToast }) {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 10. APOLO OJK COMPLIANCE PREVIEW & GOVERNANCE VIEW
+// ==========================================
+export function ApoloGovernanceView({ addToast }) {
+  const [selectedForm, setSelectedForm] = useState('FORM-01');
+
+  const handleExportApoloXml = () => {
+    if (addToast) addToast('📥 Menyiapkan berkas XML APOLO OJK (Standar XSD v4.2)...', 'info');
+    setTimeout(() => {
+      const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<ApoloOJKReport xmlns="http://www.ojk.go.id/apolo/v4" period="2026-08" ecosystem="Apex-Bank">
+  <Header>
+    <InstitutionCode>APEX-0991</InstitutionCode>
+    <ReporterTitle>Pengawas Regulasi (OJK / BI Inspector)</ReporterTitle>
+    <SubmissionDate>${new Date().toISOString()}</SubmissionDate>
+    <RiskBasedApproachLevel>POJK-8-2023-Compliant</RiskBasedApproachLevel>
+  </Header>
+  <TenantSummary>
+    <Tenant name="PT Bank BJB Tbk" riskScore="Low" autoBlockThreshold="85%" falsePositiveRate="0.0015%"/>
+    <Tenant name="PT BPR Bank Kuningan" riskScore="Moderate" autoBlockThreshold="80%" falsePositiveRate="0.0019%"/>
+  </TenantSummary>
+</ApoloOJKReport>`;
+      const blob = new Blob([xmlContent], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `APOLO_OJK_COMPLIANCE_${new Date().toISOString().substring(0, 10)}.xml`;
+      a.click();
+      URL.revokeObjectURL(url);
+      if (addToast) addToast('✅ Berkas XML Pelaporan APOLO OJK berhasil diunduh!', 'success');
+    }, 600);
+  };
+
+  return (
+    <div className="apolo-governance-view">
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>APOLO OJK Compliance Preview &amp; Governance</h2>
+          <span style={{ fontSize: '0.72rem', background: 'rgba(124,58,237,0.15)', color: '#a78bfa', border: '1px solid rgba(124,58,237,0.3)', padding: '3px 10px', borderRadius: 6, fontWeight: 700 }}>
+            PORTAL APOLO OJK (SISTEM APLIKASI PELAPORAN ONLINE)
+          </span>
+        </div>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+          Ringkasan data formulir komposisi nasabah berdasar risiko dan kepatuhan APU-PPT yang siap divalidasi dan diunggah ke portal resmi <strong>APOLO OJK</strong>.
+        </p>
+      </div>
+
+      {/* KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        <div className="card" style={{ padding: 18, borderLeft: '4px solid #7c3aed' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total Nasabah Terpantau</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: 4, color: 'var(--text-primary)' }}>1,420 Nasabah</div>
+          <div style={{ fontSize: '0.7rem', color: '#10b981', marginTop: 4 }}>🟢 100% Terverifikasi NIK Dukcapil</div>
+        </div>
+        <div className="card" style={{ padding: 18, borderLeft: '4px solid #0284c7' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Komposisi Bank Kuningan (BPR)</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: 4, color: '#38bdf8' }}>488 Rekening</div>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4 }}>Tingkat Risiko: 18.4% (Terkendali)</div>
+        </div>
+        <div className="card" style={{ padding: 18, borderLeft: '4px solid #059669' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Komposisi Bank BJB (BPD)</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: 4, color: '#10b981' }}>932 Rekening</div>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4 }}>Tingkat Risiko: 22.1% (Terkendali)</div>
+        </div>
+        <div className="card" style={{ padding: 18, borderLeft: '4px solid #f59e0b' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Rasio False Positive FDS</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: 4, color: '#f59e0b' }}>0.0017%</div>
+          <div style={{ fontSize: '0.7rem', color: '#10b981', marginTop: 4 }}>🟢 Sangat Aman (Lindungi Nasabah Sah)</div>
+        </div>
+      </div>
+
+      {/* Main APOLO Table & Preview */}
+      <div className="card" style={{ padding: 22, marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className={`btn btn-sm ${selectedForm === 'FORM-01' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setSelectedForm('FORM-01')}
+              style={{ fontSize: '0.78rem' }}
+            >
+              📄 Form 01: Profil Risiko Nasabah Terhadap Aset Digital
+            </button>
+            <button
+              className={`btn btn-sm ${selectedForm === 'FORM-02' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setSelectedForm('FORM-02')}
+              style={{ fontSize: '0.78rem' }}
+            >
+              📊 Form 02: Rekapitulasi Aliran Dana VASP Kripto
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={handleExportApoloXml}
+              style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)', display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <Download size={15} /> 📥 Unduh Format XML APOLO OJK
+            </button>
+          </div>
+        </div>
+
+        {selectedForm === 'FORM-01' ? (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Entitas Anggota Apex</th>
+                <th>Kategori Risiko POJK 8/2023</th>
+                <th>Jumlah Rekening</th>
+                <th>Total Nominal Mutasi</th>
+                <th>Tindakan Mitigasi Bank</th>
+                <th>Status Validasi OJK</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>PT Bank BJB Tbk</strong></td>
+                <td><span className="badge badge-flagged">Tinggi (High Risk VASP)</span></td>
+                <td>24 Akun</td>
+                <td>Rp 1,450,000,000</td>
+                <td>EDD (Enhanced Due Diligence) &amp; Auto-Block ≥85%</td>
+                <td><span className="badge badge-approved">VALIDATED</span></td>
+              </tr>
+              <tr>
+                <td><strong>PT BPR Bank Kuningan</strong></td>
+                <td><span className="badge badge-flagged">Tinggi (Mule Account Pattern)</span></td>
+                <td>14 Akun</td>
+                <td>Rp 920,000,000</td>
+                <td>Pembekuan Sementara &amp; Sign-off MLRO</td>
+                <td><span className="badge badge-approved">VALIDATED</span></td>
+              </tr>
+              <tr>
+                <td><strong>PT Bank BJB Tbk</strong></td>
+                <td><span className="badge badge-pending">Sedang (VASP Domestik Bappebti)</span></td>
+                <td>182 Akun</td>
+                <td>Rp 6,800,000,000</td>
+                <td>CDD Berkala &amp; Monitoring Saldo</td>
+                <td><span className="badge badge-approved">VALIDATED</span></td>
+              </tr>
+              <tr>
+                <td><strong>PT BPR Bank Kuningan</strong></td>
+                <td><span className="badge badge-approved">Rendah (Nasabah Umum)</span></td>
+                <td>474 Akun</td>
+                <td>Rp 14,200,000,000</td>
+                <td>Pemantauan Standar SNAP BI</td>
+                <td><span className="badge badge-approved">VALIDATED</span></td>
+              </tr>
+            </tbody>
+          </table>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Nama Bursa Kripto (VASP)</th>
+                <th>Status Izin Bappebti</th>
+                <th>Volume Transaksi Apex</th>
+                <th>Proporsi Total (%)</th>
+                <th>Klasifikasi Risiko OJK</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>PT Indodax Nasional Indonesia</strong></td>
+                <td><span className="badge badge-approved">Berizin Resmi</span></td>
+                <td>Rp 8,400,000,000</td>
+                <td>32%</td>
+                <td><span className="badge badge-approved">Rendah (Terkawal)</span></td>
+              </tr>
+              <tr>
+                <td><strong>PT Tokocrypto Indonesia</strong></td>
+                <td><span className="badge badge-approved">Berizin Resmi</span></td>
+                <td>Rp 5,600,000,000</td>
+                <td>24%</td>
+                <td><span className="badge badge-approved">Rendah (Terkawal)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Binance Global Exchange</strong></td>
+                <td><span className="badge badge-blocked">Offshore (Non-Bappebti)</span></td>
+                <td>Rp 9,800,000,000</td>
+                <td>18%</td>
+                <td><span className="badge badge-blocked">KRITIS (Wajib Circuit Breaker)</span></td>
+              </tr>
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

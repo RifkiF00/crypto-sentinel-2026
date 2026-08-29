@@ -19,21 +19,24 @@ export const ROLES = {
     badge: 'SUPERVISORY',
     badgeColor: '#7c3aed',
     level: 'LEVEL 3 — Supervisory Audit',
+    defaultPage: 'dashboard',
+    allowedMenus: ['dashboard', 'analysis', 'compliance', 'apolo_governance'],
     description: 'Audit kepatuhan sistem, pengawasan independen, validasi transparansi model AI & audit log tanpa intervensi operasional.',
     permissions: {
       viewDashboard: true,
-      viewLiveMonitoring: true,
-      viewGNN: true,
-      viewAlerts: true,
-      triageAlert: false,        // OJK tidak melakukan triage operasional
-      addNotes: false,           // Read-only
-      executeBlock: false,       // TIDAK BOLEH memblokir transaksi (mencegah conflict of interest)
-      resolveAlert: false,       // TIDAK BOLEH menutup kasus bank
-      generateLTKM: false,       // Hanya bank yang submit SAR ke PPATK
-      viewRules: true,           // Bisa audit kalibrasi & transparansi AI (Read-Only)
-      editRules: false,          // TIDAK BOLEH mengubah ambang batas bank
-      viewCompliance: true,      // Mengakses Immutable Audit Log & Timestamp LTKM
-      downloadLTKM: true,        // Bisa unduh dokumen untuk audit pengawasan
+      viewLiveMonitoring: false,  // Tidak ada di daftar menu pengawas
+      viewGNN: true,              // Transparansi Model GNN (XAI)
+      viewAlerts: false,          // Tidak ada di daftar menu pengawas
+      triageAlert: false,
+      addNotes: false,
+      executeBlock: false,
+      resolveAlert: false,
+      generateLTKM: false,
+      viewRules: false,           // Tidak ada di menu pengawas
+      editRules: false,
+      viewCompliance: true,       // Audit Log & Traceability
+      viewApolo: true,            // APOLO OJK Compliance Preview
+      downloadLTKM: true,
       manageGovernance: false,
     }
   },
@@ -44,22 +47,25 @@ export const ROLES = {
     badge: 'FULL ACCESS',
     badgeColor: '#059669',
     level: 'LEVEL 3 — MLRO / Full Access',
+    defaultPage: 'dashboard',
+    allowedMenus: ['dashboard', 'monitoring', 'analysis', 'alerts', 'rules', 'compliance'],
     description: 'Pengambilan keputusan akhir pemblokiran, kalibrasi kebijakan risiko POJK 8/2023, dan persetujuan pelaporan resmi PPATK.',
     permissions: {
-      viewDashboard: true,
-      viewLiveMonitoring: true,
-      viewGNN: true,
-      viewAlerts: true,
+      viewDashboard: true,       // Konsolidasi Risk Dashboard
+      viewLiveMonitoring: true,  // Live Sentinel Stream
+      viewGNN: true,             // Analisis Graf Relasi (GNN)
+      viewAlerts: true,          // Approval Engine & Block Action / CMS
       triageAlert: true,
       addNotes: true,
-      executeBlock: true,        // Menyetujui eskalasi Freeze / Unfreeze
-      resolveAlert: true,        // Memutuskan status akhir: Resolved - Valid Threat vs False Positive
-      generateLTKM: true,        // Menyetujui & ekspor draft LTKM/SAR langsung ke standar PPATK goAML
-      viewRules: true,
-      editRules: true,           // Mengubah ambang batas skor risiko & bobot hibrida GNN
-      viewCompliance: true,
+      executeBlock: true,        // Approval Freeze / Unfreeze
+      resolveAlert: true,        // Keputusan final
+      generateLTKM: true,        // Multi-Entity SAR Generator
+      viewRules: true,           // Global & Tenant-Specific Rule Calibration
+      editRules: true,
+      viewCompliance: true,      // Kepatuhan & Audit PPATK
+      viewApolo: false,
       downloadLTKM: true,
-      manageGovernance: true,    // Mengatur hak akses tim dan kriteria Travel Rule
+      manageGovernance: true,
     }
   },
   analyst: {
@@ -69,20 +75,23 @@ export const ROLES = {
     badge: 'READ + TRIAGE',
     badgeColor: '#0284c7',
     level: 'LEVEL 1 — Read + Triage',
+    defaultPage: 'monitoring',
+    allowedMenus: ['monitoring', 'analysis', 'alerts'],
     description: 'Deteksi cepat, investigasi transaksi harian, analisis graf relasi GNN, dan eskalasi indikasi ancaman ke Pejabat Kepatuhan.',
     permissions: {
-      viewDashboard: true,
-      viewLiveMonitoring: true,
-      viewGNN: true,
-      viewAlerts: true,
-      triageAlert: true,         // Mengubah status triage: Unassigned -> In Review -> Escalated
-      addNotes: true,            // Menambahkan catatan investigasi forensik
-      executeBlock: false,       // TIDAK BISA memblokir langsung (harus eskalasi ke MLRO)
-      resolveAlert: false,       // Tidak bisa menutup kasus secara final tanpa sign-off
-      generateLTKM: false,       // TIDAK BISA kirim laporan ke PPATK tanpa sign-off Pejabat Kepatuhan
-      viewRules: false,          // TIDAK BISA mengakses menu Kalibrasi FDS (SoD)
-      editRules: false,          // TIDAK BISA mengubah parameter skor risiko
-      viewCompliance: true,      // Bisa melihat regulasi terkait
+      viewDashboard: false,      // Tidak ada di menu analis
+      viewLiveMonitoring: true,  // Live Sentinel Stream
+      viewGNN: true,             // Analisis Graf Relasi (GNN) - Cross-Bank Explorer
+      viewAlerts: true,          // Investigasi Alert (CMS)
+      triageAlert: true,         // Triage alert
+      addNotes: true,            // Investigation Notes & mutasi
+      executeBlock: false,       // Eskalasi ke MLRO
+      resolveAlert: false,
+      generateLTKM: false,
+      viewRules: false,          // Tidak ada di menu analis
+      editRules: false,
+      viewCompliance: false,     // Tidak ada di menu analis
+      viewApolo: false,
       downloadLTKM: false,
       manageGovernance: false,
     }

@@ -50,20 +50,20 @@ export function mapApiLogToTx(log) {
   const isCrypto = destAcc.startsWith('9012') || destAcc.toLowerCase().includes('exchange') || destAcc.toLowerCase().includes('mule');
 
   let senderAccount = log.senderAccount || txn.sender_account || '0123456789';
-  let senderName = log.senderName || (senderAccount === '0123456789' ? 'Rifki Firmansyah' : 'Billy Jonathan');
+  let senderName = log.senderName || (senderAccount === '0123456789' ? 'Ahmad Faisal' : 'Budi Santoso');
   let senderBank = log.senderBank || (senderAccount === '0123456789' || senderAccount === '1122334455' ? 'Bank bjb' : 'Bank Kuningan');
 
   if (senderAccount === '1234567890') {
-    senderName = 'Billy Jonathan';
+    senderName = 'Budi Santoso';
     senderBank = 'Bank Kuningan';
   } else if (senderAccount === '0123456789') {
-    senderName = 'Rifki Firmansyah';
+    senderName = 'Ahmad Faisal';
     senderBank = 'Bank bjb';
   } else if (senderAccount === '1122334455') {
-    senderName = 'Desta Erlangga';
+    senderName = 'Hendro Wijaya';
     senderBank = 'Bank bjb';
   } else if (senderAccount === '9876543210') {
-    senderName = 'Siti Rahma';
+    senderName = 'Siti Rahmawati';
     senderBank = 'Bank bjb';
   }
 

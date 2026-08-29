@@ -31,7 +31,8 @@ import {
   AlertsView,
   AnalysisView,
   RulesView,
-  ComplianceView
+  ComplianceView,
+  ApoloGovernanceView
 } from './components/PageViews';
 
 // Initial Mock Data
@@ -40,9 +41,19 @@ import { recentTransactions, alertFeed } from './data/mockData';
 function DashboardLayout({ onBackToLanding }) {
   const { currentUser, can } = useAuth();
   const activatedRoleConfig = ROLES[currentUser?.role] || ROLES.compliance_officer;
-  const [activePage, setActivePage] = useState('dashboard');
+  const [activePage, setActivePage] = useState(activatedRoleConfig.defaultPage || 'dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [apiOnline, setApiOnline] = useState(false);
+
+  // Sync active page when user changes
+  useEffect(() => {
+    if (currentUser?.roleConfig?.defaultPage) {
+      const allowed = currentUser.roleConfig.allowedMenus || [];
+      if (!allowed.includes(activePage)) {
+        setActivePage(currentUser.roleConfig.defaultPage);
+      }
+    }
+  }, [currentUser]);
 
   // ----------------------------------------------------
   // UNIFIED AML SANDBOX STATES
@@ -187,6 +198,7 @@ function DashboardLayout({ onBackToLanding }) {
           addToast={addToast}
           privacyMasking={privacyMasking}
           setPrivacyMasking={setPrivacyMasking}
+          activePage={activePage}
         />
         
         <div className="page-content">
@@ -282,6 +294,13 @@ function DashboardLayout({ onBackToLanding }) {
               ---------------------------------------------------- */}
               {activePage === 'compliance' && (
                 <ComplianceView addToast={addToast} />
+              )}
+
+              {/* ----------------------------------------------------
+                  6. APOLO OJK COMPLIANCE PREVIEW & GOVERNANCE
+              ---------------------------------------------------- */}
+              {activePage === 'apolo_governance' && (
+                <ApoloGovernanceView addToast={addToast} />
               )}
             </motion.div>
           </AnimatePresence>

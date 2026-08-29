@@ -1,6 +1,7 @@
 import { Bell, Sun, Moon, Filter, Menu, Zap, Home, EyeOff, Eye, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { triggerSmurfingSimulation } from '../services/api';
 
 export default function Header({
@@ -10,9 +11,77 @@ export default function Header({
   addToast,
   privacyMasking = false,
   setPrivacyMasking,
+  activePage = 'dashboard'
 }) {
   const { theme, toggleTheme } = useTheme();
+  const { currentUser } = useAuth();
+  const role = currentUser?.role;
   const [isSimulating, setIsSimulating] = useState(false);
+
+  const getHeaderMeta = () => {
+    switch (activePage) {
+      case 'dashboard':
+        if (role === 'admin_regulator') {
+          return {
+            title: 'Regulatory Compliance Overview',
+            desc: 'Statistik pencegahan kejahatan keuangan ekosistem Apex Bank & evaluasi rasio False Positive'
+          };
+        }
+        return {
+          title: 'Konsolidasi Risk Dashboard',
+          desc: 'Ringkasan total dana terselamatkan (Mule Saved) Bank Kuningan, Bank BJB & Apex Holding'
+        };
+      case 'monitoring':
+        return {
+          title: 'Live Sentinel Stream',
+          desc: 'Pemantauan aliran transaksi real-time dari core banking Bank Kuningan & Bank BJB'
+        };
+      case 'analysis':
+        if (role === 'admin_regulator') {
+          return {
+            title: 'Transparansi Model GNN (XAI Governance)',
+            desc: 'Audit explainability algoritma AI Graph Neural Network & kepatuhan perlindungan konsumen'
+          };
+        }
+        return {
+          title: 'Analisis Graf Relasi (GNN) — Cross-Bank Explorer',
+          desc: 'Pemetaan visualisasi multi-hop aliran dana Bank Kuningan -> Bank BJB -> Wallet Kripto'
+        };
+      case 'alerts':
+        return {
+          title: 'Investigasi Alert (CMS)',
+          desc: 'Triage antrean transaksi mencurigakan, catatan forensik & eskalasi pemblokiran'
+        };
+      case 'rules':
+        return {
+          title: 'Kalibrasi FDS (POJK 8/2023)',
+          desc: 'Pengaturan ambang batas skor risiko terpusat & tenant-specific Bank Kuningan vs Bank BJB'
+        };
+      case 'compliance':
+        if (role === 'admin_regulator') {
+          return {
+            title: 'Audit Log & Traceability (PPATK & OJK Audit)',
+            desc: 'Pemeriksaan immutable audit trail, log tindakan analis & otorisasi pemblokiran'
+          };
+        }
+        return {
+          title: 'Kepatuhan & Audit PPATK',
+          desc: 'Multi-Entity SAR Generator & ekspor resmi LTKM / STR ke goAML PPATK'
+        };
+      case 'apolo_governance':
+        return {
+          title: 'APOLO OJK Compliance Preview',
+          desc: 'Formulir komposisi nasabah berdasar risiko siap unggah ke portal resmi APOLO OJK'
+        };
+      default:
+        return {
+          title: 'Dashboard Overview',
+          desc: 'Monitor transaksi bank & pencegahan pelarian uang ke crypto'
+        };
+    }
+  };
+
+  const headerMeta = getHeaderMeta();
 
   const handleSimulateSmurfing = async () => {
     setIsSimulating(true);
@@ -49,8 +118,8 @@ export default function Header({
           <Menu size={20} />
         </button>
         <div className="header-title-group">
-          <h2>Dashboard Overview</h2>
-          <p>Monitor transaksi bank & pencegahan pelarian uang ke crypto</p>
+          <h2>{headerMeta.title}</h2>
+          <p>{headerMeta.desc}</p>
         </div>
       </div>
       <div className="header-right">

@@ -5,44 +5,66 @@ import {
   ShieldAlert,
   Sliders,
   Shield,
+  FileCheck2,
   Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile, alertsCount }) {
-  const { currentUser, can } = useAuth();
-  const isAnalyst = currentUser?.role === 'analyst';
-  const isRegulator = currentUser?.role === 'admin_regulator';
+  const { currentUser } = useAuth();
+  const role = currentUser?.role || 'analyst';
 
-  const navSections = [
-    {
-      title: 'Operasional Utama',
-      items: [
-        { icon: LayoutDashboard, label: 'Dashboard Overview', id: 'dashboard', badge: isRegulator ? 'AUDIT' : null },
-        { icon: Activity, label: 'Live Sentinel Stream', id: 'monitoring', badge: 'LIVE' },
-        { icon: GitBranch, label: 'Analisis Graf Relasi (GNN)', id: 'analysis' },
-        { icon: ShieldAlert, label: 'Investigasi Alert (CMS)', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
-      ],
-    },
-    {
-      title: 'Tata Kelola & Regulasi',
-      items: [
-        {
-          icon: Sliders,
-          label: 'Kalibrasi FDS (POJK 8/2023)',
-          id: 'rules',
-          badge: isAnalyst ? 'LOCKED' : isRegulator ? 'READ-ONLY' : null,
-          isLocked: isAnalyst
-        },
-        {
-          icon: Shield,
-          label: 'Kepatuhan & Audit PPATK',
-          id: 'compliance',
-          badge: isRegulator ? 'INSPECTOR' : null
-        },
-      ],
-    },
-  ];
+  let navSections = [];
+
+  if (role === 'analyst') {
+    navSections = [
+      {
+        title: 'Operasional Harian Per Bank',
+        items: [
+          { icon: Activity, label: 'Live Sentinel Stream', id: 'monitoring', badge: 'LIVE' },
+          { icon: GitBranch, label: 'Analisis Graf Relasi (GNN)', id: 'analysis' },
+          { icon: ShieldAlert, label: 'Investigasi Alert (CMS)', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
+        ],
+      }
+    ];
+  } else if (role === 'admin_regulator') {
+    navSections = [
+      {
+        title: 'Pengawasan Independen (Read-Only)',
+        items: [
+          { icon: LayoutDashboard, label: 'Regulatory Compliance Overview', id: 'dashboard', badge: 'AUDIT' },
+          { icon: GitBranch, label: 'Transparansi Model GNN (XAI)', id: 'analysis', badge: 'XAI' },
+        ],
+      },
+      {
+        title: 'Kepatuhan Regulasi & Audit Trail',
+        items: [
+          { icon: Shield, label: 'Audit Log & Traceability', id: 'compliance', badge: 'PPATK' },
+          { icon: FileCheck2, label: 'APOLO OJK Compliance Preview', id: 'apolo_governance', badge: 'APOLO' },
+        ],
+      }
+    ];
+  } else {
+    // compliance_officer (MLRO / Full Access)
+    navSections = [
+      {
+        title: 'Manajemen Risiko Eksekutif',
+        items: [
+          { icon: LayoutDashboard, label: 'Konsolidasi Risk Dashboard', id: 'dashboard' },
+          { icon: Activity, label: 'Live Sentinel Stream', id: 'monitoring', badge: 'LIVE' },
+          { icon: GitBranch, label: 'Analisis Graf Relasi (GNN)', id: 'analysis' },
+          { icon: ShieldAlert, label: 'Investigasi Alert (CMS / Approval)', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
+        ],
+      },
+      {
+        title: 'Kebijakan & Pelaporan Resmi',
+        items: [
+          { icon: Sliders, label: 'Kalibrasi FDS (POJK 8/2023)', id: 'rules' },
+          { icon: Shield, label: 'Kepatuhan & Audit PPATK', id: 'compliance' },
+        ],
+      }
+    ];
+  }
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`} id="sidebar-nav">
