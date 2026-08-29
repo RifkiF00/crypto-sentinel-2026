@@ -2176,7 +2176,7 @@ export default function LandingPage({ onEnter }) {
                       rel="noopener noreferrer"
                       style={{ background: '#f8fafc', padding: 12, borderRadius: 12, border: '1px solid #e2e8f0', fontSize: '0.74rem', textDecoration: 'none', display: 'block', transition: 'all 0.2s ease' }}
                     >
-                      <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>✉️ Email Resmi Tim</div>
+                      <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>✉️ Email Team Lead</div>
                       <div style={{ color: '#2563eb', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis' }}>frifki971@gmail.com</div>
                     </a>
                   </div>
