@@ -13,22 +13,25 @@ import {
   Activity,
   Layers
 } from 'lucide-react';
-import { dashboardStats, formatNumber, formatCurrency } from '../data/mockData';
+import { formatNumber, formatCurrency } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
 
 export default function StatsGrid({ transactions = [] }) {
   const { currentUser } = useAuth();
   const role = currentUser?.role || 'analyst';
 
-  // Dynamic calculations from transactions array
-  const total = transactions.length > 0 ? transactions.length : dashboardStats.totalTransactions;
+  // Overview is derived exclusively from the canonical transaction stream.
+  // An empty live response is rendered as zero, never as a fixture total.
+  const total = transactions.length;
   const blocked = transactions.filter(tx => tx.status === 'blocked' || tx.status === 'BLOCK').length;
   const flagged = transactions.filter(tx => tx.status === 'flagged' || tx.status === 'REVIEW').length;
   const totalValueBlocked = transactions
     .filter(tx => tx.status === 'blocked' || tx.status === 'BLOCK')
     .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
 
-  const isLive = transactions.length > 0;
+  const liveCount = transactions.filter(tx => String(tx.dataSource || '').startsWith('LIVE')).length;
+  const demoCount = transactions.filter(tx => tx.dataSource === 'DEMO FIXTURE').length;
+  const isLive = liveCount > 0;
 
   let statsList = [];
   let bannerTitle = '';
@@ -38,7 +41,7 @@ export default function StatsGrid({ transactions = [] }) {
     statsList = [
       {
         label: 'Alert Ditugaskan Hari Ini',
-        value: '18 Kasus',
+        value: formatNumber(flagged + blocked),
         change: 12.5,
         icon: ShieldAlert,
         type: 'primary',
@@ -46,7 +49,7 @@ export default function StatsGrid({ transactions = [] }) {
       },
       {
         label: 'Antrean Dalam Review',
-        value: '5 Kasus',
+        value: formatNumber(flagged),
         change: -8.3,
         icon: Clock,
         type: 'warning',
@@ -54,7 +57,7 @@ export default function StatsGrid({ transactions = [] }) {
       },
       {
         label: 'Eskalasi ke MLRO',
-        value: '4 Kasus',
+        value: formatNumber(blocked),
         change: 25.0,
         icon: Send,
         type: 'danger',
@@ -62,7 +65,7 @@ export default function StatsGrid({ transactions = [] }) {
       },
       {
         label: 'Rata-rata Skor Risiko Jam Ini',
-        value: '76.4%',
+        value: `${(transactions.reduce((sum, tx) => sum + (Number(tx.riskScore) || 0), 0) / Math.max(total, 1)).toFixed(1)}%`,
         change: 4.2,
         icon: Activity,
         type: 'success',
@@ -98,7 +101,7 @@ export default function StatsGrid({ transactions = [] }) {
       },
       {
         label: 'Total Dana Terlindungi',
-        value: formatCurrency(isLive ? totalValueBlocked : dashboardStats.totalValueBlocked),
+        value: formatCurrency(totalValueBlocked),
         change: 18.3,
         icon: Layers,
         type: 'primary',
@@ -112,31 +115,31 @@ export default function StatsGrid({ transactions = [] }) {
       {
         label: 'Total Transaksi Masuk',
         value: formatNumber(total),
-        change: isLive ? ((transactions.length / Math.max(dashboardStats.totalTransactions, 1)) * 100 - 100).toFixed(1) * 1 : dashboardStats.totalTransactionsChange,
+        change: 0,
         icon: Banknote,
         type: 'primary',
-        sourceNote: isLive ? `${transactions.length} tx dari Neon Cloud DB` : 'Dataset PaySim & Telemetri Live',
+        sourceNote: liveCount > 0 ? `${liveCount} tx live dari API` : demoCount > 0 ? `${demoCount} tx demo fixture` : 'Belum ada transaksi diterima',
       },
       {
         label: 'Transaksi Dicegah (Auto-Block)',
-        value: formatNumber(isLive ? blocked : dashboardStats.blockedTransactions),
-        change: isLive ? (blocked > 0 ? ((blocked / total) * 100).toFixed(1) * 1 : 0) : dashboardStats.blockedTransactionsChange,
+        value: formatNumber(blocked),
+        change: total > 0 ? (blocked / total * 100).toFixed(1) * 1 : 0,
         icon: ShieldBan,
         type: 'danger',
         sourceNote: 'Evaluasi FDS Risk Score ≥ 85%',
       },
       {
         label: 'Transaksi Ditandai (Review)',
-        value: formatNumber(isLive ? flagged : dashboardStats.flaggedTransactions),
-        change: isLive ? (flagged > 0 ? ((flagged / total) * 100).toFixed(1) * 1 : 0) : dashboardStats.flaggedTransactionsChange,
+        value: formatNumber(flagged),
+        change: total > 0 ? (flagged / total * 100).toFixed(1) * 1 : 0,
         icon: AlertTriangle,
         type: 'warning',
         sourceNote: 'Evaluasi FDS Risk Score 60% - 84%',
       },
       {
         label: 'Nilai Dana Terselamatkan (Mule Saved)',
-        value: formatCurrency(isLive ? totalValueBlocked : dashboardStats.totalValueBlocked),
-        change: isLive ? (totalValueBlocked > 0 ? 18.3 : 0) : dashboardStats.totalValueBlockedChange,
+        value: formatCurrency(totalValueBlocked),
+        change: totalValueBlocked > 0 ? 100 : 0,
         icon: CheckCircle2,
         type: 'success',
         sourceNote: 'Dana Rekening Mule Berhasil Dibekukan',
@@ -153,7 +156,7 @@ export default function StatsGrid({ transactions = [] }) {
           <span>{bannerTitle}</span>
         </div>
         <span className="dataset-source-tag">
-          {isLive ? `🟢 ${transactions.length} LIVE TX · NEON DB` : 'SAMPEL EKOSISTEM APEX'}
+          {liveCount > 0 ? `🟢 ${liveCount} LIVE TX · API` : demoCount > 0 ? `🟠 ${demoCount} DEMO FIXTURE` : '⚪ NO DATA · MENUNGGU API'}
         </span>
       </div>
 

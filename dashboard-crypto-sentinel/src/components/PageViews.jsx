@@ -75,8 +75,8 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
   const [timeFilter, setTimeFilter] = useState('1day'); // '1day' | '7days' | 'all'
   const [tenantFilter, setTenantFilter] = useState('all'); // 'all' (Apex) | 'kuningan' | 'bjb'
   const [tickerLogs, setTickerLogs] = useState([
-    { time: new Date().toLocaleTimeString(), text: 'Real-time WebSocket connection established with Bank API Gateways.' },
-    { time: new Date().toLocaleTimeString(), text: 'Active scanning enabled. Compliance database connected.' }
+    { time: new Date().toLocaleTimeString(), text: 'Polling channel initialized for configured bank API gateways.' },
+    { time: new Date().toLocaleTimeString(), text: 'Active scanning enabled. Source freshness is shown per transaction.' }
   ]);
 
   // Filter transactions by selected time range and tenant filter
@@ -93,21 +93,21 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
             const cleanTs = t.timestamp.replace(' ', 'T');
             const txDate = new Date(cleanTs);
             if (!isNaN(txDate.getTime()) && txDate < cutoffTime) return false;
-          } catch (e) {}
+          } catch (e) { }
         }
       }
 
       // 2. Tenant Filter (Bank Kuningan, Bank bjb, Apex Gabungan)
       if (tenantFilter === 'kuningan') {
-        const isKng = (t.senderBank || '').toLowerCase().includes('kuningan') || 
-                      (t.destinationBank || '').toLowerCase().includes('kuningan') ||
-                      (t.destination || '').toLowerCase().includes('kuningan');
+        const isKng = (t.senderBank || '').toLowerCase().includes('kuningan') ||
+          (t.destinationBank || '').toLowerCase().includes('kuningan') ||
+          (t.destination || '').toLowerCase().includes('kuningan');
         return isKng;
       }
       if (tenantFilter === 'bjb') {
-        const isBjb = (t.senderBank || '').toLowerCase().includes('bjb') || 
-                     (t.destinationBank || '').toLowerCase().includes('bjb') ||
-                     (t.destination || '').toLowerCase().includes('bjb');
+        const isBjb = (t.senderBank || '').toLowerCase().includes('bjb') ||
+          (t.destinationBank || '').toLowerCase().includes('bjb') ||
+          (t.destination || '').toLowerCase().includes('bjb');
         return isBjb;
       }
       return true;

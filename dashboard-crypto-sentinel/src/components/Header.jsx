@@ -1,5 +1,6 @@
 import { Bell, Sun, Moon, Filter, Menu, Zap, Home, EyeOff, Eye, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
+import { APP_MODE } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { triggerSmurfingSimulation } from '../services/api';
@@ -7,6 +8,7 @@ import { triggerSmurfingSimulation } from '../services/api';
 export default function Header({
   onMenuToggle,
   apiOnline = false,
+  systemHealth = {},
   onBackToLanding,
   addToast,
   privacyMasking = false,
@@ -203,8 +205,8 @@ export default function Header({
           </button>
         </div>
 
-        <div 
-          className="live-indicator animate-pulse" 
+        <div
+          className="live-indicator animate-pulse"
           id="live-status"
           style={{
             borderColor: apiOnline ? 'rgba(16,185,129,0.3)' : 'rgba(100,116,139,0.3)',
@@ -216,15 +218,17 @@ export default function Header({
             gap: 8
           }}
         >
-          <div 
-            className="live-dot" 
+          <div
+            className="live-dot"
             style={{
               background: apiOnline ? '#10b981' : '#64748b',
               boxShadow: apiOnline ? '0 0 8px #10b981' : 'none'
             }}
           />
           <span style={{ fontSize: '0.78rem', fontWeight: 600, color: apiOnline ? '#10b981' : 'var(--text-muted)' }}>
-            {apiOnline ? 'SENTINEL API: ONLINE' : 'SENTINEL: OFFLINE MODE'}
+            {apiOnline
+              ? (systemHealth.coreOnline ? `SENTINEL + CORE: ONLINE · ${APP_MODE.toUpperCase()}` : `SENTINEL API: ONLINE · CORE UNAVAILABLE · ${APP_MODE.toUpperCase()}`)
+              : `${APP_MODE.toUpperCase()}: BACKEND UNAVAILABLE`}
           </span>
         </div>
 

@@ -24,3 +24,4 @@ crypto-sentinel-api/data/paysim.csv
 # Simpan lokal di crypto-sentinel-api/app/ setelah download dari Colab
 # gnn_hybrid_model.joblib (0.3 MB) tetap di-commit
 crypto-sentinel-api/app/gnn_embeddings.pkl
+.aider*

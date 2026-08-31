@@ -3,6 +3,8 @@ import {
   Activity,
   GitBranch,
   ShieldAlert,
+  Users,
+  Database,
   Sliders,
   Shield,
   FileCheck2,
@@ -15,18 +17,20 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
   const role = currentUser?.role || 'analyst';
 
   let navSections = [];
+  const operationsItems = [
+    { icon: LayoutDashboard, label: 'Operations Control', id: 'operations', badge: 'SLA' },
+    { icon: Activity, label: 'Transaction Monitoring', id: 'monitoring', badge: 'LIVE' },
+    { icon: ShieldAlert, label: 'Alert & Case Queue', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
+  ];
+  const investigationItems = [
+    { icon: Users, label: 'Customer / Account 360', id: 'investigation_360' },
+    { icon: GitBranch, label: 'Network & Graph Analysis', id: 'analysis' },
+  ];
 
   if (role === 'analyst') {
     navSections = [
-      {
-        title: 'Operasional Harian Per Bank',
-        items: [
-          { icon: LayoutDashboard, label: 'Dashboard Operasional', id: 'dashboard', badge: 'TRIAGE' },
-          { icon: Activity, label: 'Live Sentinel Stream', id: 'monitoring', badge: 'LIVE' },
-          { icon: GitBranch, label: 'Analisis Graf Relasi (GNN)', id: 'analysis' },
-          { icon: ShieldAlert, label: 'Investigasi Alert (CMS)', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
-        ],
-      }
+      { title: 'Operations', items: [{ icon: LayoutDashboard, label: 'Dashboard Operasional', id: 'dashboard', badge: 'TRIAGE' }, ...operationsItems.slice(1)] },
+      { title: 'Investigation', items: investigationItems },
     ];
   } else if (role === 'admin_regulator') {
     navSections = [
@@ -48,6 +52,8 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
   } else {
     // compliance_officer (MLRO / Full Access)
     navSections = [
+      { title: 'Operations', items: operationsItems },
+      { title: 'Investigation', items: investigationItems },
       {
         title: 'Manajemen Risiko Eksekutif',
         items: [
@@ -58,10 +64,19 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
         ],
       },
       {
-        title: 'Kebijakan & Pelaporan Resmi',
+        title: 'Risk Controls & Compliance',
         items: [
+          { icon: Sliders, label: 'Risk Rules & Thresholds', id: 'risk_controls' },
           { icon: Sliders, label: 'Kalibrasi FDS (POJK 8/2023)', id: 'rules' },
           { icon: Shield, label: 'Kepatuhan & Audit PPATK', id: 'compliance' },
+        ],
+      },
+      {
+        title: 'Platform & Governance',
+        items: [
+          { icon: GitBranch, label: 'Model Governance & XAI', id: 'model_governance' },
+          { icon: Database, label: 'Integration & Data Quality', id: 'integration' },
+          { icon: Lock, label: 'Administration & RBAC', id: 'administration' },
         ],
       }
     ];
@@ -106,20 +121,20 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
                       background: item.badge === 'LOCKED'
                         ? 'rgba(239, 68, 68, 0.15)'
                         : item.badge === 'READ-ONLY' || item.badge === 'AUDIT' || item.badge === 'INSPECTOR'
-                        ? 'rgba(124, 58, 237, 0.15)'
-                        : item.id === 'monitoring'
-                        ? 'var(--status-success)'
-                        : 'var(--status-danger)',
+                          ? 'rgba(124, 58, 237, 0.15)'
+                          : item.id === 'monitoring'
+                            ? 'var(--status-success)'
+                            : 'var(--status-danger)',
                       color: item.badge === 'LOCKED'
                         ? '#ef4444'
                         : item.badge === 'READ-ONLY' || item.badge === 'AUDIT' || item.badge === 'INSPECTOR'
-                        ? '#a78bfa'
-                        : 'white',
+                          ? '#a78bfa'
+                          : 'white',
                       border: item.badge === 'LOCKED'
                         ? '1px solid rgba(239, 68, 68, 0.3)'
                         : item.badge === 'READ-ONLY' || item.badge === 'AUDIT' || item.badge === 'INSPECTOR'
-                        ? '1px solid rgba(124, 58, 237, 0.3)'
-                        : 'none',
+                          ? '1px solid rgba(124, 58, 237, 0.3)'
+                          : 'none',
                       fontSize: '0.62rem',
                       fontWeight: 800,
                       animation: item.id === 'monitoring' || item.badge === 'LOCKED' || item.badge === 'READ-ONLY' || item.badge === 'AUDIT' || item.badge === 'INSPECTOR' ? 'none' : 'pulse-badge 2s infinite'

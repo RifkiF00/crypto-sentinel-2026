@@ -11,7 +11,46 @@ import {
   muleAccountsData
 } from '../data/mockData';
 
-export const API_BASE_URL = 'http://localhost:8000';
+// Runtime configuration: use Vite env variables in deployment and explicit mode
+// so a failed backend can never silently masquerade as live banking telemetry.
+export const API_BASE_URL = (
+  import.meta.env.VITE_SENTINEL_API_URL || 'http://localhost:8000'
+).replace(/\/$/, '');
+export const CORE_API_BASE_URL = (
+  import.meta.env.VITE_CORE_API_URL || 'http://localhost:8080'
+).replace(/\/$/, '');
+export const APP_MODE = import.meta.env.VITE_APP_MODE || 'live'; // live | demo | hybrid
+export const IS_DEMO_MODE = APP_MODE === 'demo';
+
+export const DATA_SOURCES = Object.freeze({
+  LIVE_SENTINEL: 'LIVE · SENTINEL API',
+  LIVE_CORE: 'LIVE · CORE BANKING API',
+  SYNTHETIC: 'SYNTHETIC · PAY SIM',
+  DEMO: 'DEMO FIXTURE',
+  STALE: 'STALE',
+  ERROR: 'ERROR'
+});
+
+export function createDataMeta(source, extra = {}) {
+  return {
+    source,
+    mode: APP_MODE,
+    fetchedAt: new Date().toISOString(),
+    ...extra
+  };
+}
+
+function demoOrThrow(fallback, error) {
+  if (APP_MODE === 'live') throw error;
+  return fallback;
+}
+
+function markDemo(value) {
+  if (Array.isArray(value)) {
+    return value.map(item => ({ ...item, dataSource: DATA_SOURCES.DEMO }));
+  }
+  return { ...value, dataSource: DATA_SOURCES.DEMO };
+}
 
 // Simple fetch helper with timeout
 async function fetchWithTimeout(resource, options = {}) {
@@ -85,6 +124,9 @@ export function mapApiLogToTx(log) {
 
   return {
     id: log.transaction_id || `TXN-${Math.floor(10000 + Math.random() * 90000)}`,
+    dataSource: DATA_SOURCES.LIVE_SENTINEL,
+    sourceMeta: createDataMeta(DATA_SOURCES.LIVE_SENTINEL, { tenantId: log.tenant_id || log.senderBank || 'unknown' }),
+    tenantId: log.tenant_id || log.senderBank || 'unknown',
     timestamp: formattedTime || new Date().toISOString().replace('T', ' ').substring(0, 19),
     senderName: senderName,
     senderAccount: senderAccount,
@@ -100,7 +142,7 @@ export function mapApiLogToTx(log) {
   };
 }
 
-// Check if the FastAPI server is online
+// Check Sentinel health. In live mode this is the source of truth for the header.
 export async function checkHealth() {
   try {
     const response = await fetchWithTimeout(`${API_BASE_URL}/`, { method: 'GET', timeout: 1500 });
@@ -114,6 +156,22 @@ export async function checkHealth() {
   }
 }
 
+export async function fetchSystemHealth() {
+  const checks = await Promise.allSettled([
+    fetchWithTimeout(`${API_BASE_URL}/`, { method: 'GET', timeout: 1500 }),
+    fetchWithTimeout(`${CORE_API_BASE_URL}/`, { method: 'GET', timeout: 1500 })
+  ]);
+  const sentinelOnline = checks[0].status === 'fulfilled' && checks[0].value.ok;
+  const coreOnline = checks[1].status === 'fulfilled' && checks[1].value.ok;
+  return {
+    sentinelOnline,
+    coreOnline,
+    online: sentinelOnline && coreOnline,
+    source: sentinelOnline && coreOnline ? DATA_SOURCES.LIVE_SENTINEL : DATA_SOURCES.ERROR,
+    checkedAt: new Date().toISOString()
+  };
+}
+
 // Fetch all transactions (combining SQLite DB transactions & FDS API logs)
 export async function fetchTransactions() {
   try {
@@ -121,24 +179,31 @@ export async function fetchTransactions() {
 
     // 1. Fetch from SQLite DB (Core Banking API)
     try {
-      const dbRes = await fetch(`http://localhost:8080/api/v1/bjb/transactions`);
+      const dbRes = await fetchWithTimeout(`${CORE_API_BASE_URL}/api/v1/bjb/transactions`, { timeout: 4000 });
       if (dbRes.ok) {
         const dbData = await dbRes.json();
         if (dbData.data && dbData.data.length > 0) {
-          const dbMapped = dbData.data.map(item => ({
-            id: item.transaction_id,
-            timestamp: item.timestamp,
-            senderName: item.senderName,
-            senderAccount: item.senderAccount,
-            senderBank: item.senderBank || (item.senderAccount === '0123456789' || item.senderAccount === '1122334455' ? 'Bank bjb' : 'Bank Kuningan'),
-            amount: item.amount,
-            destinationType: item.destinationAccount.startsWith('9012') ? 'Crypto Exchange' : 'Transfer Bank',
-            destination: item.destination,
-            walletAddress: item.destinationAccount.startsWith('9012') ? `0x${item.destinationAccount}b...77a` : null,
-            riskScore: item.risk_score,
-            status: item.status,
-            reason: item.reasons?.join(', ') || null
-          }));
+          const dbMapped = dbData.data.map(item => {
+            const destinationAccount = String(item.destinationAccount || '');
+            const tenantId = item.tenant_id || item.senderBank || 'unknown';
+            return {
+              id: item.transaction_id,
+              sourceMeta: createDataMeta(DATA_SOURCES.LIVE_CORE, { tenantId }),
+              timestamp: item.timestamp,
+              senderName: item.senderName,
+              senderAccount: item.senderAccount,
+              senderBank: item.senderBank || (item.senderAccount === '0123456789' || item.senderAccount === '1122334455' ? 'Bank bjb' : 'Bank Kuningan'),
+              amount: item.amount,
+              destinationType: destinationAccount.startsWith('9012') ? 'Crypto Exchange' : 'Transfer Bank',
+              destination: item.destination || destinationAccount,
+              walletAddress: destinationAccount.startsWith('9012') ? `0x${destinationAccount}b...77a` : null,
+              riskScore: item.risk_score,
+              status: item.status,
+              reason: item.reasons?.join(', ') || null,
+              dataSource: DATA_SOURCES.LIVE_CORE,
+              tenantId
+            };
+          });
           allTxList.push(...dbMapped);
         }
       }
@@ -149,7 +214,7 @@ export async function fetchTransactions() {
 
     // 2. Fetch from Sentinel API logs
     try {
-      const logsRes = await fetch(`${API_BASE_URL}/logs`);
+      const logsRes = await fetchWithTimeout(`${API_BASE_URL}/logs`, { timeout: 4000 });
       if (logsRes.ok) {
         const logsData = await logsRes.json();
         const mappedLogs = (logsData.data || []).map(mapApiLogToTx);
@@ -163,10 +228,14 @@ export async function fetchTransactions() {
       console.warn('API logs fetch warning:', e);
     }
 
-    return allTxList.length > 0 ? allTxList : recentTransactions;
+    // In live mode an empty response is valid and must remain empty; returning
+    // fixtures here previously hid backend failures and stale data.
+    if (allTxList.length > 0 || APP_MODE === 'live') return allTxList;
+    return recentTransactions.map(tx => ({ ...tx, dataSource: DATA_SOURCES.DEMO }));
   } catch (error) {
     console.warn('Failed to fetch transactions from API', error);
-    return recentTransactions;
+    if (APP_MODE === 'live') throw error;
+    return recentTransactions.map(tx => ({ ...tx, dataSource: DATA_SOURCES.DEMO }));
   }
 }
 
@@ -192,10 +261,8 @@ function formatAlertTime(timestampStr) {
 // Fetch Alerts (persisted & dynamic relative time)
 export async function fetchAlerts() {
   try {
-    const isOnline = await checkHealth();
-    if (!isOnline) return [];
-
-    const res = await fetch(`${API_BASE_URL}/alerts`);
+    const res = await fetchWithTimeout(`${API_BASE_URL}/alerts`, { timeout: 4000 });
+    if (!res.ok) throw new Error(`Alerts request failed (${res.status})`);
     const data = await res.json();
 
     const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
@@ -218,56 +285,71 @@ export async function fetchAlerts() {
             rawTimestamp: log.timestamp
           };
         });
-      return mappedAlerts;
+      return mappedAlerts.map(alert => ({
+        ...alert,
+        dataSource: DATA_SOURCES.LIVE_SENTINEL,
+        sourceMeta: createDataMeta(DATA_SOURCES.LIVE_SENTINEL)
+      }));
     }
 
-    return [];
+    return APP_MODE === 'live' ? [] : alertFeed.map(alert => ({
+      ...alert,
+      dataSource: DATA_SOURCES.DEMO,
+      sourceMeta: createDataMeta(DATA_SOURCES.DEMO)
+    }));
   } catch (error) {
     console.warn('Failed to fetch alerts from API', error);
-    return [];
+    if (APP_MODE === 'live') throw error;
+    return alertFeed.map(alert => ({
+      ...alert,
+      dataSource: DATA_SOURCES.DEMO,
+      sourceMeta: createDataMeta(DATA_SOURCES.DEMO)
+    }));
   }
 }
 
 export async function resolveAlertApi(alertId) {
-  try {
-    const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
-    if (!storedResolved.includes(alertId)) {
-      storedResolved.push(alertId);
-      localStorage.setItem('resolved_alert_ids', JSON.stringify(storedResolved));
-    }
+  const response = await fetchWithTimeout(
+    `${CORE_API_BASE_URL}/api/v1/sentinel/alerts/resolve/${alertId}`,
+    { method: 'POST', timeout: 4000 }
+  );
+  if (!response.ok) throw new Error(`Alert resolution failed (${response.status})`);
 
-    await Promise.allSettled([
-      fetch(`${API_BASE_URL}/api/v1/sentinel/alerts/resolve/${alertId}`, { method: 'POST' }),
-      fetch(`http://localhost:8080/api/v1/sentinel/alerts/resolve/${alertId}`, { method: 'POST' })
-    ]);
-  } catch (e) {
-    console.warn('Error resolving alert API:', e);
+  const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
+  if (!storedResolved.includes(alertId)) {
+    storedResolved.push(alertId);
+    localStorage.setItem('resolved_alert_ids', JSON.stringify(storedResolved));
   }
+  return { persisted: true, dataSource: DATA_SOURCES.LIVE_CORE };
 }
 
 export async function triggerSmurfingSimulation() {
   try {
-    const res = await fetch(`http://localhost:8080/api/v1/bri/simulate-smurfing`, {
-      method: 'POST'
+    const res = await fetchWithTimeout(`${CORE_API_BASE_URL}/api/v1/bri/simulate-smurfing`, {
+      method: 'POST',
+      timeout: 8000
     });
     if (!res.ok) throw new Error('Gagal terhubung ke API Simulasi');
     return await res.json();
   } catch (error) {
     console.warn('Smurfing simulation execution:', error);
-    return { status: 'SUCCESS', message: 'Injeksi 5 pecahan transaksi smurfing beruntun terpicu!' };
+    return demoOrThrow(
+      { status: 'DEMO_ONLY', message: 'Simulasi hanya tersedia ketika backend core aktif.', dataSource: DATA_SOURCES.DEMO },
+      error
+    );
   }
 }
 
 // Fetch Statistics
 export async function fetchStatistics() {
   try {
-    const isOnline = await checkHealth();
-    if (!isOnline) return dashboardStats;
-
-    const res = await fetch(`${API_BASE_URL}/statistics`);
+    const res = await fetchWithTimeout(`${API_BASE_URL}/statistics`, { timeout: 4000 });
+    if (!res.ok) throw new Error(`Statistics request failed (${res.status})`);
     const data = await res.json();
 
     return {
+      dataSource: DATA_SOURCES.LIVE_SENTINEL,
+      sourceMeta: createDataMeta(DATA_SOURCES.LIVE_SENTINEL),
       totalTransactions: data.total_transactions_analyzed,
       totalTransactionsChange: data.total_transactions_change || 12.5,
       blockedTransactions: data.decision_summary?.BLOCK || 0,
@@ -278,85 +360,73 @@ export async function fetchStatistics() {
       totalValueBlockedChange: data.total_value_blocked_change || 18.3,
     };
   } catch (error) {
-    return dashboardStats;
+    return demoOrThrow(markDemo(dashboardStats), error);
   }
 }
 
 // Fetch transaction trend
 export async function fetchTransactionTrend() {
   try {
-    const isOnline = await checkHealth();
-    if (!isOnline) return transactionTrend;
-
-    const res = await fetch(`${API_BASE_URL}/transaction-trend`);
+    const res = await fetchWithTimeout(`${API_BASE_URL}/transaction-trend`, { timeout: 4000 });
+    if (!res.ok) throw new Error(`Transaction trend request failed (${res.status})`);
     return await res.json();
   } catch (error) {
-    return transactionTrend;
+    return demoOrThrow(markDemo(transactionTrend), error);
   }
 }
 
 // Fetch hourly activity
 export async function fetchHourlyActivity() {
   try {
-    const isOnline = await checkHealth();
-    if (!isOnline) return hourlyActivity;
-
-    const res = await fetch(`${API_BASE_URL}/hourly-activity`);
+    const res = await fetchWithTimeout(`${API_BASE_URL}/hourly-activity`, { timeout: 4000 });
+    if (!res.ok) throw new Error(`Hourly activity request failed (${res.status})`);
     return await res.json();
   } catch (error) {
-    return hourlyActivity;
+    return demoOrThrow(markDemo(hourlyActivity), error);
   }
 }
 
 // Fetch bank distribution
 export async function fetchBankDistribution() {
   try {
-    const isOnline = await checkHealth();
-    if (!isOnline) return bankDistribution;
-
-    const res = await fetch(`${API_BASE_URL}/bank-distribution`);
+    const res = await fetchWithTimeout(`${API_BASE_URL}/bank-distribution`, { timeout: 4000 });
+    if (!res.ok) throw new Error(`Bank distribution request failed (${res.status})`);
     return await res.json();
   } catch (error) {
-    return bankDistribution;
+    return demoOrThrow(markDemo(bankDistribution), error);
   }
 }
 
 // Fetch blocked patterns
 export async function fetchBlockedPatterns() {
   try {
-    const isOnline = await checkHealth();
-    if (!isOnline) return topBlockedPatterns;
-
-    const res = await fetch(`${API_BASE_URL}/blocked-patterns`);
+    const res = await fetchWithTimeout(`${API_BASE_URL}/blocked-patterns`, { timeout: 4000 });
+    if (!res.ok) throw new Error(`Blocked patterns request failed (${res.status})`);
     return await res.json();
   } catch (error) {
-    return topBlockedPatterns;
+    return demoOrThrow(markDemo(topBlockedPatterns), error);
   }
 }
 
 // Fetch crypto exchanges list
 export async function fetchCryptoExchanges() {
   try {
-    const isOnline = await checkHealth();
-    if (!isOnline) return cryptoExchangeData;
-
-    const res = await fetch(`${API_BASE_URL}/crypto-exchanges`);
+    const res = await fetchWithTimeout(`${API_BASE_URL}/crypto-exchanges`, { timeout: 4000 });
+    if (!res.ok) throw new Error(`Crypto exchanges request failed (${res.status})`);
     return await res.json();
   } catch (error) {
-    return cryptoExchangeData;
+    return demoOrThrow(markDemo(cryptoExchangeData), error);
   }
 }
 
 // Fetch mule accounts
 export async function fetchMuleAccounts() {
   try {
-    const isOnline = await checkHealth();
-    if (!isOnline) return muleAccountsData;
-
-    const res = await fetch(`${API_BASE_URL}/mule-accounts`);
+    const res = await fetchWithTimeout(`${API_BASE_URL}/mule-accounts`, { timeout: 4000 });
+    if (!res.ok) throw new Error(`Mule accounts request failed (${res.status})`);
     return await res.json();
   } catch (error) {
-    return muleAccountsData;
+    return demoOrThrow(markDemo(muleAccountsData), error);
   }
 }
 
@@ -411,16 +481,21 @@ export async function fetchGnnGraph() {
   try {
     const isOnline = await checkHealth();
     if (!isOnline) {
-      // Apply the same deduplication logic to local mock data to keep it consistent
-      return cleanAndFormatGraph(gnnGraphData);
+      return demoOrThrow(
+        { ...cleanAndFormatGraph(gnnGraphData), dataSource: DATA_SOURCES.DEMO, sourceMeta: createDataMeta(DATA_SOURCES.DEMO) },
+        new Error('Sentinel API unavailable')
+      );
     }
 
     const res = await fetch(`${API_BASE_URL}/demo-graph`);
     const data = await res.json();
-    return cleanAndFormatGraph(data);
+    return { ...cleanAndFormatGraph(data), dataSource: DATA_SOURCES.LIVE_SENTINEL, sourceMeta: createDataMeta(DATA_SOURCES.LIVE_SENTINEL) };
   } catch (error) {
     console.error("Error fetching GNN graph:", error);
-    return cleanAndFormatGraph(gnnGraphData);
+    return demoOrThrow(
+      { ...cleanAndFormatGraph(gnnGraphData), dataSource: DATA_SOURCES.DEMO, sourceMeta: createDataMeta(DATA_SOURCES.DEMO) },
+      error
+    );
   }
 }
 

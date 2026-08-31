@@ -10,7 +10,7 @@ import AuthLoadingScreen from './components/AuthLoadingScreen';
 import LoginPage from './components/LoginPage';
 
 // Dynamic API Integration
-import { checkHealth, fetchTransactions, fetchAlerts } from './services/api';
+import { fetchTransactions, fetchAlerts, fetchSystemHealth } from './services/api';
 
 // Dashboard Overview Components
 import StatsGrid from './components/StatsGrid';
@@ -34,9 +34,14 @@ import {
   ComplianceView,
   ApoloGovernanceView
 } from './components/PageViews';
-
-// Initial Mock Data
-import { recentTransactions, alertFeed } from './data/mockData';
+import {
+  OperationsView,
+  Investigation360View,
+  RiskControlsView,
+  ModelGovernanceView,
+  IntegrationPlatformView,
+  AdministrationView
+} from './components/PlatformViews';
 
 function DashboardLayout({ onBackToLanding }) {
   const { currentUser, can } = useAuth();
@@ -44,6 +49,7 @@ function DashboardLayout({ onBackToLanding }) {
   const [activePage, setActivePage] = useState(activatedRoleConfig.defaultPage || 'dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [apiOnline, setApiOnline] = useState(false);
+  const [systemHealth, setSystemHealth] = useState({ sentinelOnline: false, coreOnline: false, online: false });
 
   // Sync active page when user changes
   useEffect(() => {
@@ -58,11 +64,8 @@ function DashboardLayout({ onBackToLanding }) {
   // ----------------------------------------------------
   // UNIFIED AML SANDBOX STATES
   // ----------------------------------------------------
-  const [transactions, setTransactions] = useState(recentTransactions);
-  const [alerts, setAlerts] = useState(() => {
-    const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
-    return alertFeed.filter(a => !storedResolved.includes(a.id));
-  });
+  const [transactions, setTransactions] = useState([]);
+  const [alerts, setAlerts] = useState([]);
 
   // Polling mechanism to check health and load transaction data from backend
   useEffect(() => {
@@ -70,21 +73,25 @@ function DashboardLayout({ onBackToLanding }) {
 
     async function loadData() {
       try {
-        const online = await checkHealth();
+        const health = await fetchSystemHealth();
         if (!active) return;
-        setApiOnline(online);
-        
-        const txs = await fetchTransactions();
-        const alts = await fetchAlerts();
+        setSystemHealth(health);
+        setApiOnline(health.sentinelOnline);
+
+        const [txs, alts] = await Promise.all([fetchTransactions(), fetchAlerts()]);
         if (active) {
-          if (txs && txs.length > 0) {
-            setTransactions(txs);
-          }
+          setTransactions(Array.isArray(txs) ? txs : []);
           const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
-          setAlerts(alts.filter(a => !storedResolved.includes(a.id) && !storedResolved.includes(a.transaction_id)));
+          setAlerts((Array.isArray(alts) ? alts : []).filter(a => !storedResolved.includes(a.id) && !storedResolved.includes(a.transaction_id)));
         }
       } catch (err) {
-        console.error("Error loading API data:", err);
+        console.error('Error loading API data:', err);
+        if (active) {
+          setApiOnline(false);
+          setSystemHealth({ sentinelOnline: false, coreOnline: false, online: false });
+          setTransactions([]);
+          setAlerts([]);
+        }
       }
     }
 
@@ -96,7 +103,7 @@ function DashboardLayout({ onBackToLanding }) {
       clearInterval(interval);
     };
   }, []);
-  
+
   const [blockedEntities, setBlockedEntities] = useState({
     wallets: [
       { id: 'w1', address: '0x1a2b3c4d5e6f7890abcdef1234567890abcd1234', dateAdded: '2026-05-28', reason: 'Pola Structuring Berulang (Smurfing)' },
@@ -134,7 +141,7 @@ function DashboardLayout({ onBackToLanding }) {
   const addToast = useCallback((message, type = 'success') => {
     const id = Math.random().toString();
     setToasts(prev => [...prev, { id, message, type }]);
-    
+
     // Play cyber alert sound effect using Web Audio API
     if (type === 'error' || type === 'warning' || message.includes('🔥') || message.includes('BLOCKED')) {
       try {
@@ -194,13 +201,14 @@ function DashboardLayout({ onBackToLanding }) {
         <Header
           onMenuToggle={toggleSidebar}
           apiOnline={apiOnline}
+          systemHealth={systemHealth}
           onBackToLanding={onBackToLanding}
           addToast={addToast}
           privacyMasking={privacyMasking}
           setPrivacyMasking={setPrivacyMasking}
           activePage={activePage}
         />
-        
+
         <div className="page-content">
           <AnimatePresence mode="wait">
             <motion.div
@@ -239,11 +247,11 @@ function DashboardLayout({ onBackToLanding }) {
                   2. LIVE MONITORING & SENTINEL TERMINAL VIEW
               ---------------------------------------------------- */}
               {activePage === 'monitoring' && (
-                <MonitoringView 
-                  transactions={transactions} 
-                  setTransactions={setTransactions} 
-                  addToast={addToast} 
-                  rules={rules} 
+                <MonitoringView
+                  transactions={transactions}
+                  setTransactions={setTransactions}
+                  addToast={addToast}
+                  rules={rules}
                 />
               )}
 
@@ -258,10 +266,10 @@ function DashboardLayout({ onBackToLanding }) {
                   3. ALERTS & CMS INVESTIGATION VIEW
               ---------------------------------------------------- */}
               {activePage === 'alerts' && (
-                <AlertsView 
-                  alerts={alerts} 
-                  setAlerts={setAlerts} 
-                  addToast={addToast} 
+                <AlertsView
+                  alerts={alerts}
+                  setAlerts={setAlerts}
+                  addToast={addToast}
                   setBlockedEntities={setBlockedEntities}
                   onNavigateToGNN={(alert) => {
                     setActivePage('analysis');
@@ -275,14 +283,14 @@ function DashboardLayout({ onBackToLanding }) {
               ---------------------------------------------------- */}
               {activePage === 'rules' && (
                 !can('viewRules') ? (
-                  <AccessDenied 
+                  <AccessDenied
                     permission="Kalibrasi Ambang Batas FDS & Risk Appetite Bank"
                     requiredRole="Pejabat Kepatuhan (Compliance Officer / MLRO)"
                   />
                 ) : (
-                  <RulesView 
-                    rules={rules} 
-                    setRules={setRules} 
+                  <RulesView
+                    rules={rules}
+                    setRules={setRules}
                     addToast={addToast}
                     isReadOnly={!can('editRules')}
                   />
@@ -302,6 +310,12 @@ function DashboardLayout({ onBackToLanding }) {
               {activePage === 'apolo_governance' && (
                 <ApoloGovernanceView addToast={addToast} />
               )}
+              {activePage === 'operations' && <OperationsView transactions={transactions} alerts={alerts} />}
+              {activePage === 'investigation_360' && <Investigation360View transactions={transactions} />}
+              {activePage === 'risk_controls' && <RiskControlsView />}
+              {activePage === 'model_governance' && <ModelGovernanceView />}
+              {activePage === 'integration' && <IntegrationPlatformView systemHealth={systemHealth} />}
+              {activePage === 'administration' && <AdministrationView />}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -310,16 +324,16 @@ function DashboardLayout({ onBackToLanding }) {
       {/* ----------------------------------------------------
           DYNAMIC TOAST NOTIFICATIONS DRAWER
       ---------------------------------------------------- */}
-      <div 
-        style={{ 
-          position: 'fixed', 
-          bottom: 24, 
-          right: 24, 
-          zIndex: 9999, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: 10, 
-          pointerEvents: 'none' 
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          pointerEvents: 'none'
         }}
       >
         <AnimatePresence>
@@ -347,14 +361,14 @@ function DashboardLayout({ onBackToLanding }) {
               }}
             >
               <span>{toast.message}</span>
-              <button 
+              <button
                 onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
-                style={{ 
-                  background: 'transparent', 
-                  border: 'none', 
-                  color: 'white', 
-                  cursor: 'pointer', 
-                  display: 'flex', 
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'white',
+                  cursor: 'pointer',
+                  display: 'flex',
                   alignItems: 'center',
                   opacity: 0.8
                 }}

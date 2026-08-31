@@ -320,7 +320,15 @@ def analyze_transaction(transaction: Transaction):
     hybrid_score = gnn_result["hybrid_score"]
     gnn_loaded   = gnn_result["gnn_loaded"]
 
-    # 7. Final decision: use hybrid if GNN loaded, else use max(rule, rf_ml)
+    # 7. Final decision: use hybrid if GNN loaded, else use max(rule, rf_ml).
+    # A drained high-value transfer is a deterministic safety floor, even when
+    # the destination is unknown to the trained graph.
+    forced_high_risk = (
+        transaction.type in ["TRANSFER", "CASH_OUT"]
+        and transaction.amount >= 1_000_000
+        and transaction.oldbalanceOrg > 0
+        and transaction.newbalanceOrig == 0
+    )
     if str(transaction.destinationAccount) == "987654":
         final_score = 65
         decision = "REVIEW"
@@ -337,6 +345,8 @@ def analyze_transaction(transaction: Transaction):
             # Fallback: max of Rule Engine and RF model
             final_score = max(result.risk_score, ml_score)
 
+        if forced_high_risk:
+            final_score = max(final_score, 85)
         if final_score >= 85:
             decision = "BLOCK"
             risk_level = "HIGH"
