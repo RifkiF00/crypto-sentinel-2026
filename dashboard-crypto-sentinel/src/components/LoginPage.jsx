@@ -246,16 +246,30 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
 
           {/* ── Quick Login Role Selector ───────────────────────────── */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#475569', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                 Pilih Akun Demo Perbankan
               </label>
-              <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>Otentikasi Instan</span>
+              <span style={{
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                padding: '2px 8px',
+                borderRadius: 999,
+                background: 'rgba(2, 132, 199, 0.1)',
+                color: '#0284c7',
+                border: '1px solid rgba(2, 132, 199, 0.25)'
+              }}>
+                Demo Mode · 2 Roles
+              </span>
             </div>
+            <p style={{ fontSize: '0.72rem', color: '#64748b', margin: '0 0 10px 0', lineHeight: 1.4 }}>
+              Pilih peran operasional untuk menguji pemisahan wewenang (<em>Segregation of Duties</em>):
+            </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {DEMO_USERS.map(u => {
                 const roleConfig = ROLES[u.role];
                 const isSelected = selectedQuickUser === u.id;
+                const isRegulator = u.role === 'admin_regulator';
                 return (
                   <button
                     key={u.id}
@@ -266,8 +280,8 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
                       alignItems: 'center',
                       gap: 12,
                       padding: '11px 14px',
-                      background: isSelected ? '#ffffff' : '#ffffff',
-                      border: isSelected ? '1.5px solid #1e3a8a' : '1px solid #e2e8f0',
+                      background: isSelected ? '#ffffff' : (isRegulator ? '#faf5ff' : '#ffffff'),
+                      border: isSelected ? '1.5px solid #1e3a8a' : (isRegulator ? '1px dashed #d8b4fe' : '1px solid #e2e8f0'),
                       borderRadius: 12,
                       cursor: 'pointer',
                       textAlign: 'left',
@@ -280,7 +294,7 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
                     {/* Role Icon Box */}
                     <div style={{
                       width: 36, height: 36, borderRadius: 10,
-                      background: isSelected ? '#1e3a8a' : '#f1f5f9',
+                      background: isSelected ? '#1e3a8a' : (isRegulator ? 'rgba(124, 58, 237, 0.1)' : '#f1f5f9'),
                       border: isSelected ? '1px solid #1e3a8a' : '1px solid #e2e8f0',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       flexShrink: 0,
@@ -291,11 +305,18 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
 
                     {/* Role Name & Unit */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.25 }}>
-                        {u.name}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.25 }}>
+                          {u.name}
+                        </span>
+                        {isRegulator && (
+                          <span style={{ fontSize: '0.6rem', padding: '1px 5px', borderRadius: 4, background: '#ede9fe', color: '#7c3aed', fontWeight: 700 }}>
+                            ROADMAP
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2, fontWeight: 500 }}>
-                        {roleConfig?.sublabel}
+                        {roleConfig?.label} ({u.bank})
                       </div>
                     </div>
 
@@ -305,8 +326,8 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
                       fontWeight: 700,
                       padding: '3px 8px',
                       borderRadius: 6,
-                      background: isSelected ? 'rgba(30, 58, 138, 0.08)' : '#f8fafc',
-                      color: isSelected ? '#1e3a8a' : '#64748b',
+                      background: isSelected ? 'rgba(30, 58, 138, 0.08)' : (isRegulator ? '#f5f3ff' : '#f8fafc'),
+                      color: isSelected ? '#1e3a8a' : (isRegulator ? '#7c3aed' : '#64748b'),
                       border: isSelected ? '1px solid rgba(30, 58, 138, 0.25)' : '1px solid #e2e8f0',
                       flexShrink: 0,
                       letterSpacing: '0.02em'

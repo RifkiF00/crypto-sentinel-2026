@@ -5,7 +5,7 @@ import ast
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 import pandas as pd
 import uuid
@@ -102,9 +102,23 @@ KNOWN_BANKS = {
 }
 
 def get_bank_for_account(acc_num: str) -> str:
+    if str(acc_num).startswith("110"):
+        return "Bank bjb"
+    elif str(acc_num).startswith("601"):
+        return "Bank Kuningan"
+    elif str(acc_num).startswith("002"):
+        return "Bank BRI"
+    elif str(acc_num).startswith("014"):
+        return "Bank BCA"
+    elif str(acc_num).startswith("008"):
+        return "Bank Mandiri"
+    elif str(acc_num).startswith("009"):
+        return "Bank BNI"
+    elif str(acc_num).startswith("C"):
+        return "VASP Crypto Exchange"
     if acc_num in KNOWN_BANKS:
         return KNOWN_BANKS[acc_num]
-    banks = ["BCA", "Mandiri", "BRI", "BNI", "CIMB"]
+    banks = ["Bank bjb", "Bank Kuningan", "Bank BRI", "Bank BCA", "Bank Mandiri", "Bank BNI"]
     h = int(hashlib.md5(acc_num.encode()).hexdigest(), 16)
     return banks[h % len(banks)]
 
@@ -335,18 +349,16 @@ def analyze_transaction(transaction: Transaction):
         risk_level = "MEDIUM"
     else:
         if gnn_loaded:
-            # True Hybrid: 60% GNN + 40% Rule Engine
-            # IMPORTANT: take max(hybrid, rule_score) so GNN can BOOST but never REDUCE
-            # This prevents zero-embeddings (unknown accounts not in PaySim) from dragging
-            # down a clearly fraudulent rule_score. GNN catches relational patterns;
-            # Rule Engine catches behavioral anomalies — both are floor signals.
             final_score = max(hybrid_score, result.risk_score)
         else:
-            # Fallback: max of Rule Engine and RF model
             final_score = max(result.risk_score, ml_score)
 
         if forced_high_risk:
             final_score = max(final_score, 85)
+
+        # ── False-Positive Circuit Breaker Logic ──
+        # Risk Score 60 - 84 is ROUTED to REVIEW (Human-in-the-loop compliance triage)
+        # ONLY Risk Score >= 85 triggers automatic hard BLOCK.
         if final_score >= 85:
             decision = "BLOCK"
             risk_level = "HIGH"
@@ -1392,11 +1404,14 @@ class GenerateSTRRequest(BaseModel):
     destination_account: str
     amount: float
     risk_score: int
-    reasons: list[str] = []
+    reasons: list[str] = Field(default_factory=list)
     sender_name: str = "Nasabah Terlapor"
     destination_name: str = "Rekening Penerima / Bursa Kripto"
     bank_name: str = "PT BPR KUNINGAN (PERSERODA)"
     compliance_officer: str = "Pejabat Kepatuhan & APU-PPT"
+    case_id: str | None = None
+    graph_snapshot: dict = Field(default_factory=dict)
+    masked: bool = True
 
 
 str_drafts_store: dict[str, dict] = {}
@@ -1421,6 +1436,79 @@ def generate_str_endpoint(payload: GenerateSTRRequest):
     str_drafts_store[report_id] = draft
     str_drafts_store[payload.transaction_id] = draft
     return draft
+
+
+def _mask_identifier(value: str | None, visible: int = 4) -> str:
+    """Mask account/device/IP identifiers before regulatory evidence leaves the API."""
+    if not value:
+        return "UNKNOWN"
+    text = str(value)
+    if len(text) <= visible:
+        return "*" * len(text)
+    return f"{'*' * (len(text) - visible)}{text[-visible:]}"
+
+
+def _masked_graph_snapshot(snapshot: dict) -> dict:
+    """Return a serialisable, privacy-preserving graph evidence snapshot."""
+    snapshot = snapshot or {}
+    nodes = []
+    for node in snapshot.get("nodes", []):
+        if not isinstance(node, dict):
+            continue
+        item = dict(node)
+        for key in ("account", "account_id", "account_number", "device_id", "ip_address", "ip"):
+            if key in item:
+                item[key] = _mask_identifier(item[key])
+        if "label" in item and item.get("type") not in {"crypto", "device"}:
+            item["label"] = "Masked entity"
+        nodes.append(item)
+    return {**snapshot, "nodes": nodes, "privacy": "MASKED_EVIDENCE"}
+
+
+@app.post("/str/generate-investigation", tags=["Regulatory STR / LTKM"])
+def generate_investigation_str(payload: GenerateSTRRequest):
+    """Generate a case-linked, masked-by-default LTKM draft with graph evidence metadata."""
+    sender_account = _mask_identifier(payload.sender_account) if payload.masked else payload.sender_account
+    destination_account = _mask_identifier(payload.destination_account) if payload.masked else payload.destination_account
+    sender_name = "Masked customer" if payload.masked else payload.sender_name
+    draft = generate_str_draft(
+        transaction_id=payload.transaction_id,
+        sender_account=sender_account,
+        destination_account=destination_account,
+        amount=payload.amount,
+        risk_score=payload.risk_score,
+        reasons=payload.reasons,
+        sender_name=sender_name,
+        destination_name=payload.destination_name,
+        bank_name=payload.bank_name,
+        compliance_officer=payload.compliance_officer,
+    )
+    draft["case_id"] = payload.case_id
+    draft["evidence"] = {
+        "graph_snapshot": _masked_graph_snapshot(payload.graph_snapshot) if payload.masked else payload.graph_snapshot,
+        "evidence_mode": "MASKED",
+        "source": "LIVE · SENTINEL API",
+    }
+    draft["privacy"] = "MASKED_BY_DEFAULT" if payload.masked else "UNMASKED_REQUESTED"
+    report_id = draft["report_id"]
+    str_drafts_store[report_id] = draft
+    str_drafts_store[payload.transaction_id] = draft
+    return draft
+
+
+@app.get("/str/evidence/export/{report_or_tx_id}", tags=["Regulatory STR / LTKM"])
+def export_masked_evidence(report_or_tx_id: str):
+    """Export only masked graph evidence; raw PII is never returned by this endpoint."""
+    draft = str_drafts_store.get(report_or_tx_id)
+    if not draft:
+        return {"error": "Report not found", "id": report_or_tx_id}
+    return {
+        "report_id": draft["report_id"],
+        "case_id": draft.get("case_id"),
+        "transaction_id": draft["transaction_details"]["transaction_id"],
+        "privacy": "MASKED_EVIDENCE",
+        "evidence": draft.get("evidence", {"graph_snapshot": {}}),
+    }
 
 
 @app.get("/str/list", tags=["Regulatory STR / LTKM"])

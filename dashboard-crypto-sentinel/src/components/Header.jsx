@@ -26,59 +26,59 @@ export default function Header({
         if (role === 'admin_regulator') {
           return {
             title: 'Regulatory Compliance Overview',
-            desc: 'Statistik pencegahan kejahatan keuangan ekosistem Apex Bank & evaluasi rasio False Positive'
+            desc: 'Pengawasan independen dan evaluasi risiko ekosistem multi-bank'
           };
         }
         return {
-          title: 'Konsolidasi Risk Dashboard',
-          desc: 'Ringkasan total dana terselamatkan (Mule Saved) Bank Kuningan, Bank BJB & Apex Holding'
+          title: 'Command Center',
+          desc: 'Konsolidasi deteksi transaksi mencurigakan dan profil risiko'
         };
       case 'monitoring':
         return {
-          title: 'Live Sentinel Stream',
-          desc: 'Pemantauan aliran transaksi real-time dari core banking Bank Kuningan & Bank BJB'
+          title: 'Live Stream Detection',
+          desc: 'Aliran transaksi real-time terhubung ke core banking'
         };
       case 'analysis':
         if (role === 'admin_regulator') {
           return {
-            title: 'Transparansi Model GNN (XAI Governance)',
-            desc: 'Audit explainability algoritma AI Graph Neural Network & kepatuhan perlindungan konsumen'
+            title: 'Tata Kelola Model GNN & XAI',
+            desc: 'Audit keterbukaan model graph neural network dan kepatuhan POJK'
           };
         }
         return {
-          title: 'Analisis Graf Relasi (GNN) — Cross-Bank Explorer',
-          desc: 'Pemetaan visualisasi multi-hop aliran dana Bank Kuningan -> Bank BJB -> Wallet Kripto'
+          title: 'GNN Network Investigation',
+          desc: 'Investigasi topologi multi-hop sindikat mule dan penampungan exchange'
         };
       case 'alerts':
         return {
-          title: 'Investigasi Alert (CMS)',
-          desc: 'Triage antrean transaksi mencurigakan, catatan forensik & eskalasi pemblokiran'
+          title: 'Case Management & Alerts',
+          desc: 'Antrean investigasi, forensik transaksi dan eskalasi tindakan'
         };
       case 'rules':
         return {
-          title: 'Kalibrasi FDS (POJK 8/2023)',
-          desc: 'Pengaturan ambang batas skor risiko terpusat & tenant-specific Bank Kuningan vs Bank BJB'
+          title: 'Kalibrasi FDS & Threshold',
+          desc: 'Pengaturan parameter deteksi dan ambang batas risiko POJK 8/2023'
         };
       case 'compliance':
         if (role === 'admin_regulator') {
           return {
-            title: 'Audit Log & Traceability (PPATK & OJK Audit)',
-            desc: 'Pemeriksaan immutable audit trail, log tindakan analis & otorisasi pemblokiran'
+            title: 'Audit Log & Traceability',
+            desc: 'Jejak audit immutable untuk kepatuhan regulator'
           };
         }
         return {
-          title: 'Kepatuhan & Audit PPATK',
-          desc: 'Multi-Entity SAR Generator & ekspor resmi LTKM / STR ke goAML PPATK'
+          title: 'Kepatuhan PPATK (LTKM)',
+          desc: 'Manajemen draf pelaporan SAR/LTKM ke portal goAML PPATK'
         };
       case 'apolo_governance':
         return {
-          title: 'APOLO OJK Compliance Preview',
-          desc: 'Formulir komposisi nasabah berdasar risiko siap unggah ke portal resmi APOLO OJK'
+          title: 'Pelaporan APOLO OJK',
+          desc: 'Pratinjau dan arsip data kepatuhan profil risiko nasabah OJK'
         };
       default:
         return {
-          title: 'Dashboard Overview',
-          desc: 'Monitor transaksi bank & pencegahan pelarian uang ke crypto'
+          title: 'Platform Overview',
+          desc: 'Sistem deteksi dini anti-pencucian uang'
         };
     }
   };
@@ -116,129 +116,127 @@ export default function Header({
   return (
     <header className="header" id="main-header">
       <div className="header-left">
-        <button className="mobile-menu-btn" onClick={onMenuToggle} id="btn-menu">
-          <Menu size={20} />
+        <button className="mobile-menu-btn" onClick={onMenuToggle} id="btn-menu" aria-label="Toggle Menu">
+          <Menu size={18} />
         </button>
         <div className="header-title-group">
           <h2>{headerMeta.title}</h2>
           <p>{headerMeta.desc}</p>
         </div>
       </div>
-      <div className="header-right">
-        {onBackToLanding && (
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={onBackToLanding}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}
-          >
-            <Home size={16} />
-            <span>Landing Page</span>
-          </button>
-        )}
 
+      <div className="header-right">
         {/* Toggle Masking UU PDP */}
         <button
           className="btn btn-ghost btn-sm tooltip"
-          data-tooltip={privacyMasking ? 'Matikan Sensor Privasi' : 'Aktifkan Sensor UU PDP'}
+          data-tooltip={privacyMasking ? 'Matikan Sensor Privasi' : 'Aktifkan Sensor UU PDP No. 27/2022'}
           onClick={toggleMasking}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            fontSize: '0.78rem',
-            background: privacyMasking ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
-            color: privacyMasking ? '#10b981' : 'var(--text-secondary)',
-            border: `1px solid ${privacyMasking ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255,255,255,0.1)'}`,
+            fontSize: '0.76rem',
+            fontWeight: 600,
+            padding: '6px 12px',
             borderRadius: 'var(--radius-md)',
-            padding: '5px 12px',
+            border: privacyMasking ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid var(--border-color)',
+            background: privacyMasking ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
+            color: privacyMasking ? '#10b981' : 'var(--text-secondary)'
           }}
         >
-          {privacyMasking ? <EyeOff size={15} /> : <Eye size={15} />}
-          <span>{privacyMasking ? 'UU PDP: AKTIF' : 'Sensor Data'}</span>
+          {privacyMasking ? <ShieldCheck size={14} /> : <EyeOff size={14} />}
+          <span>{privacyMasking ? 'Sensor PDP Aktif' : 'Sensor Nonaktif'}</span>
         </button>
 
-        {/* Sandbox Demo Controls (Isolated from Production) */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'rgba(239, 68, 68, 0.08)',
-          border: '1px solid rgba(239, 68, 68, 0.25)',
-          borderRadius: 'var(--radius-md)',
-          padding: '3px 6px 3px 10px'
-        }}>
-          <span style={{
-            fontSize: '0.65rem',
-            fontWeight: 800,
-            color: '#f97316',
-            letterSpacing: '0.04em',
+        {/* Sandbox Simulation */}
+        <button
+          className="btn btn-ghost btn-sm tooltip"
+          data-tooltip="Simulasi injeksi 10 transaksi smurfing ke engine"
+          onClick={handleSimulateSmurfing}
+          disabled={isSimulating}
+          style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 4
-          }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f97316', display: 'inline-block' }} />
-            SANDBOX DEMO
-          </span>
+            gap: 6,
+            fontSize: '0.76rem',
+            fontWeight: 600,
+            padding: '6px 12px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-color)',
+            background: isSimulating ? 'rgba(245, 158, 11, 0.1)' : 'transparent',
+            color: isSimulating ? '#f59e0b' : 'var(--text-secondary)',
+            cursor: isSimulating ? 'wait' : 'pointer'
+          }}
+        >
+          <Zap size={14} style={{ color: '#f59e0b' }} className={isSimulating ? 'animate-spin' : ''} />
+          <span>{isSimulating ? 'Memproses...' : 'Simulasi Sandbox'}</span>
+        </button>
 
-          <button
-            className="btn btn-sm"
-            onClick={handleSimulateSmurfing}
-            disabled={isSimulating}
+        {/* Live Status Badge */}
+        <div
+          id="live-status"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 7,
+            padding: '6px 12px',
+            borderRadius: 'var(--radius-full)',
+            background: apiOnline ? 'rgba(16, 185, 129, 0.08)' : 'rgba(100, 116, 139, 0.08)',
+            border: `1px solid ${apiOnline ? 'rgba(16, 185, 129, 0.25)' : 'rgba(100, 116, 139, 0.2)'}`,
+            fontSize: '0.74rem',
+            fontWeight: 600,
+            color: apiOnline ? '#10b981' : 'var(--text-muted)'
+          }}
+        >
+          <span
             style={{
-              background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: 'var(--radius-sm)',
-              padding: '4px 10px',
-              fontSize: '0.74rem',
-              fontWeight: 700,
+              width: 7,
+              height: 7,
+              borderRadius: '50%',
+              background: apiOnline ? '#10b981' : '#64748b',
+              boxShadow: apiOnline ? '0 0 6px rgba(16, 185, 129, 0.6)' : 'none'
+            }}
+          />
+          <span>{apiOnline ? (systemHealth.coreOnline ? 'Engine + Core Live' : 'Sentinel Engine Live') : 'Offline'}</span>
+        </div>
+
+        {onBackToLanding && (
+          <button
+            className="btn btn-ghost btn-sm tooltip"
+            data-tooltip="Kembali ke Beranda"
+            onClick={onBackToLanding}
+            style={{
               display: 'flex',
               alignItems: 'center',
               gap: 5,
-              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.25)',
-              cursor: isSimulating ? 'wait' : 'pointer'
+              fontSize: '0.76rem',
+              fontWeight: 600,
+              padding: '6px 10px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-secondary)'
             }}
-            title="Simulasi mutasi smurfing buatan dalam lingkungan sandbox pengujian"
           >
-            <Zap size={12} className={isSimulating ? 'animate-bounce' : ''} />
-            <span>{isSimulating ? 'Memproses...' : 'Simulasi Smurfing'}</span>
+            <Home size={14} />
+            <span>Landing</span>
           </button>
-        </div>
-
-        <div
-          className="live-indicator animate-pulse"
-          id="live-status"
-          style={{
-            borderColor: apiOnline ? 'rgba(16,185,129,0.3)' : 'rgba(100,116,139,0.3)',
-            background: apiOnline ? 'rgba(16,185,129,0.06)' : 'rgba(100,116,139,0.06)',
-            padding: '5px 12px',
-            borderRadius: 'var(--radius-full)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8
-          }}
-        >
-          <div
-            className="live-dot"
-            style={{
-              background: apiOnline ? '#10b981' : '#64748b',
-              boxShadow: apiOnline ? '0 0 8px #10b981' : 'none'
-            }}
-          />
-          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: apiOnline ? '#10b981' : 'var(--text-muted)' }}>
-            {apiOnline
-              ? (systemHealth.coreOnline ? `SENTINEL + CORE: ONLINE · ${APP_MODE.toUpperCase()}` : `SENTINEL API: ONLINE · CORE UNAVAILABLE · ${APP_MODE.toUpperCase()}`)
-              : `${APP_MODE.toUpperCase()}: BACKEND UNAVAILABLE`}
-          </span>
-        </div>
+        )}
 
         <button
           className="theme-toggle tooltip"
           data-tooltip={theme === 'light' ? 'Mode Gelap' : 'Mode Terang'}
           onClick={toggleTheme}
           id="btn-theme-toggle"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 'var(--radius-md)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
         >
-          {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+          {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
         </button>
       </div>
     </header>

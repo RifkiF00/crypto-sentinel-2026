@@ -10,7 +10,12 @@ import AuthLoadingScreen from './components/AuthLoadingScreen';
 import LoginPage from './components/LoginPage';
 
 // Dynamic API Integration
-import { fetchTransactions, fetchAlerts, fetchSystemHealth } from './services/api';
+import {
+  fetchTransactions,
+  fetchAlerts,
+  fetchSystemHealth,
+  createCaseApi
+} from './services/api';
 
 // Dashboard Overview Components
 import StatsGrid from './components/StatsGrid';
@@ -43,6 +48,8 @@ import {
   AdministrationView
 } from './components/PlatformViews';
 
+import Customer360Drawer from './components/Customer360Drawer';
+
 function DashboardLayout({ onBackToLanding }) {
   const { currentUser, can } = useAuth();
   const activatedRoleConfig = ROLES[currentUser?.role] || ROLES.compliance_officer;
@@ -50,6 +57,11 @@ function DashboardLayout({ onBackToLanding }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [apiOnline, setApiOnline] = useState(false);
   const [systemHealth, setSystemHealth] = useState({ sentinelOnline: false, coreOnline: false, online: false });
+
+  // Customer 360 & Cross-Page Investigation States
+  const [customer360Account, setCustomer360Account] = useState(null);
+  const [isCustomer360Open, setIsCustomer360Open] = useState(false);
+  const [selectedGnnEntity, setSelectedGnnEntity] = useState(null);
 
   // Sync active page when user changes
   useEffect(() => {
@@ -168,7 +180,36 @@ function DashboardLayout({ onBackToLanding }) {
     }, 3500);
   }, []);
 
-  const [privacyMasking, setPrivacyMasking] = useState(false);
+  const [privacyMasking, setPrivacyMasking] = useState(true);
+
+  const handleCreateInvestigationCase = useCallback(async (payload) => {
+    const account = payload?.account || {};
+    const edge = payload?.edge || {};
+    const accountId = account.account || account.account_id || account.id || 'UNKNOWN';
+    const transactionId = edge.transaction_id || edge.transactionId || payload?.transactionId || `GNN-${Date.now()}`;
+    const caseId = payload?.caseId || `CASE-GNN-${Date.now()}`;
+
+    try {
+      await createCaseApi({
+        caseId,
+        alertId: payload?.alertId || null,
+        transactionId,
+        accountId,
+        priority: account.riskScore >= 90 ? 'CRITICAL' : 'HIGH',
+        note: payload?.note || `Eskalasi investigasi GNN untuk ${account.label || accountId}`,
+        graphSnapshot: payload?.graphSnapshot || {},
+        actor: currentUser?.id || currentUser?.name || 'Unknown_User',
+        role: currentUser?.role || 'analyst',
+        tenantId: currentUser?.bank || 'all'
+      });
+      setSelectedGnnEntity(account);
+      setActivePage('alerts');
+      addToast(`📝 Kasus ${caseId} tersimpan dengan snapshot graf GNN.`, 'success');
+    } catch (error) {
+      console.error('Failed to create GNN investigation case:', error);
+      addToast(`❌ Kasus gagal disimpan: ${error.message}`, 'error');
+    }
+  }, [currentUser, addToast]);
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -252,6 +293,16 @@ function DashboardLayout({ onBackToLanding }) {
                   setTransactions={setTransactions}
                   addToast={addToast}
                   rules={rules}
+                  isMasked={privacyMasking}
+                  onNavigateToGNN={(txn) => {
+                    setSelectedGnnEntity(txn);
+                    setActivePage('analysis');
+                    if (addToast) addToast(`🧠 Membuka Subgraf Penjelas GNN untuk ${txn.id || 'Transaksi'}`, 'info');
+                  }}
+                  onOpenCustomer360={(acc) => {
+                    setCustomer360Account(acc);
+                    setIsCustomer360Open(true);
+                  }}
                 />
               )}
 
@@ -259,11 +310,21 @@ function DashboardLayout({ onBackToLanding }) {
                   3. GRAPH RELATION FORENSICS (GNN GRAPH SAGE)
               ---------------------------------------------------- */}
               {activePage === 'analysis' && (
-                <AnalysisView transactions={transactions} addToast={addToast} />
+                <AnalysisView
+                  transactions={transactions}
+                  addToast={addToast}
+                  isMasked={privacyMasking}
+                  selectedEntity={selectedGnnEntity}
+                  onCreateCase={handleCreateInvestigationCase}
+                  onOpenCustomer360={(acc) => {
+                    setCustomer360Account(acc);
+                    setIsCustomer360Open(true);
+                  }}
+                />
               )}
 
               {/* ----------------------------------------------------
-                  3. ALERTS & CMS INVESTIGATION VIEW
+                  4. ALERTS & CMS INVESTIGATION VIEW
               ---------------------------------------------------- */}
               {activePage === 'alerts' && (
                 <AlertsView
@@ -271,9 +332,15 @@ function DashboardLayout({ onBackToLanding }) {
                   setAlerts={setAlerts}
                   addToast={addToast}
                   setBlockedEntities={setBlockedEntities}
+                  isMasked={privacyMasking}
                   onNavigateToGNN={(alert) => {
+                    setSelectedGnnEntity(alert);
                     setActivePage('analysis');
                     if (addToast) addToast(`🧠 Membuka Subgraf Penjelas GNN untuk ${alert?.title || 'Kasus'}`, 'info');
+                  }}
+                  onOpenCustomer360={(acc) => {
+                    setCustomer360Account(acc);
+                    setIsCustomer360Open(true);
                   }}
                 />
               )}
@@ -310,8 +377,8 @@ function DashboardLayout({ onBackToLanding }) {
               {activePage === 'apolo_governance' && (
                 <ApoloGovernanceView addToast={addToast} />
               )}
-              {activePage === 'operations' && <OperationsView transactions={transactions} alerts={alerts} />}
-              {activePage === 'investigation_360' && <Investigation360View transactions={transactions} />}
+              {activePage === 'operations' && <OperationsView transactions={transactions} alerts={alerts} isMasked={privacyMasking} />}
+              {activePage === 'investigation_360' && <Investigation360View transactions={transactions} isMasked={privacyMasking} />}
               {activePage === 'risk_controls' && <RiskControlsView />}
               {activePage === 'model_governance' && <ModelGovernanceView />}
               {activePage === 'integration' && <IntegrationPlatformView systemHealth={systemHealth} />}
@@ -379,6 +446,22 @@ function DashboardLayout({ onBackToLanding }) {
           ))}
         </AnimatePresence>
       </div>
+      {/* ----------------------------------------------------
+          GLOBAL CUSTOMER 360 INVESTIGATION DRAWER
+      ---------------------------------------------------- */}
+      <Customer360Drawer
+        account={customer360Account}
+        isOpen={isCustomer360Open}
+        onClose={() => setIsCustomer360Open(false)}
+        isMasked={privacyMasking}
+        onNavigateToGNN={(acc) => {
+          setSelectedGnnEntity(acc);
+          setActivePage('analysis');
+          if (addToast) addToast(`🧠 Membuka Analisis Graf GNN untuk ${acc.name || acc.label || 'Nasabah'}`, 'info');
+        }}
+        onCreateCase={handleCreateInvestigationCase}
+        addToast={addToast}
+      />
     </div>
   );
 }

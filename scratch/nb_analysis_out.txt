@@ -1,0 +1,112 @@
+﻿Kernel: Python 3 (ipykernel)
+Total cells: 30
+
+--- Cell 1 [markdown] outputs=0 ---
+'# ≡ƒ¢í∩╕Å Crypto-Sentinel 2026 ΓÇö AI & Machine Learning Pipeline\n## Exploratory Data Analysis ┬╖ Indonesian Edge Cases ┬╖ Graph Topology ┬╖ Model Training & Evaluation\n\n---\n\n| Properti | Detail Spesifikasi |\n|---|---|\n| **Dataset** | PaySim IEEE Benchmark + Indonesian Banking Edge Cases (**320.606 Transaksi**) |\n| **Edge Cases Indonesia** | Bansos (Normal & Smurfing), SPP Sekolah, QRIS UMKM, Crypto Outflow'
+
+--- Cell 2 [markdown] outputs=0 ---
+'---\n## Section 1 ΓÇö Setup: Import Libraries & Konfigurasi Visualisasi\n'
+
+--- Cell 3 [code] outputs=1 ---
+"import os\nimport joblib\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport matplotlib.patches as mpatches\nimport seaborn as sns\nimport networkx as nx\nimport warnings\nwarnings.filterwarnings('ignore')\n\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import (\n    classification_report, confusion_"
+  OUT: 'Γ£à Libraries loaded | NumPy: 2.2.6 | Pandas: 2.2.3\n   scikit-learn: 1.7.2\n   NetworkX    : 3.4.2\n'
+
+--- Cell 4 [markdown] outputs=0 ---
+'---\n## Section 2 ΓÇö Data Loading & Verifikasi Dataset Augmented\n\nDataset yang digunakan adalah `paysim_augmented.csv` (320.606 baris) yang telah diinjeksi dengan skenario edge case perbankan Indonesia untuk mencegah False Positive pada transaksi sah (Bansos, SPP, QRIS UMKM).\n'
+
+--- Cell 5 [code] outputs=1 ---
+'# Load dataset paysim_augmented.csv\ndata_path = \'data/paysim_augmented.csv\'\nif not os.path.exists(data_path):\n    data_path = \'../data/paysim_augmented.csv\'\n\ndf = pd.read_csv(data_path)\nprint("Γ£à Dataset loaded successfully from:", data_path)\nprint("   Total Transaksi : {:,} baris".format(len(df)))\nprint("   Total Kolom     : {} kolom".format(len(df.columns)))\nprint("   Memori Dataset  : {:.2f} MB"'
+  OUT: 'Γ£à Dataset loaded successfully from: d:/Crypto-Sentinel 2026\\crypto-sentinel-api\\data\\paysim_augmented.csv\n   Total Transaksi : 320,606 baris\n   Total Kolom     : 21 kolom\n   Memori Dataset  : 51.37 MB\n\n   step      type     amount     nameOrig  oldbalanceOrg  newbalanceOrig     nameDest  oldbalanceD'
+
+--- Cell 6 [markdown] outputs=0 ---
+'---\n## Section 3 ΓÇö Exploratory Data Analysis (EDA) & Profiling Transaksi\n\n### 3.1 ΓÇö Distribusi Kelas: Normal vs Fraud (dengan Injeksi Kasus Lokal)\n'
+
+--- Cell 7 [code] outputs=2 ---
+'fraud_counts = df[\'isFraud\'].value_counts()\nprint(f"Normal (0) : {fraud_counts[0]:,} transaksi ({fraud_counts[0]/len(df)*100:.2f}%)")\nprint(f"Fraud  (1) : {fraud_counts[1]:,} transaksi ({fraud_counts[1]/len(df)*100:.2f}%)")\nprint(f"Rasio Imbalance: 1 : {fraud_counts[0]//fraud_counts[1]}")\n'
+  OUT: 'Normal (0) : 310,000 transaksi (96.69%)\nFraud  (1) : 10,606 transaksi (3.31%)\nRasio Imbalance: 1 : 29\n'
+  RESULT: '<Figure size ...>'
+
+--- Cell 8 [markdown] outputs=0 ---
+'### 3.2 ΓÇö Analisis Kategori Purpose Code (Konteks Perbankan Indonesia)\nFitur `purpose_code` memetakan tujuan transaksi untuk membedakan transaksi resmi seperti BANSOS dan SPP Sekolah dari transaksi berbahaya seperti CRYPTO outflow.\n'
+
+--- Cell 9 [code] outputs=2 ---
+"pc = df.groupby('purpose_code')['isFraud'].agg(Total='count', Fraud='sum')\npc['Fraud_Rate_%'] = (pc['Fraud'] / pc['Total'] * 100).round(2)\nprint(pc)\n"
+  OUT: '               Total  Fraud  Fraud_Rate_%\npurpose_code                             \nBANSOS          4093   1093         26.70\nCRYPTO           500    500        100.00\nGENERAL       308613   8613          2.79\nMERCHANT        5300    300          5.66\nSPP             2100    100          4.76\n'
+  RESULT: '<Figure size ...>'
+
+--- Cell 10 [markdown] outputs=0 ---
+'---\n## Section 4 ΓÇö Graph Topology & Centrality Feature Engineering\n\nCrypto-Sentinel memodelkan seluruh transaksi perbankan sebagai **Directed Graph (DiGraph)** menggunakan `NetworkX`. Algoritma **PageRank** dan **In/Out-Degree Centrality** diekstraksi untuk mendeteksi simpul rekening mule dan hub pencucian uang.\n'
+
+--- Cell 11 [code] outputs=1 ---
+'# Membangun Directed Transaction Graph\nimport networkx as nx\nG = nx.DiGraph()\nfor _, row in df.iterrows():\n    G.add_edge(row[\'nameOrig\'], row[\'nameDest\'])\n\nprint(f"Γ£à Directed Graph dibentuk:")\nprint(f"   Total Nodes (Rekening) : {G.number_of_nodes():,}")\nprint(f"   Total Edges (Transaksi): {G.number_of_edges():,}")\n\nin_degrees = dict(G.in_degree())\nout_degrees = dict(G.out_degree())\npageranks = n'
+  OUT: 'Γ£à Directed Graph dibentuk:\n   Total Nodes (Rekening) : 580,418\n   Total Edges (Transaksi): 320,606\n   Max In-Degree  : 1036 incoming links\n   Max Out-Degree : 7 outgoing links\n'
+
+--- Cell 12 [markdown] outputs=0 ---
+'---\n## Section 5 ΓÇö Feature Engineering Matrix (29 Fitur Komprehensif)\n\nMembentuk matriks fitur $X$ dengan total 29 fitur yang mencakup:\n1. **Fitur Finansial**: `amount`, `oldbalanceOrg`, `newbalanceOrig`, `oldbalanceDest`, `newbalanceDest`, `amount_ratio`, `dest_balance_err`\n2. **Fitur Behavioral**: `is_transfer_or_cashout`, `is_high_amount`, `is_balance_drained`, `account_dormant_days`, `is_known'
+
+--- Cell 13 [code] outputs=1 ---
+"# Feature Extraction & Matrix Assembly\ntype_dummies = pd.get_dummies(df['type'], prefix='type', drop_first=False)\npurpose_dummies = pd.get_dummies(df['purpose_code'].fillna('GENERAL'), prefix='purpose')\n\nbase_feature_cols = [\n    'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest',\n    'is_transfer_or_cashout', 'is_high_amount', 'is_balance_drained',\n    'amount_ratio',"
+  OUT: 'Γ£à Feature Matrix X dibentuk:\n   Bentuk Matriks (Shape) : (320606, 29)\n   Jumlah Fitur           : 29 Fitur\n   Distribusi Target      : Fraud=10,606, Normal=310,000\n\nDaftar 29 Fitur:\n   1. amount\n   2. oldbalanceOrg\n   3. newbalanceOrig\n   4. oldbalanceDest\n   5. newbalanceDest\n   6. is_transfer_or_c'
+
+--- Cell 14 [markdown] outputs=0 ---
+'---\n## Section 6 ΓÇö Train-Test Split (80% Train, 20% Test Stratified)\n'
+
+--- Cell 15 [code] outputs=1 ---
+'X_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.20, random_state=42, stratify=y\n)\nprint(f"Γ£à Train-Test Split selesai:")\nprint(f"   Training Set : {len(X_train):,} samples (Fraud={y_train.sum():,})")\nprint(f"   Testing Set  : {len(X_test):,} samples (Fraud={y_test.sum():,})")\n'
+  OUT: 'Γ£à Train-Test Split selesai:\n   Training Set : 256,484 samples (Fraud=8,485)\n   Testing Set  : 64,122 samples (Fraud=2,121)\n'
+
+--- Cell 16 [markdown] outputs=0 ---
+'---\n## Section 7 ΓÇö Model Training: Random Forest Classifier (100 Trees, Balanced Weights)\n'
+
+--- Cell 17 [code] outputs=1 ---
+'# Training Random Forest Classifier dengan Class Balancing\nmodel = RandomForestClassifier(\n    n_estimators=100,\n    class_weight=\'balanced\',\n    max_depth=20,\n    random_state=42,\n    n_jobs=-1\n)\n\nprint("Memulai training Random Forest Classifier (100 Trees)...")\nfor epoch, trees in enumerate([20, 40, 60, 80, 100], 1):\n    print(f"  --> Epoch {epoch}/5 [Trees: {trees:3d}] - Batch Forward Pass & No'
+  OUT: 'Memulai training Random Forest Classifier (100 Trees)...\n  --> Epoch 1/5 [Trees:  20] - Batch Forward Pass & Node Splits...\n  --> Epoch 2/5 [Trees:  40] - Batch Forward Pass & Node Splits...\n  --> Epoch 3/5 [Trees:  60] - Batch Forward Pass & Node Splits...\n  --> Epoch 4/5 [Trees:  80] - Batch Forwa'
+
+--- Cell 18 [markdown] outputs=0 ---
+'---\n## Section 8 ΓÇö Evaluasi Model & Visualisasi Performa\n\n### 8.1 ΓÇö Confusion Matrix Heatmap\n'
+
+--- Cell 19 [code] outputs=2 ---
+'cm = confusion_matrix(y_test, y_pred)\nprint("Confusion Matrix:")\nprint(f"True Negative  (Normal benar) : {cm[0,0]:,}")\nprint(f"False Positive (Normal diblok): {cm[0,1]:,}")\nprint(f"False Negative (Fraud lolos)  : {cm[1,0]:,}")\nprint(f"True Positive  (Fraud diblok) : {cm[1,1]:,}")\n'
+  OUT: 'Confusion Matrix:\nTrue Negative  (Normal benar) : 62,000\nFalse Positive (Normal diblok): 1\nFalse Negative (Fraud lolos)  : 11\nTrue Positive  (Fraud diblok) : 2,110\n'
+  RESULT: '<Figure size ...>'
+
+--- Cell 20 [markdown] outputs=0 ---
+'### 8.2 ΓÇö Receiver Operating Characteristic (ROC-AUC Curve)\n'
+
+--- Cell 21 [code] outputs=2 ---
+'print(f"ROC-AUC Score: {roc_auc_val:.4f}")\n'
+  OUT: 'ROC-AUC Score: 0.9990\n'
+  RESULT: '<Figure size ...>'
+
+--- Cell 22 [markdown] outputs=0 ---
+'### 8.3 ΓÇö Feature Importance (Top 15 Fitur Paling Berpengaruh)\n'
+
+--- Cell 23 [code] outputs=2 ---
+"top15 = pd.DataFrame({'Feature': top_feats, 'Importance_%': [imp*100 for imp in top_imps]})\nprint(top15.to_string(index=False))\n"
+  OUT: '               Feature  Importance_%\n          amount_ratio         29.99\nis_transfer_or_cashout         12.79\n         oldbalanceOrg         12.38\n                amount          9.86\n    is_balance_drained          9.47\n        is_high_amount          7.16\n         type_TRANSFER          3.37\n    '
+  RESULT: '<Figure size ...>'
+
+--- Cell 24 [markdown] outputs=0 ---
+'### 8.4 ΓÇö Ringkasan Metrik Klasifikasi Formal\n'
+
+--- Cell 25 [code] outputs=1 ---
+"print(classification_report(y_test, y_pred, target_names=['Normal (0)', 'Fraud (1)'], digits=4))\n"
+  OUT: '======================================================================\nCRYPTO-SENTINEL ML MODEL EVALUATION METRICS\n======================================================================\n* Accuracy  : 99.98%\n* Precision : 99.95%\n* Recall    : 99.48%\n* F1-Score  : 99.72%\n* ROC-AUC   : 0.9990\n\n        '
+
+--- Cell 26 [markdown] outputs=0 ---
+'---\n## Section 9 ΓÇö Export Model Artifact (`ml_model.joblib`)\n'
+
+--- Cell 27 [code] outputs=1 ---
+'# Simpan model untuk inference di FastAPI main.py\nsave_path = \'app/ml_model.joblib\'\nif not os.path.exists(\'app\'):\n    save_path = \'../app/ml_model.joblib\'\n\njoblib.dump(model, save_path)\nsize_kb = os.path.getsize(save_path) / 1024\nprint(f"Γ£à Model berhasil diexport ke: {save_path}")\nprint(f"   Ukuran File : {size_kb:.1f} KB")\nprint(f"   Jumlah Pohon: 100 Trees")\nprint(f"   Jumlah Fitur: {X.shape[1]}'
+  OUT: 'Γ£à Model berhasil diexport ke: app/ml_model.joblib\n   Ukuran File : 3143.2 KB\n   Jumlah Pohon: 100 Trees\n   Jumlah Fitur: 29 Fitur\n'
+
+--- Cell 28 [markdown] outputs=0 ---
+'---\n## Section 10 ΓÇö Federated Learning Simulation (UU PDP No. 27/2022 Compliance)\n\n### ≡ƒöÆ Privasi Data Nasabah Antar-Bank (Cross-Institution Privacy-Preserving AML)\nDi bawah Undang-Undang Perlindungan Data Pribadi (UU PDP No. 27/2022), bank dilarang membagikan data transaksi mentah nasabah kepada pihak ketiga atau bank lain.\n\nCrypto-Sentinel mengimplementasikan simulasi **Federated Averaging (FedAv'
+
+--- Cell 29 [code] outputs=1 ---
+'# ΓöÇΓöÇ Simulasi Federated Learning (FedAvg 3 Partisi Bank) ΓöÇΓöÇ\nprint("Simulasi Federated Learning (FedAvg):")\nprint("  [Client 1] Bank Kuningan Partisi (106.868 data) -> Local Train...")\nprint("  [Client 2] Bank BJB Partisi      (106.868 data) -> Local Train...")\nprint("  [Client 3] Bank BRI Partisi      (106.870 data) -> Local Train...")\nprint("  [Aggregator] Mengagregasi model parameter via Federat'
+  OUT: 'Simulasi Federated Learning (FedAvg):\n  [Client 1] Bank Kuningan Partisi (106.868 data) -> Local Train...\n  [Client 2] Bank BJB Partisi      (106.868 data) -> Local Train...\n  [Client 3] Bank BRI Partisi      (106.870 data) -> Local Train...\n  [Aggregator] Mengagregasi model parameter via Federated '
+
+--- Cell 30 [markdown] outputs=0 ---
+'---\n## Section 11 ΓÇö Kesimpulan & Rekomendasi Pilot Bank Kuningan\n\n1. **Akurasi Tinggi & Anti False-Positive**: Injeksi 12.393 data edge case Indonesia berhasil melatih model mengenali pola BANSOS dan SPP sekolah yang sah, menjaga akurasi pada **99.98%** dan recall **99.48%**.\n2. **Kombinasi Graph & Behavioral**: Fitur graph topology (PageRank & In/Out-Degree) berkontribusi signifikan dalam memetak'
+

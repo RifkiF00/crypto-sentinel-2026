@@ -1,6 +1,9 @@
-from fastapi import APIRouter, HTTPException, Form, Request
+from fastapi import APIRouter, HTTPException, Form, Request, Header, Body
 from sqlalchemy.orm import Session
-from models.db_models import Account, Transaction, SentinelAlert, STRDraft, engine
+from models.db_models import (
+    Account, Transaction, SentinelAlert, STRDraft, AuditLog, CaseInvestigation,
+    RegulatoryWatchlist, DeviceTelemetry, MuleGraphCommunity, ApoloRegulatoryFiling, engine
+)
 from datetime import datetime, timezone
 from bri_client import transfer_bri, transfer_interbank_bri
 import uuid
@@ -754,18 +757,27 @@ async def bri_transfer_interbank(
 @router.get("/kuningan/account/{account_id}")
 @router.get("/bjb/account/{account_id}")
 def get_account_info(account_id: str):
-    """Mendapatkan informasi detail akun berdasarkan account_id untuk validasi nama penerima."""
+    """Mendapatkan informasi detail akun dan profil CRA berdasarkan account_id."""
     with Session(engine) as db:
         acc = db.get(Account, account_id)
         if not acc:
             raise HTTPException(status_code=404, detail="Akun tidak ditemukan")
         return {
             "account_id": acc.account_id,
+            "national_id": acc.national_id,
             "owner_name": acc.owner_name,
             "balance": acc.balance,
             "risk_profile": acc.risk_profile,
+            "risk_score": getattr(acc, "risk_score", 15.0),
+            "mule_probability": getattr(acc, "mule_probability", 0.05),
+            "occupation": getattr(acc, "occupation", "Karyawan Swasta"),
+            "monthly_income": getattr(acc, "monthly_income", 10000000),
+            "pep_status": getattr(acc, "pep_status", False),
+            "cdd_edd_status": getattr(acc, "cdd_edd_status", "CDD_STANDARD"),
             "is_active": acc.is_active,
-            "is_blocked": acc.is_blocked
+            "is_blocked": acc.is_blocked,
+            "registered_device": acc.registered_device,
+            "registered_ip": acc.registered_ip
         }
 
 
@@ -773,15 +785,22 @@ def get_account_info(account_id: str):
 @router.get("/kuningan/accounts")
 @router.get("/bjb/accounts")
 def list_accounts(limit: int = 150):
-    """Mendapatkan daftar seluruh akun nasabah di database untuk kemudahan testing manual."""
+    """Mendapatkan daftar seluruh akun nasabah lengkap dengan CRA (Customer Risk Assessment) score."""
     with Session(engine) as db:
         accs = db.query(Account).limit(limit).all()
         return [
             {
                 "account_id": acc.account_id,
+                "national_id": acc.national_id,
                 "owner_name": acc.owner_name,
                 "balance": acc.balance,
                 "risk_profile": acc.risk_profile,
+                "risk_score": getattr(acc, "risk_score", 15.0),
+                "mule_probability": getattr(acc, "mule_probability", 0.05),
+                "occupation": getattr(acc, "occupation", "Karyawan Swasta"),
+                "monthly_income": getattr(acc, "monthly_income", 10000000),
+                "pep_status": getattr(acc, "pep_status", False),
+                "cdd_edd_status": getattr(acc, "cdd_edd_status", "CDD_STANDARD"),
                 "is_active": acc.is_active,
                 "is_blocked": acc.is_blocked,
                 "registered_device": acc.registered_device,
@@ -860,27 +879,223 @@ def get_account_transactions(account_id: str):
         ]
 
 
+def get_auth_context(
+    x_user_id: str = Header("Analyst_System", alias="X-User-ID"),
+    x_user_role: str = Header("compliance_officer", alias="X-User-Role"),
+    x_tenant_id: str = Header("all", alias="X-Tenant-ID")
+):
+    return {
+        "actor": x_user_id,
+        "role": x_user_role,
+        "tenant_id": x_tenant_id
+    }
+
+def log_audit(db: Session, actor: str, role: str, action: str, target_id: str, reason: str, ip_address: str = "127.0.0.1", tenant_id: str = "all"):
+    audit = AuditLog(
+        actor=actor,
+        role=role,
+        action=action,
+        target_id=target_id,
+        reason=reason,
+        ip_address=ip_address,
+        tenant_id=tenant_id
+    )
+    db.add(audit)
+    db.commit()
+
+@router.post("/audit-logs")
+def create_audit_log(
+    action: str = Form(...),
+    target_id: str = Form(...),
+    reason: str = Form(...),
+    x_user_id: str = Header("Analyst_User", alias="X-User-ID"),
+    x_user_role: str = Header("analyst", alias="X-User-Role")
+):
+    """Mencatat aksi sensitif dari UI ke immutable audit trail."""
+    if x_user_role not in {"analyst", "compliance_officer", "admin_regulator"}:
+        raise HTTPException(status_code=403, detail="Role tidak valid")
+    with Session(engine) as db:
+        log_audit(db, actor=x_user_id, role=x_user_role, action=action, target_id=target_id, reason=reason)
+        return {"status": "SUCCESS", "action": action, "target_id": target_id}
+
+@router.get("/audit-logs")
+def get_audit_logs(limit: int = 50):
+    """Mendapatkan daftar log audit yang tidak dapat diubah (Immutable Audit Trail)."""
+    with Session(engine) as db:
+        logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(limit).all()
+        return [
+            {
+                "id": l.id,
+                "actor": l.actor,
+                "role": l.role,
+                "action": l.action,
+                "target_id": l.target_id,
+                "reason": l.reason,
+                "ip_address": l.ip_address,
+                "tenant_id": l.tenant_id,
+                "timestamp": l.created_at.isoformat() if l.created_at else None
+            }
+            for l in logs
+        ]
+
+@router.get("/cases")
+def list_cases(status: str = None, limit: int = 50):
+    """Mendapatkan daftar kasus investigasi CMS."""
+    with Session(engine) as db:
+        query = db.query(CaseInvestigation)
+        if status:
+            query = query.filter(CaseInvestigation.status == status)
+        cases = query.order_by(CaseInvestigation.updated_at.desc()).limit(limit).all()
+        return [
+            {
+                "case_id": c.case_id,
+                "alert_id": c.alert_id,
+                "transaction_id": c.transaction_id,
+                "account_id": c.account_id,
+                "status": c.status,
+                "priority": c.priority,
+                "assigned_to": c.assigned_to,
+                "lifecycle_history": c.lifecycle_history or [],
+                "notes": c.notes or [],
+                "resolution": c.resolution,
+                "created_at": c.created_at.isoformat() if c.created_at else None,
+                "updated_at": c.updated_at.isoformat() if c.updated_at else None
+            }
+            for c in cases
+        ]
+
+@router.post("/cases/create")
+def create_case(
+    case_id: str = Form(...),
+    transaction_id: str = Form(...),
+    account_id: str = Form(...),
+    alert_id: str = Form(None),
+    priority: str = Form("HIGH"),
+    note: str = Form(""),
+    graph_snapshot: str = Form("{}"),
+    x_user_id: str = Header("Analyst_User", alias="X-User-ID"),
+    x_user_role: str = Header("analyst", alias="X-User-Role")
+):
+    """Membuat case investigasi dan menyimpan snapshot graf sebagai evidence."""
+    if x_user_role not in {"analyst", "compliance_officer"}:
+        raise HTTPException(status_code=403, detail="Otorisasi ditolak")
+    import json
+    try:
+        snapshot = json.loads(graph_snapshot or "{}")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="graph_snapshot bukan JSON valid")
+    with Session(engine) as db:
+        if db.get(CaseInvestigation, case_id):
+            raise HTTPException(status_code=409, detail="Case ID sudah ada")
+        now_str = datetime.now(timezone.utc).isoformat()
+        case = CaseInvestigation(
+            case_id=case_id, alert_id=alert_id, transaction_id=transaction_id,
+            account_id=account_id, status="OPEN", priority=priority,
+            assigned_to=x_user_id, lifecycle_history=[{"from_status": None, "to_status": "OPEN", "actor": x_user_id, "role": x_user_role, "timestamp": now_str, "note": note}],
+            notes=[{"id": str(uuid.uuid4())[:8], "author": x_user_id, "role": x_user_role, "text": note, "created_at": now_str}] if note else [],
+            graph_snapshot=snapshot
+        )
+        db.add(case)
+        log_audit(db, actor=x_user_id, role=x_user_role, action="CASE_CREATE", target_id=case_id, reason=note or "GNN investigation case created")
+        db.commit()
+        return {"status": "SUCCESS", "case_id": case_id, "snapshot_saved": True}
+
+@router.post("/cases/update")
+def update_case_status(
+    case_id: str = Form(...),
+    new_status: str = Form(...),
+    note: str = Form(...),
+    x_user_id: str = Header("Analyst_User", alias="X-User-ID"),
+    x_user_role: str = Header("compliance_officer", alias="X-User-Role")
+):
+    """Memperbarui status kasus CMS beserta catatan investigasi dan audit log."""
+    allowed_roles = {"analyst", "compliance_officer"}
+    if x_user_role not in allowed_roles:
+        raise HTTPException(status_code=403, detail="Otorisasi ditolak: Regulator hanya memiliki akses baca")
+
+    with Session(engine) as db:
+        case = db.get(CaseInvestigation, case_id)
+        if not case:
+            # Create dynamic case if not exists
+            case = CaseInvestigation(
+                case_id=case_id,
+                transaction_id=case_id,
+                account_id="UNKNOWN",
+                status="OPEN",
+                lifecycle_history=[],
+                notes=[]
+            )
+            db.add(case)
+        
+        old_status = case.status
+        case.status = new_status
+        now_str = datetime.now(timezone.utc).isoformat()
+        
+        history = list(case.lifecycle_history or [])
+        history.append({
+            "from_status": old_status,
+            "to_status": new_status,
+            "actor": x_user_id,
+            "role": x_user_role,
+            "timestamp": now_str,
+            "note": note
+        })
+        case.lifecycle_history = history
+
+        notes = list(case.notes or [])
+        if note:
+            notes.append({
+                "id": str(uuid.uuid4())[:8],
+                "author": x_user_id,
+                "role": x_user_role,
+                "text": note,
+                "created_at": now_str
+            })
+        case.notes = notes
+        
+        log_audit(db, actor=x_user_id, role=x_user_role, action=f"CASE_STATUS_{new_status}", target_id=case_id, reason=note)
+        db.commit()
+        return {"status": "SUCCESS", "case_id": case_id, "new_status": new_status}
+
 @router.post("/bri/account/block/{account_id}")
-def block_account(account_id: str):
-    """Memblokir otomatis akun nasabah (Upstream Chain Freezing)."""
+def block_account(
+    account_id: str,
+    reason: str = Form("Disuspek terafiliasi Mule / Fraud"),
+    x_user_id: str = Header("Analyst_User", alias="X-User-ID"),
+    x_user_role: str = Header("compliance_officer", alias="X-User-Role")
+):
+    """Memblokir otomatis akun nasabah (Upstream Chain Freezing) dengan RBAC & Audit Log."""
+    if x_user_role != "compliance_officer":
+        raise HTTPException(status_code=403, detail="Otorisasi ditolak: Hanya Compliance Officer/MLRO yang berhak memblokir akun")
+        
     with Session(engine) as db:
         acc = db.get(Account, account_id)
         if not acc:
             raise HTTPException(status_code=404, detail="Akun tidak ditemukan")
         acc.is_blocked = True
+        log_audit(db, actor=x_user_id, role=x_user_role, action="BLOCK_ACCOUNT", target_id=account_id, reason=reason)
         db.commit()
         return {"status": "SUCCESS", "message": f"Account {account_id} has been blocked successfully"}
 
 
 @router.post("/sentinel/alerts/resolve/{tx_id}")
-def resolve_alert_in_db(tx_id: str):
-    """Mengubah status alert di database SQLite menjadi resolved (1)."""
+def resolve_alert_in_db(
+    tx_id: str,
+    reason: str = Form("Hasil investigasi manual: Transaksi sah / False Positive"),
+    x_user_id: str = Header("Analyst_User", alias="X-User-ID"),
+    x_user_role: str = Header("compliance_officer", alias="X-User-Role")
+):
+    """Mengubah status alert di database menjadi resolved (1) dengan RBAC & Audit Log."""
+    if x_user_role != "compliance_officer":
+        raise HTTPException(status_code=403, detail="Otorisasi ditolak: Hanya Compliance Officer/MLRO yang berhak meresolusikan alert")
+
     with Session(engine) as db:
         alerts = db.query(SentinelAlert).filter(SentinelAlert.transaction_id == tx_id).all()
         for a in alerts:
             a.resolved = True
+        log_audit(db, actor=x_user_id, role=x_user_role, action="RESOLVE_ALERT", target_id=tx_id, reason=reason)
         db.commit()
-        return {"status": "SUCCESS", "message": f"Alert {tx_id} marked as resolved in SQLite DB", "count": len(alerts)}
+        return {"status": "SUCCESS", "message": f"Alert {tx_id} marked as resolved", "count": len(alerts)}
 
 
 @router.post("/bri/simulate-smurfing")
@@ -975,3 +1190,108 @@ async def api_simulate_smurfing():
             
     print("="*70 + "\n")
     return {"status": "SUCCESS", "message": f"Berhasil mensimulasikan {len(recipients)} pecahan transaksi smurfing beruntun!", "details": results}
+
+# ==============================================================================
+# ENTERPRISE AML REST API ENDPOINTS
+# ==============================================================================
+
+@router.get("/regulatory-watchlists")
+def get_regulatory_watchlists(category: str = None, limit: int = 50):
+    """Mendapatkan daftar entitas Blacklist Resmi (DTTOT, PEP, Satgas PASTI, High-Risk Crypto)."""
+    with Session(engine) as db:
+        query = db.query(RegulatoryWatchlist)
+        if category and category != 'all':
+            query = query.filter(RegulatoryWatchlist.category == category)
+        items = query.order_by(RegulatoryWatchlist.created_at.desc()).limit(limit).all()
+        return [
+            {
+                "watchlist_id": w.watchlist_id,
+                "category": w.category,
+                "entity_name": w.entity_name,
+                "alias_names": w.alias_names or [],
+                "identifier_number": w.identifier_number,
+                "identifier_type": w.identifier_type,
+                "legal_basis": w.legal_basis,
+                "risk_level": w.risk_level,
+                "is_active": w.is_active,
+                "created_at": w.created_at.isoformat() if w.created_at else None
+            }
+            for w in items
+        ]
+
+@router.get("/device-telemetry/{account_id}")
+def get_device_telemetry(account_id: str):
+    """Mendapatkan riwayat telemetri perangkat & identitas kanal digital nasabah."""
+    with Session(engine) as db:
+        telemetry = db.query(DeviceTelemetry).filter(DeviceTelemetry.account_id == account_id).first()
+        acc = db.get(Account, account_id)
+        if not telemetry and acc:
+            return {
+                "account_id": account_id,
+                "device_fingerprint": f"FP-{acc.registered_device or 'DEV-MOBILE'}",
+                "device_model": acc.registered_device or "Samsung Galaxy A54",
+                "os_version": "Android 14 (OneUI 6.1)",
+                "ip_address": acc.registered_ip or "180.252.12.88",
+                "isp_provider": "Telkomsel Indonesia",
+                "is_rooted_jailbroken": False,
+                "is_mock_location_active": False,
+                "is_vpn_proxy": False,
+                "associated_accounts_count": 1
+            }
+        elif telemetry:
+            return {
+                "account_id": telemetry.account_id,
+                "device_fingerprint": telemetry.device_fingerprint,
+                "device_model": telemetry.device_model,
+                "os_version": telemetry.os_version,
+                "ip_address": telemetry.ip_address,
+                "isp_provider": telemetry.isp_provider,
+                "is_rooted_jailbroken": telemetry.is_rooted_jailbroken,
+                "is_mock_location_active": telemetry.is_mock_location_active,
+                "is_vpn_proxy": telemetry.is_vpn_proxy,
+                "associated_accounts_count": telemetry.associated_accounts_count
+            }
+        return {"account_id": account_id, "associated_accounts_count": 1}
+
+@router.get("/mule-communities")
+def get_mule_communities():
+    """Mendapatkan daftar sindikat / klaster mule hasil deteksi GNN."""
+    with Session(engine) as db:
+        items = db.query(MuleGraphCommunity).order_by(MuleGraphCommunity.created_at.desc()).all()
+        return [
+            {
+                "cluster_id": c.cluster_id,
+                "cluster_name": c.cluster_name,
+                "core_hub_account": c.core_hub_account,
+                "total_mule_nodes": c.total_mule_nodes,
+                "aggregate_inflow": c.aggregate_inflow,
+                "aggregate_outflow": c.aggregate_outflow,
+                "target_crypto_exchange": c.target_crypto_exchange,
+                "graph_topology_type": c.graph_topology_type,
+                "risk_score": c.risk_score,
+                "detection_algorithm": c.detection_algorithm,
+                "is_frozen": c.is_frozen
+            }
+            for c in items
+        ]
+
+@router.get("/apolo-filings")
+def get_apolo_filings():
+    """Mendapatkan daftar riwayat arsip pelaporan regulasi APOLO OJK & PPATK."""
+    with Session(engine) as db:
+        items = db.query(ApoloRegulatoryFiling).order_by(ApoloRegulatoryFiling.created_at.desc()).all()
+        return [
+            {
+                "filing_id": f.filing_id,
+                "reporting_period": f.reporting_period,
+                "reporting_type": f.reporting_type,
+                "total_transactions": f.total_transactions,
+                "total_blocked_nominal": f.total_blocked_nominal,
+                "total_str_submitted": f.total_str_submitted,
+                "xml_checksum": f.xml_checksum,
+                "submission_status": f.submission_status,
+                "submitted_by": f.submitted_by,
+                "created_at": f.created_at.isoformat() if f.created_at else None
+            }
+            for f in items
+        ]

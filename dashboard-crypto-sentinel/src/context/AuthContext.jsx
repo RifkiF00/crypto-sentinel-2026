@@ -2,98 +2,120 @@
  * AuthContext.jsx — Real Role-Based Access Control (RBAC)
  * Crypto-Sentinel | Enterprise Banking FDS Platform
  * 
- * Tiga Tier Akses (Sesuai Struktur Organisasi Bank):
- * 1. admin_regulator   — OJK/BI Supervisory Access (Full Read, No Write)
- * 2. compliance_officer — Pejabat Kepatuhan APU-PPT (Full Access)
- * 3. analyst           — Analis AML (Read + Alert Resolution only)
+ * Dua Role Utama Demo (Segregation of Duties):
+ * 1. analyst           — AML Investigator (Triage, GNN Forensics, Customer 360 Masked, Case Notes, Escalate to MLRO)
+ * 2. compliance_officer — Compliance Officer / MLRO (Full Decision, Block Approval, Policy Calibration, goAML STR Draft, Advanced Governance)
+ *
+ * Role Ketiga Konseptual (Roadmap / Read-Only Preview):
+ * 3. admin_regulator   — Regulator / Auditor (OJK/BI Supervisory Read-Only Audit)
  */
 
 import { createContext, useContext, useState } from 'react';
 
 // ─── Permission Matrix ────────────────────────────────────────────────────────
 export const ROLES = {
-  admin_regulator: {
-    label: 'Pengawas Regulasi (OJK / BI)',
-    sublabel: 'OJK — Supervisory / Read-Only Audit',
-    avatar: 'AR',
-    badge: 'SUPERVISORY',
-    badgeColor: '#7c3aed',
-    level: 'LEVEL 3 — Supervisory Audit',
-    defaultPage: 'dashboard',
-    allowedMenus: ['dashboard', 'analysis', 'compliance', 'apolo_governance'],
-    description: 'Audit kepatuhan sistem, pengawasan independen, validasi transparansi model AI & audit log tanpa intervensi operasional.',
-    permissions: {
-      viewDashboard: true,
-      viewLiveMonitoring: false,  // Tidak ada di daftar menu pengawas
-      viewGNN: true,              // Transparansi Model GNN (XAI)
-      viewAlerts: false,          // Tidak ada di daftar menu pengawas
-      triageAlert: false,
-      addNotes: false,
-      executeBlock: false,
-      resolveAlert: false,
-      generateLTKM: false,
-      viewRules: false,           // Tidak ada di menu pengawas
-      editRules: false,
-      viewCompliance: true,       // Audit Log & Traceability
-      viewApolo: true,            // APOLO OJK Compliance Preview
-      downloadLTKM: true,
-      manageGovernance: false,
-    }
-  },
-  compliance_officer: {
-    label: 'Pejabat Kepatuhan (Compliance Officer / MLRO)',
-    sublabel: 'Unit APU-PPT & Kepatuhan Bank',
-    avatar: 'PK',
-    badge: 'FULL ACCESS',
-    badgeColor: '#059669',
-    level: 'LEVEL 3 — MLRO / Full Access',
-    defaultPage: 'dashboard',
-    allowedMenus: ['dashboard', 'monitoring', 'analysis', 'alerts', 'rules', 'compliance'],
-    description: 'Pengambilan keputusan akhir pemblokiran, kalibrasi kebijakan risiko POJK 8/2023, dan persetujuan pelaporan resmi PPATK.',
-    permissions: {
-      viewDashboard: true,       // Konsolidasi Risk Dashboard
-      viewLiveMonitoring: true,  // Live Sentinel Stream
-      viewGNN: true,             // Analisis Graf Relasi (GNN)
-      viewAlerts: true,          // Approval Engine & Block Action / CMS
-      triageAlert: true,
-      addNotes: true,
-      executeBlock: true,        // Approval Freeze / Unfreeze
-      resolveAlert: true,        // Keputusan final
-      generateLTKM: true,        // Multi-Entity SAR Generator
-      viewRules: true,           // Global & Tenant-Specific Rule Calibration
-      editRules: true,
-      viewCompliance: true,      // Kepatuhan & Audit PPATK
-      viewApolo: false,
-      downloadLTKM: true,
-      manageGovernance: true,
-    }
-  },
   analyst: {
-    label: 'Analis AML / Fraud Investigator',
+    label: 'AML Investigator',
     sublabel: 'Unit Forensik & Triage Transaksi',
-    avatar: 'AA',
-    badge: 'READ + TRIAGE',
+    avatar: 'AI',
+    badge: 'INVESTIGATOR',
     badgeColor: '#0284c7',
-    level: 'LEVEL 1 — Read + Triage',
+    level: 'LEVEL 1 — Investigator & Triage',
     defaultPage: 'dashboard',
     allowedMenus: ['dashboard', 'monitoring', 'analysis', 'alerts'],
-    description: 'Deteksi cepat, investigasi transaksi harian, analisis graf relasi GNN, dan eskalasi indikasi ancaman ke Pejabat Kepatuhan.',
+    description: 'Deteksi cepat transaksi mencurigakan, eksplorasi jaringan relasi GNN, analisis profil Customer 360 (PII masked), dan eskalasi indikasi ke MLRO.',
     permissions: {
-      viewDashboard: true,       // Dashboard Operasional (Beban Kerja & Triage Personal)
-      viewLiveMonitoring: true,  // Live Sentinel Stream
-      viewGNN: true,             // Analisis Graf Relasi (GNN) - Cross-Bank Explorer
-      viewAlerts: true,          // Investigasi Alert (CMS)
-      triageAlert: true,         // Triage alert
-      addNotes: true,            // Investigation Notes & mutasi
-      executeBlock: false,       // Eskalasi ke MLRO
-      resolveAlert: false,
-      generateLTKM: false,
-      viewRules: false,          // Dihilangkan
+      viewDashboard: true,
+      viewLiveMonitoring: true,
+      viewGNN: true,
+      viewAlerts: true,
+      triageAlert: true,
+      addNotes: true,
+      createCase: true,
+      escalateCase: true,
+      requestDraftLTKM: true,
+      viewMaskedData: true,
+      unmaskPII: false,           // Hanya MLRO terotorisasi
+      executeBlock: false,        // Segregation of duties: Investigator tidak boleh memblokir final
+      resolveAlert: false,        // Resolusi final oleh MLRO
+      overrideCircuitBreaker: false,
+      viewRules: false,
       editRules: false,
-      viewCompliance: false,     // Dihilangkan
+      viewCompliance: false,
       viewApolo: false,
       downloadLTKM: false,
       manageGovernance: false,
+      deleteAuditLogs: false,
+    }
+  },
+  compliance_officer: {
+    label: 'Compliance Officer / MLRO',
+    sublabel: 'Unit APU-PPT & Kepatuhan Bank',
+    avatar: 'CO',
+    badge: 'MLRO · FULL ACCESS',
+    badgeColor: '#059669',
+    level: 'LEVEL 3 — MLRO / Full Decision',
+    defaultPage: 'dashboard',
+    allowedMenus: [
+      'dashboard', 'monitoring', 'analysis', 'alerts',
+      'risk_controls', 'rules', 'compliance', 'apolo_governance',
+      'model_governance', 'integration', 'administration',
+      'operations', 'investigation_360'
+    ],
+    description: 'Pengambilan keputusan akhir pemblokiran rekening, kalibrasi threshold POJK 8/2023, verifikasi draf LTKM/STR ke PPATK, dan tata kelola platform enterprise.',
+    permissions: {
+      viewDashboard: true,
+      viewLiveMonitoring: true,
+      viewGNN: true,
+      viewAlerts: true,
+      triageAlert: true,
+      addNotes: true,
+      createCase: true,
+      escalateCase: true,
+      executeBlock: true,         // Otorisasi pemblokiran rekening permanen (wajib reason)
+      resolveAlert: true,         // Otorisasi penutupan/resolusi kasus (wajib reason)
+      overrideCircuitBreaker: true, // 2-step confirmation + audit trail
+      generateLTKM: true,         // Generator draf goAML PPATK 3 detik
+      viewRules: true,            // Kalibrasi threshold POJK 8/2023
+      editRules: true,
+      viewCompliance: true,       // Kepatuhan & Audit PPATK
+      viewApolo: true,            // APOLO OJK Compliance Preview
+      downloadLTKM: true,
+      manageGovernance: true,
+      unmaskPII: true,            // Membuka sensor data nasabah (wajib reason)
+      deleteAuditLogs: false,     // Audit log bersifat immutable
+    }
+  },
+  admin_regulator: {
+    label: 'Regulator / Auditor (Roadmap Preview)',
+    sublabel: 'OJK / BI — Supervisory Read-Only Audit',
+    avatar: 'RA',
+    badge: 'ROADMAP · AUDIT',
+    badgeColor: '#7c3aed',
+    level: 'LEVEL 3 — Supervisory Audit',
+    defaultPage: 'dashboard',
+    allowedMenus: ['dashboard', 'analysis', 'compliance', 'apolo_governance', 'model_governance'],
+    description: 'Pengawasan independen, penelusuran model card AI, dan verifikasi jejak audit trail kepatuhan perbankan nasional.',
+    permissions: {
+      viewDashboard: true,
+      viewLiveMonitoring: false,
+      viewGNN: true,
+      viewAlerts: false,
+      triageAlert: false,
+      addNotes: false,
+      createCase: false,
+      escalateCase: false,
+      executeBlock: false,
+      resolveAlert: false,
+      generateLTKM: false,
+      viewRules: false,
+      editRules: false,
+      viewCompliance: true,
+      viewApolo: true,
+      downloadLTKM: true,
+      manageGovernance: false,
+      unmaskPII: false,
+      deleteAuditLogs: false,
     }
   }
 };
@@ -104,29 +126,22 @@ export const DEMO_USERS = [
     id: 'u1',
     email: 'compliance@bankkuningan.co.id',
     password: 'SentinelPass2026!',
-    name: 'Pejabat Kepatuhan (Compliance Officer)',
+    name: 'Desta Pratama, S.E., CAMS',
     role: 'compliance_officer',
     bank: 'PT BPR Kuningan (Perseroda)',
-    nip: 'BKG-COMPLIANCE-0089',
+    nip: 'BKG-MLRO-0089',
   },
   {
     id: 'u2',
-    email: 'regulator@ojk.go.id',
-    password: 'OJKInspect2026!',
-    name: 'Pengawas Regulasi (OJK / BI Inspector)',
-    role: 'admin_regulator',
-    bank: 'OJK — Pengawasan Perbankan',
-    nip: 'OJK-SUPERVISORY-0042',
-  },
-  {
-    id: 'u3',
     email: 'analyst@bankbjb.co.id',
     password: 'AnalystBjb2026!',
-    name: 'Analis AML / Fraud Investigator',
+    name: 'Aam Firmansyah, S.Kom.',
     role: 'analyst',
     bank: 'Bank bjb — Unit AML & Forensik',
-    nip: 'BJB-ANALYST-0211',
-  }
+    nip: 'BJB-INVESTIGATOR-0211',
+  },
+  // Regulator remains supported by RBAC as a roadmap/read-only preview,
+  // but is intentionally not presented as an operational demo login.
 ];
 
 // ─── Context ─────────────────────────────────────────────────────────────────

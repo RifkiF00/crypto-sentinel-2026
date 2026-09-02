@@ -64,12 +64,13 @@ import GNNVisualization from './GNNVisualization';
 import ResponsiveChartWrapper from './ResponsiveChartWrapper';
 
 // Dynamic API Integration
-import { checkHealth, analyzeTransaction, mapApiLogToTx, fetchCryptoExchanges, fetchBlockedPatterns, fetchMuleAccounts, fetchStatistics, fetchTransactions, resolveAlertApi } from '../services/api';
+import { checkHealth, analyzeTransaction, mapApiLogToTx, fetchCryptoExchanges, fetchBlockedPatterns, fetchMuleAccounts, fetchStatistics, fetchTransactions, resolveAlertApi, blockAccountInNeon, generateInvestigationLtkm, exportMaskedEvidence, fetchRegulatoryWatchlists, fetchMuleCommunities, fetchApoloFilings } from '../services/api';
+import { maskName, maskAccount, maskNik, maskIp } from '../utils/masking';
 
 // ==========================================
 // 1. LIVE MONITORING VIEW
 // ==========================================
-export function MonitoringView({ transactions, setTransactions, addToast, rules }) {
+export function MonitoringView({ transactions, setTransactions, addToast, rules, isMasked = true, onNavigateToGNN, onOpenCustomer360 }) {
   const [isLive, setIsLive] = useState(true);
   const [autoBlock] = useState(rules.autoBlockEnabled);
   const [timeFilter, setTimeFilter] = useState('1day'); // '1day' | '7days' | 'all'
@@ -296,6 +297,7 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
                       <th>Nominal</th>
                       <th>Skor Risiko</th>
                       <th>Status</th>
+                      <th>Aksi Forensik</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -305,11 +307,11 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
                           <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{txn.id}</div>
                           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{txn.timestamp.split(' ')[1]}</div>
                         </td>
-                        <td style={{ fontWeight: 500 }}>{txn.senderName}</td>
-                        <td>{txn.senderBank} ({txn.senderAccount})</td>
+                        <td style={{ fontWeight: 500 }}>{maskName(txn.senderName, isMasked)}</td>
+                        <td>{txn.senderBank} ({maskAccount(txn.senderAccount, isMasked)})</td>
                         <td>
-                          <div style={{ fontWeight: 600 }}>{txn.destination}</div>
-                          {txn.walletAddress && <div className="wallet-address">{txn.walletAddress}</div>}
+                          <div style={{ fontWeight: 600 }}>{maskName(txn.destination, isMasked)}</div>
+                          {txn.walletAddress && <div className="wallet-address">{maskAccount(txn.walletAddress, isMasked)}</div>}
                         </td>
                         <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{formatCurrency(txn.amount)}</td>
                         <td>
@@ -330,6 +332,65 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
                             <span className="badge-dot" />
                             {txn.status === 'blocked' ? 'Dicegah' : txn.status === 'flagged' ? 'Ditandai' : 'Lolos'}
                           </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              className="btn btn-sm"
+                              onClick={() => {
+                                if (onNavigateToGNN) onNavigateToGNN(txn);
+                              }}
+                              style={{
+                                fontSize: '0.7rem',
+                                padding: '3px 8px',
+                                background: 'rgba(2, 132, 199, 0.12)',
+                                color: '#38bdf8',
+                                border: '1px solid rgba(2, 132, 199, 0.3)',
+                                borderRadius: 6,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                              title="Buka Subgraf GNN atas transaksi ini"
+                            >
+                              <GitBranch size={12} /> GNN
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm"
+                              onClick={() => {
+                                if (onOpenCustomer360) {
+                                  onOpenCustomer360({
+                                    id: txn.senderAccount,
+                                    name: txn.senderName,
+                                    account: txn.senderAccount,
+                                    bank: txn.senderBank,
+                                    riskScore: txn.riskScore,
+                                    amount: txn.amount
+                                  });
+                                }
+                              }}
+                              style={{
+                                fontSize: '0.7rem',
+                                padding: '3px 8px',
+                                background: 'rgba(255, 255, 255, 0.06)',
+                                color: 'var(--text-primary)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: 6,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                              }}
+                              title="Buka Profil Customer 360"
+                            >
+                              <User size={12} /> 360
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -373,7 +434,7 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules 
 // ==========================================
 // 2. ALERTS AND THREATS VIEW
 // ==========================================
-export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, onNavigateToGNN }) {
+export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, onNavigateToGNN, onOpenCustomer360, isMasked = true }) {
   const { currentUser, can } = useAuth();
   const isAnalyst = currentUser?.role === 'analyst';
   const isRegulator = currentUser?.role === 'admin_regulator';
@@ -389,6 +450,15 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, on
   const [showLtkmModal, setShowLtkmModal] = useState(false);
   const [ltkmHtml, setLtkmHtml] = useState('');
   const [isGeneratingLtkm, setIsGeneratingLtkm] = useState(false);
+
+  // Compliance Action Reason Modal State (POJK 8/2023 & UU PDP Audit Trail)
+  const [actionReasonModal, setActionReasonModal] = useState({
+    open: false,
+    alertId: null,
+    actionType: 'block',
+    title: '',
+    reasonText: ''
+  });
 
   // Enterprise Triage & Notes State per Alert
   const [triageStatuses, setTriageStatuses] = useState({});
@@ -426,20 +496,37 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, on
   };
 
   const handleGenerateLtkm = async (alert) => {
+    if (!can('requestDraftLTKM') && !can('generateLTKM')) {
+      addToast('Role Anda tidak memiliki izin membuat draf LTKM.', 'error');
+      return;
+    }
+
     setIsGeneratingLtkm(true);
     try {
       const txnId = alert.transaction_id || alert.id || 'TXN-9901';
-      const res = await fetch(`http://localhost:8000/api/v1/sentinel/str/download/${txnId}`);
-      if (res.ok) {
-        const html = await res.text();
-        setLtkmHtml(html);
-        setShowLtkmModal(true);
-        addToast('📄 Draf Laporan LTKM Resmi PPATK (goAML) berhasil dikompilasi!', 'success');
-      } else {
-        addToast('Gagal memuat format LTKM dari API', 'error');
-      }
+      const accountId = alert.account_id || alert.sender_account || alert.senderAccount || 'UNKNOWN';
+      const draft = await generateInvestigationLtkm({
+        caseId: alert.case_id || null,
+        transactionId: txnId,
+        senderAccount: accountId,
+        destinationAccount: alert.destination_account || alert.receiver_account || 'CRYPTO_DESTINATION',
+        amount: Number(alert.amount || 0),
+        riskScore: Number(alert.risk_score || alert.riskScore || 0),
+        reasons: alert.reasons || alert.indicators || [alert.description || 'Indikasi transaksi anomali'],
+        senderName: getSenderName(alert),
+        destinationName: alert.destination_name || 'Rekening Penerima / Bursa Kripto',
+        bankName: currentUser?.bank || undefined,
+        complianceOfficer: currentUser?.name || undefined,
+        masked: isMasked,
+        actor: currentUser?.id || currentUser?.name || 'Unknown_User',
+        role: currentUser?.role || 'analyst'
+      });
+      const html = await exportMaskedEvidence(draft.report_id);
+      setLtkmHtml(html);
+      setShowLtkmModal(true);
+      addToast('📄 Draf LTKM terhubung ke evidence investigasi dan diekspor dalam mode masked.', 'success');
     } catch (e) {
-      addToast('Koneksi ke backend API terputus', 'error');
+      addToast(`Gagal mengompilasi draf LTKM: ${e.message}`, 'error');
     } finally {
       setIsGeneratingLtkm(false);
     }
@@ -452,12 +539,48 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, on
     return matchesSearch && matchesSeverity;
   });
 
-  const handleResolveAlert = (id, action) => {
-    // Actions: 'block', 'dismiss', 'investigate'
-    resolveAlertApi(id);
+  const handleResolveAlert = async (id, action, customReason = '') => {
+    // Actions: 'block', 'dismiss', 'investigate'; reason is mandatory for mutative actions.
+    const reasonText = customReason.trim();
+    if (!reasonText) {
+      addToast('Alasan keputusan wajib diisi untuk audit trail.', 'error');
+      return;
+    }
+
+    const alertItem = alerts.find(a => a.id === id);
+    const accountMatch = alertItem?.description?.match(/\d{8,}/);
+    if (action === 'block' && accountMatch) {
+      try {
+        await blockAccountInNeon(accountMatch[0], reasonText, currentUser?.id || currentUser?.name || 'MLRO', currentUser?.role || 'compliance_officer');
+      } catch (error) {
+        addToast(`❌ Pemblokiran backend gagal: ${error.message}`, 'error');
+        return;
+      }
+    }
+    if (action !== 'block') {
+      try {
+        await resolveAlertApi(id, reasonText, currentUser?.id || currentUser?.name || 'MLRO', currentUser?.role || 'compliance_officer');
+      } catch (error) {
+        addToast(`❌ Resolusi backend gagal: ${error.message}`, 'error');
+        return;
+      }
+    }
+
+    const decisionReason = reasonText || (action === 'block' ? 'Pola indikasi pencucian uang bursa kripto (POJK 8/2023)' : 'Verifikasi kepatuhan transaksi');
+
+    // Add note of the resolution
+    const noteObj = {
+      id: Date.now().toString(),
+      author: `${currentUser?.name || 'Compliance Officer'} (${currentUser?.role || 'MLRO'})`,
+      text: `[KEPUTUSAN ${action.toUpperCase()}] ${decisionReason}`,
+      time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
+    };
+    setInvestigationNotes(prev => ({
+      ...prev,
+      [id]: [...(prev[id] || []), noteObj]
+    }));
 
     if (action === 'block') {
-      const alertItem = alerts.find(a => a.id === id);
       if (alertItem) {
         // Extract wallet or info if matches
         const walletMatch = alertItem.description.match(/0x[a-fA-F0-9]{40}/);
@@ -469,25 +592,26 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, on
         setBlockedEntities(prev => ({
           ...prev,
           wallets: [
-            { id: Math.random().toString(), address: walletToBlock, dateAdded: new Date().toISOString().substring(0, 10), reason: `AML Alert: ${alertItem.title}` },
+            { id: Math.random().toString(), address: walletToBlock, dateAdded: new Date().toISOString().substring(0, 10), reason: `AML Decision: ${decisionReason}` },
             ...prev.wallets
           ],
           banks: [
-            { id: Math.random().toString(), account: accountToBlock, holder: alertItem.description.split(' mengirim')[0] || 'Unknown Sender', bank: 'BCA', dateAdded: new Date().toISOString().substring(0, 10), reason: `AML Alert: ${alertItem.title}` },
+            { id: Math.random().toString(), account: accountToBlock, holder: alertItem.description.split(' mengirim')[0] || 'Unknown Sender', bank: 'BCA', dateAdded: new Date().toISOString().substring(0, 10), reason: `AML Decision: ${decisionReason}` },
             ...prev.banks
           ]
         }));
 
-        addToast(`🛡️ Alert diselesaikan. Akun & wallet ${walletToBlock.substring(0, 8)}... berhasil diblokir!`, 'error');
+        addToast(`🛡️ Pemblokiran disetujui MLRO: Rekening & wallet ${walletToBlock.substring(0, 8)}... berhasil dibekukan! Alasan dicatat di audit log.`, 'error');
       }
     } else if (action === 'dismiss') {
-      addToast('✅ Alert ditandai sebagai AMAN dan diselesaikan.', 'success');
+      addToast(`✅ Kasus ditutup sebagai FALSE POSITIVE oleh ${currentUser?.name || 'MLRO'}. Alasan: ${decisionReason}`, 'success');
     } else if (action === 'investigate') {
-      addToast('📂 Alert dalam status investigasi mendalam OJK.', 'warning');
+      addToast(`📂 Kasus divalidasi sebagai ANCAMAN NYATA (Valid Threat). Draf pelaporan siap diekspor.`, 'warning');
     }
 
     setAlerts(prev => prev.filter(a => a.id !== id));
     setSelectedAlert(null);
+    setActionReasonModal({ open: false, alertId: null, actionType: 'block', title: '', reasonText: '' });
   };
 
   const getSenderName = (alert) => {
@@ -883,7 +1007,15 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, on
                           <button
                             className="btn btn-primary"
                             style={{ background: 'var(--gradient-danger)', justifyContent: 'center', fontSize: '0.78rem' }}
-                            onClick={() => handleResolveAlert(selectedAlert.id, 'block')}
+                            onClick={() => {
+                              setActionReasonModal({
+                                open: true,
+                                alertId: selectedAlert.id,
+                                actionType: 'block',
+                                title: 'Otorisasi Pemblokiran Rekening & Wallet (MLRO)',
+                                reasonText: 'Terindikasi kuat sindikat smurfing dan pelarian dana ke bursa kripto luar negeri (POJK 8/2023).'
+                              });
+                            }}
                           >
                             🛡️ Setujui Pemblokiran Akun &amp; Wallet Crypto
                           </button>
@@ -907,14 +1039,30 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, on
                             <button
                               className="btn btn-ghost"
                               style={{ justifyContent: 'center', fontSize: '0.72rem', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' }}
-                              onClick={() => handleResolveAlert(selectedAlert.id, 'investigate')}
+                              onClick={() => {
+                                setActionReasonModal({
+                                  open: true,
+                                  alertId: selectedAlert.id,
+                                  actionType: 'investigate',
+                                  title: 'Resolusi Kasus: Ancaman Tervalidasi (Valid Threat)',
+                                  reasonText: 'Anomali jaringan transaksi dan korelasi rekening mule terbukti valid. Diteruskan untuk pelaporan PPATK.'
+                                });
+                              }}
                             >
                               ✅ Putuskan: Valid Threat
                             </button>
                             <button
                               className="btn btn-ghost"
                               style={{ justifyContent: 'center', fontSize: '0.72rem', color: 'var(--text-muted)' }}
-                              onClick={() => handleResolveAlert(selectedAlert.id, 'dismiss')}
+                              onClick={() => {
+                                setActionReasonModal({
+                                  open: true,
+                                  alertId: selectedAlert.id,
+                                  actionType: 'dismiss',
+                                  title: 'Resolusi Kasus: False Positive',
+                                  reasonText: 'Transaksi telah dikonfirmasi sah melalui verifikasi dokumen CDD/EDD nasabah.'
+                                });
+                              }}
                             >
                               ❌ False Positive
                             </button>
@@ -1429,6 +1577,130 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, on
           </motion.div>
         </div>
       )}
+
+      {/* Compliance Action Reason Modal (MLRO Decision Audit Log) */}
+      {actionReasonModal.open && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 999999,
+            background: 'rgba(3, 8, 30, 0.75)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20
+          }}
+          onClick={() => setActionReasonModal({ open: false, alertId: null, actionType: 'block', title: '', reasonText: '' })}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            style={{
+              width: '100%',
+              maxWidth: 480,
+              background: 'var(--card-bg, #0f172a)',
+              border: `1.5px solid ${actionReasonModal.actionType === 'block' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)'}`,
+              borderRadius: 18,
+              padding: 24,
+              boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
+              color: 'var(--text-primary)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{
+                width: 38,
+                height: 38,
+                borderRadius: 10,
+                background: actionReasonModal.actionType === 'block' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                color: actionReasonModal.actionType === 'block' ? '#ef4444' : '#10b981',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {actionReasonModal.actionType === 'block' ? <ShieldAlert size={20} /> : <CheckCircle2 size={20} />}
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>{actionReasonModal.title}</h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Otorisator: <strong>{currentUser?.name || 'Compliance Officer'}</strong> ({currentUser?.role || 'MLRO'})
+                </p>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 14 }}>
+              Setiap keputusan pemblokiran atau penutupan kasus kepatuhan wajib disertai dasar pertimbangan forensik untuk memenuhi audit trail POJK 8/2023 dan regulasi PPATK.
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleResolveAlert(actionReasonModal.alertId, actionReasonModal.actionType, actionReasonModal.reasonText);
+              }}
+            >
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
+                Dasar Pertimbangan / Alasan Keputusan:
+              </label>
+              <textarea
+                value={actionReasonModal.reasonText}
+                onChange={(e) => setActionReasonModal(prev => ({ ...prev, reasonText: e.target.value }))}
+                placeholder="Masukkan dasar pertimbangan hukum/forensik..."
+                rows={3}
+                required
+                style={{
+                  width: '100%',
+                  background: 'var(--bg-input, #1e293b)',
+                  border: '1px solid var(--border-color, #334155)',
+                  borderRadius: 8,
+                  padding: 10,
+                  color: 'var(--text-primary, #fff)',
+                  fontSize: '0.8rem',
+                  marginBottom: 16,
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box'
+                }}
+              />
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setActionReasonModal({ open: false, alertId: null, actionType: 'block', title: '', reasonText: '' })}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: 8,
+                    background: 'transparent',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    fontWeight: 600
+                  }}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    background: actionReasonModal.actionType === 'block' ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                    border: 'none',
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    fontWeight: 800
+                  }}
+                >
+                  {actionReasonModal.actionType === 'block' ? 'Konfirmasi Pemblokiran & Catat Audit' : 'Konfirmasi Resolusi Kasus'}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1436,34 +1708,45 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, on
 // ==========================================
 // 3. TRANSACTION ANALYSIS VIEW
 // ==========================================
-export function AnalysisView({ transactions, addToast }) {
+export function AnalysisView({ transactions, addToast, isMasked = true, onOpenCustomer360, selectedEntity }) {
   const chartTheme = useChartTheme();
   const [analysisRange, setAnalysisRange] = useState('30days');
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
-  const [activeAnalysisTab, setActiveAnalysisTab] = useState('patterns');
+  const [activeAnalysisTab, setActiveAnalysisTab] = useState('gnn');
   const [exchanges, setExchanges] = useState(cryptoExchangeData);
   const [patterns, setPatterns] = useState(topBlockedPatterns);
+  const [analysisStats, setAnalysisStats] = useState(null);
+  const [analysisSource, setAnalysisSource] = useState('DEMO FIXTURE');
+  const [muleCommunities, setMuleCommunities] = useState([]);
+  const [communitySource, setCommunitySource] = useState('DATABASE SYNC');
 
   useEffect(() => {
     let active = true;
     async function loadAnalysisData() {
       try {
-        const online = await checkHealth();
+        const [statsRes, exRes, patRes, commRes] = await Promise.all([
+          fetchStatistics(),
+          fetchCryptoExchanges(),
+          fetchBlockedPatterns(),
+          fetchMuleCommunities()
+        ]);
         if (!active) return;
-        if (online) {
-          const exRes = await fetchCryptoExchanges();
-          const patRes = await fetchBlockedPatterns();
-          if (active) {
-            setExchanges(exRes);
-            setPatterns(patRes);
-          }
-        }
+        setAnalysisStats(statsRes);
+        setExchanges(exRes.data || exRes);
+        setPatterns(patRes.data || patRes);
+        const communities = commRes?.data || [];
+        setMuleCommunities(communities);
+        setCommunitySource(commRes?.sourceMeta?.label || commRes?.dataSource || 'DATABASE SYNC');
+        const sources = [statsRes, exRes, patRes, commRes].map(item => item?.sourceMeta?.label || item?.dataSource);
+        setAnalysisSource(sources.some(source => String(source).includes('LIVE')) ? 'LIVE · SENTINEL API' : 'DEMO FIXTURE');
       } catch (e) {
         console.error("Failed to load analysis page data:", e);
+        if (active) setAnalysisSource('DEMO FIXTURE');
       }
     }
     loadAnalysisData();
+    return () => { active = false; };
   }, []);
 
 
@@ -1522,19 +1805,22 @@ AUDITOR SYSTEM    : CRYPTO-SENTINEL FDS ENGINE v3.2
   };
 
   const analysisTabs = [
-    { id: 'patterns', label: 'Analisis Pola AML', icon: <BarChart3 size={16} /> },
-    { id: 'mule', label: 'Deteksi Rekening Mule', icon: <Users size={16} /> },
-    { id: 'gnn', label: 'GNN Network Analysis', icon: <Activity size={16} /> },
+    { id: 'gnn', label: 'GNN Network Workbench', icon: <Activity size={16} /> },
+    { id: 'patterns', label: 'Distribusi Bursa & Pola AML', icon: <BarChart3 size={16} /> },
   ];
 
   return (
     <div className="analysis-view">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Analisis Mendalam OJK</h2>
-          <p style={{ color: 'var(--text-muted)' }}>Visualisasi pola penimbunan pecahan, deteksi rekening mule, dan analisis jaringan transaksi dengan GNN.</p>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.02em' }}>GNN Network Workbench</h2>
+          <p style={{ color: 'var(--text-muted)', marginTop: 6 }}>Investigasi relasional multi-hop untuk analisis AML, dengan data statistik dan distribusi bursa dari Sentinel API.</p>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-card-subtle)', color: 'var(--text-muted)', fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.04em' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: analysisSource.startsWith('LIVE') ? 'var(--status-success)' : 'var(--status-warning)' }} />
+            {analysisSource}
+          </span>
           {activeAnalysisTab === 'patterns' && (
             <>
               <select
@@ -1610,15 +1896,15 @@ AUDITOR SYSTEM    : CRYPTO-SENTINEL FDS ENGINE v3.2
                 </div>
                 <div className="card-body">
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-                    <div style={{ background: 'var(--bg-input)', padding: 12, borderRadius: 'var(--radius-md)' }}>
-                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Minggu Ini (Mei W4)</span>
-                      <p style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--status-danger)', fontFamily: 'var(--font-mono)' }}>Rp 15.2M</p>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--status-success)', fontWeight: 600 }}>🛡️ 198 Transaksi Blok</span>
+                    <div style={{ background: 'var(--bg-input)', padding: 12, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Transaksi Dianalisis</span>
+                      <p style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{formatNumber(analysisStats?.totalTransactions || 0)}</p>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Perubahan: {analysisStats?.totalTransactionsChange ?? '—'}%</span>
                     </div>
-                    <div style={{ background: 'var(--bg-input)', padding: 12, borderRadius: 'var(--radius-md)' }}>
-                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Minggu Lalu (Mei W3)</span>
-                      <p style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Rp 12.8M</p>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>🛡️ 162 Transaksi Blok</span>
+                    <div style={{ background: 'var(--bg-input)', padding: 12, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Nominal Dicegah</span>
+                      <p style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--status-danger)', fontFamily: 'var(--font-mono)' }}>{formatCurrency(analysisStats?.totalValueBlocked || 0)}</p>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Transaksi blok: {formatNumber(analysisStats?.blockedTransactions || 0)}</span>
                     </div>
                   </div>
 
@@ -1677,20 +1963,7 @@ AUDITOR SYSTEM    : CRYPTO-SENTINEL FDS ENGINE v3.2
           </motion.div>
         )}
 
-        {/* Tab 2: Mule Account Analysis */}
-        {activeAnalysisTab === 'mule' && (
-          <motion.div
-            key="mule"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-          >
-            <MuleAccountAnalysis addToast={addToast} />
-          </motion.div>
-        )}
-
-        {/* Tab 3: GNN Network Analysis */}
+        {/* GNN Network Workbench */}
         {activeAnalysisTab === 'gnn' && (
           <motion.div
             key="gnn"
@@ -1699,7 +1972,69 @@ AUDITOR SYSTEM    : CRYPTO-SENTINEL FDS ENGINE v3.2
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
           >
-            <GNNVisualization addToast={addToast} />
+            <div className="card" style={{ padding: 22, marginBottom: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <h3 className="card-title"><Brain size={18} /> Klaster Sindikat Mule Terdeteksi (GraphSAGE + Leiden)</h3>
+                  <span style={{ fontSize: '0.68rem', color: communitySource.includes('LIVE') ? 'var(--status-success)' : 'var(--text-muted)', fontWeight: 800 }}>● {communitySource} · {muleCommunities.length || 0} CLUSTER</span>
+                </div>
+              </div>
+              <div className="table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Cluster ID</th>
+                      <th>Nama Sindikat</th>
+                      <th>Hub Account</th>
+                      <th>Total Node Mule</th>
+                      <th>Inflow Agregat</th>
+                      <th>Outflow Agregat</th>
+                      <th>Topologi Graf</th>
+                      <th>Risk Score</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {muleCommunities.length === 0 && (
+                      <tr>
+                        <td colSpan={9} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 24 }}>Belum ada klaster sindikat mule tersinkronisasi dari database.</td>
+                      </tr>
+                    )}
+                    {muleCommunities.map((cluster) => (
+                      <tr key={cluster.cluster_id}>
+                        <td><code style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}>{cluster.cluster_id}</code></td>
+                        <td style={{ fontWeight: 700 }}>{cluster.cluster_name}</td>
+                        <td><code style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--accent-primary)' }}>{cluster.core_hub_account}</code></td>
+                        <td style={{ fontFamily: 'var(--font-mono)' }}>{cluster.total_mule_nodes} Node</td>
+                        <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--status-success)' }}>{formatCurrency(cluster.aggregate_inflow || 0)}</td>
+                        <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--status-danger)' }}>{formatCurrency(cluster.aggregate_outflow || 0)}</td>
+                        <td>
+                          <span className={`badge ${cluster.graph_topology_type?.includes('CYCLIC') ? 'badge-blocked' : cluster.graph_topology_type?.includes('FAN_OUT') ? 'badge-flagged' : 'badge-pending'}`}>
+                            {cluster.graph_topology_type}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 800, color: (cluster.risk_score || 0) >= 90 ? 'var(--status-danger)' : 'var(--status-warning)', fontFamily: 'var(--font-mono)' }}>
+                            {(cluster.risk_score || 0).toFixed(1)}%
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`badge ${cluster.is_frozen ? 'badge-approved' : 'badge-blocked'}`}>
+                            {cluster.is_frozen ? 'FROZEN' : 'ACTIVE'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <GNNVisualization
+              addToast={addToast}
+              onOpenCustomer360={onOpenCustomer360}
+              selectedEntity={selectedEntity}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -2097,6 +2432,58 @@ export function RiskProfilesView({ addToast }) {
 // ==========================================
 export function BlocklistView({ blockedEntities, setBlockedEntities, addToast }) {
   const [activeTab, setActiveTab] = useState('wallets');
+  const [watchlists, setWatchlists] = useState([]);
+  const [isLoadingWatchlists, setIsLoadingWatchlists] = useState(false);
+  const [watchlistSource, setWatchlistSource] = useState('DATABASE SYNC');
+
+  const loadWatchlists = async () => {
+    setIsLoadingWatchlists(true);
+    try {
+      const response = await fetchRegulatoryWatchlists('all');
+      const records = response?.data || [];
+      setWatchlists(records);
+      setWatchlistSource(response?.sourceMeta?.label || response?.dataSource || 'DATABASE SYNC');
+      if (records.length > 0) {
+        const mapped = {
+          wallets: records.filter(item => item.identifier_type === 'WALLET_ADDRESS').map(item => ({
+            id: item.watchlist_id,
+            address: item.identifier_number,
+            dateAdded: item.created_at ? item.created_at.substring(0, 10) : '-',
+            reason: `${item.category}: ${item.legal_basis || 'Regulatory watchlist'}`
+          })),
+          banks: records.filter(item => item.identifier_type === 'BANK_ACCOUNT').map(item => ({
+            id: item.watchlist_id,
+            account: item.identifier_number,
+            holder: item.entity_name,
+            bank: item.country_origin || 'Indonesia',
+            dateAdded: item.created_at ? item.created_at.substring(0, 10) : '-',
+            reason: `${item.category}: ${item.legal_basis || 'Regulatory watchlist'}`
+          })),
+          ids: records.filter(item => ['NATIONAL_ID', 'PASSPORT', 'NPWP'].includes(item.identifier_type)).map(item => ({
+            id: item.watchlist_id,
+            nik: item.identifier_number,
+            name: item.entity_name,
+            dateAdded: item.created_at ? item.created_at.substring(0, 10) : '-',
+            reason: `${item.category}: ${item.legal_basis || 'Regulatory watchlist'}`
+          }))
+        };
+        setBlockedEntities(prev => ({
+          wallets: mapped.wallets.length ? mapped.wallets : prev.wallets,
+          banks: mapped.banks.length ? mapped.banks : prev.banks,
+          ids: mapped.ids.length ? mapped.ids : prev.ids
+        }));
+      }
+    } catch (error) {
+      console.warn('Watchlist sync failed:', error);
+      setWatchlistSource('LOCAL FALLBACK');
+    } finally {
+      setIsLoadingWatchlists(false);
+    }
+  };
+
+  useEffect(() => {
+    loadWatchlists();
+  }, []);
 
   // Form input states
   const [walletInput, setWalletInput] = useState('');
@@ -2185,11 +2572,15 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
 
   return (
     <div className="blocklist-view">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Database Terblokir OJK (Blocklist)</h2>
           <p style={{ color: 'var(--text-muted)' }}>Manajemen blocklist nasional untuk membekukan alamat dompet crypto luar negeri, nomor rekening m-banking, dan NIK pelaku money laundering.</p>
+          <span style={{ fontSize: '0.68rem', color: watchlistSource.includes('LIVE') ? 'var(--status-success)' : 'var(--text-muted)', fontWeight: 800 }}>● {watchlistSource} · {watchlists.length || 'local'} RECORD</span>
         </div>
+        <button className="btn btn-ghost btn-sm" onClick={loadWatchlists} disabled={isLoadingWatchlists}>
+          <RefreshCw size={14} className={isLoadingWatchlists ? 'animate-spin' : ''} /> {isLoadingWatchlists ? 'Sinkronisasi...' : 'Sinkronkan Watchlist'}
+        </button>
       </div>
 
       <div className="content-grid-wide">
@@ -2300,8 +2691,8 @@ export function BlocklistView({ blockedEntities, setBlockedEntities, addToast })
                   <tbody>
                     {blockedEntities.ids.map((id) => (
                       <tr key={id.id}>
-                        <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{id.name}</td>
-                        <td><code style={{ fontSize: '0.82rem', fontFamily: 'var(--font-mono)' }}>{id.nik}</code></td>
+                        <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{maskName(id.name, isMasked)}</td>
+                        <td><code style={{ fontSize: '0.82rem', fontFamily: 'var(--font-mono)' }}>{maskNik(id.nik, isMasked)}</code></td>
                         <td>{id.dateAdded}</td>
                         <td style={{ fontSize: '0.82rem' }}>{id.reason}</td>
                         <td>
@@ -3386,6 +3777,30 @@ export function SettingsView({ adminProfile, setAdminProfile, addToast }) {
 // ==========================================
 export function ApoloGovernanceView({ addToast }) {
   const [selectedForm, setSelectedForm] = useState('FORM-01');
+  const [filings, setFilings] = useState([]);
+  const [isLoadingFilings, setIsLoadingFilings] = useState(false);
+  const [filingSource, setFilingSource] = useState('DATABASE SYNC');
+
+  useEffect(() => {
+    let active = true;
+    async function loadFilings() {
+      setIsLoadingFilings(true);
+      try {
+        const response = await fetchApoloFilings();
+        if (!active) return;
+        const records = response?.data || [];
+        setFilings(records);
+        setFilingSource(response?.sourceMeta?.label || response?.dataSource || 'DATABASE SYNC');
+      } catch (error) {
+        console.warn('APOLO filings sync failed:', error);
+        if (active) setFilingSource('LOCAL FALLBACK');
+      } finally {
+        if (active) setIsLoadingFilings(false);
+      }
+    }
+    loadFilings();
+    return () => { active = false; };
+  }, []);
 
   const handleExportApoloXml = () => {
     if (addToast) addToast('📥 Menyiapkan berkas XML APOLO OJK (Standar XSD v4.2)...', 'info');
@@ -3449,6 +3864,60 @@ export function ApoloGovernanceView({ addToast }) {
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Rasio False Positive FDS</div>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: 4, color: '#f59e0b' }}>0.0017%</div>
           <div style={{ fontSize: '0.7rem', color: '#10b981', marginTop: 4 }}>🟢 Sangat Aman (Lindungi Nasabah Sah)</div>
+        </div>
+      </div>
+
+      {/* APOLO Regulatory Filings History */}
+      <div className="card" style={{ padding: 22, marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <h3 className="card-title"><FileText size={18} /> Riwayat Arsip Pelaporan Regulasi (APOLO OJK &amp; PPATK)</h3>
+            <span style={{ fontSize: '0.68rem', color: filingSource.includes('LIVE') ? 'var(--status-success)' : 'var(--text-muted)', fontWeight: 800 }}>● {filingSource} · {filings.length || 0} RECORD</span>
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={() => { setIsLoadingFilings(true); fetchApoloFilings().then(res => { setFilings(res?.data || []); setFilingSource(res?.sourceMeta?.label || res?.dataSource || 'DATABASE SYNC'); }).catch(() => setFilingSource('LOCAL FALLBACK')).finally(() => setIsLoadingFilings(false)); }} disabled={isLoadingFilings}>
+            <RefreshCw size={14} className={isLoadingFilings ? 'animate-spin' : ''} /> {isLoadingFilings ? 'Sinkronisasi...' : 'Sinkronkan Arsip'}
+          </button>
+        </div>
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Periode Laporan</th>
+                <th>Tipe Pelaporan</th>
+                <th>Total Transaksi</th>
+                <th>Nominal Diblokir</th>
+                <th>LTKM Diajukan</th>
+                <th>Status Submit</th>
+                <th>Checksum XML</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filings.length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 24 }}>Belum ada arsip pelaporan regulasi tersinkronisasi dari database.</td>
+                </tr>
+              )}
+              {filings.map((filing) => (
+                <tr key={filing.filing_id}>
+                  <td style={{ fontWeight: 700 }}>{filing.reporting_period}</td>
+                  <td>
+                    <span className={`badge ${filing.reporting_type?.includes('PPATK') ? 'badge-flagged' : 'badge-approved'}`}>
+                      {filing.reporting_type}
+                    </span>
+                  </td>
+                  <td style={{ fontFamily: 'var(--font-mono)' }}>{formatNumber(filing.total_transactions || 0)}</td>
+                  <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--status-danger)', fontWeight: 700 }}>{formatCurrency(filing.total_blocked_nominal || 0)}</td>
+                  <td style={{ fontFamily: 'var(--font-mono)' }}>{filing.total_str_submitted || 0} LTKM</td>
+                  <td>
+                    <span className={`badge ${filing.submission_status === 'ACCEPTED_OJK' ? 'badge-approved' : filing.submission_status === 'SUBMITTED' ? 'badge-pending' : 'badge-flagged'}`}>
+                      {filing.submission_status}
+                    </span>
+                  </td>
+                  <td><code style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{(filing.xml_checksum || '-').substring(0, 18)}...</code></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 

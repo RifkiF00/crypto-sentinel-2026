@@ -103,22 +103,26 @@ def evaluate_transaction(transaction: Any, threat_df: pd.DataFrame, sender_profi
         except Exception as e:
             print(f"[Dormant Check Warning]: {e}")
 
-    # 6. Technical: Device ID Anomaly check
+    # 6. Technical: Device Binding & Multi-Device Login Anomaly Check
     device_id = getattr(transaction, "device_id", None)
-    if sender_profile and device_id and sender_profile.get("registered_device"):
-        if str(device_id) != str(sender_profile["registered_device"]):
-            risk_score += 20
-            reasons.append("Device ID mismatch: unverified device detected")
+    if sender_profile and sender_profile.get("registered_device"):
+        reg_device = str(sender_profile["registered_device"])
+        if not device_id:
+            risk_score += 25
+            reasons.append("Device Binding Violation: Missing device fingerprint metadata")
+        elif str(device_id) != reg_device:
+            risk_score += 35
+            reasons.append(f"Device Binding Anomaly: Unrecognized device ({device_id}) vs registered ({reg_device})")
 
     # 7. Technical: IP Geolocation Anomaly & VPN Datacenter Check
     is_local_ip = ip_addr.startswith("192.168.") or ip_addr.startswith("127.0.0.1") or ip_addr.startswith("172.")
     if ip_addr and any(ip_addr.startswith(prefix) for prefix in VPN_DATACENTER_PREFIXES):
-        risk_score += 20
+        risk_score += 25
         reasons.append(f"Technical Anomaly: Origin IP ({ip_addr}) matches known VPN/Datacenter proxy range")
     elif sender_profile and ip_addr and sender_profile.get("registered_ip") and not is_local_ip:
         if ip_addr != sender_profile["registered_ip"]:
-            risk_score += 25
-            reasons.append("Impossible travel detected (IP Geolocation Anomaly)")
+            risk_score += 30
+            reasons.append(f"Impossible Travel: IP Subnet shift from {sender_profile['registered_ip']} to {ip_addr}")
 
     # 8. Purpose Mismatch: ISO 20022 Purpose vs. Destination
     if purpose_code in ["DEBT", "SALA"]:
@@ -151,32 +155,49 @@ def evaluate_transaction(transaction: Any, threat_df: pd.DataFrame, sender_profi
                 risk_score += 30
                 reasons.append(f"Dynamic Baseline Alert: Amount (Rp {amount:,.0f}) is > 5x customer's past average (Rp {avg_amount:,.0f})")
 
-    # 11. Advanced Technical: Geolocation Impossible Travel
+    # 11. Advanced Technical: Geolocation Impossible Travel (Haversine & Velocity Audit)
     if past_transactions:
         try:
             valid_past = [t for t in past_transactions if t.get("latitude") is not None and t.get("longitude") is not None and t.get("timestamp")]
-            if valid_past:
-                sorted_txs = sorted(valid_past, key=lambda x: x.get("timestamp", ""))
+            lat2 = getattr(transaction, "latitude", None)
+            lon2 = getattr(transaction, "longitude", None)
+
+            if valid_past and lat2 is not None and lon2 is not None:
+                sorted_txs = sorted(valid_past, key=lambda x: str(x.get("timestamp", "")))
                 latest_tx = sorted_txs[-1]
                 lat1 = float(latest_tx.get("latitude"))
                 lon1 = float(latest_tx.get("longitude"))
-                lat2 = getattr(transaction, "latitude", None)
-                lon2 = getattr(transaction, "longitude", None)
-                
-                t1_str = latest_tx.get("timestamp")
-                t1 = datetime.fromisoformat(str(t1_str).replace("Z", "+00:00"))
-                t2 = datetime.now(t1.tzinfo)
-                
-                if lat1 is not None and lon1 is not None and lat2 is not None and lon2 is not None:
-                    lat2 = float(lat2)
-                    lon2 = float(lon2)
-                    distance = haversine_distance(lat1, lon1, lat2, lon2)
-                    time_diff = (t2 - t1).total_seconds() / 3600.0
-                    if time_diff > 0.001:
-                        speed = distance / time_diff
-                        if speed > 1000.0:
-                            risk_score += 35
-                            reasons.append(f"Impossible Travel Alert: Speed of {speed:,.0f} km/h between transactions exceeds physical limits ({distance:,.1f} km in {time_diff*60:,.1f} mins)")
+                lat2 = float(lat2)
+                lon2 = float(lon2)
+
+                t1_str = str(latest_tx.get("timestamp"))
+                t1 = datetime.fromisoformat(t1_str.replace("Z", "+00:00"))
+                if t1.tzinfo is None:
+                    t1 = t1.replace(tzinfo=timezone.utc)
+
+                tx_time_raw = getattr(transaction, "timestamp", None)
+                if tx_time_raw:
+                    t2 = datetime.fromisoformat(str(tx_time_raw).replace("Z", "+00:00"))
+                else:
+                    t2 = datetime.now(timezone.utc)
+                if t2.tzinfo is None:
+                    t2 = t2.replace(tzinfo=timezone.utc)
+
+                time_diff_hours = abs((t2 - t1).total_seconds()) / 3600.0
+                distance_km = haversine_distance(lat1, lon1, lat2, lon2)
+
+                if distance_km > 50.0:  # Significant physical movement (>50 km)
+                    if time_diff_hours < 0.01:  # Instant travel (< 36 seconds)
+                        speed_kmh = 9999.0
+                    else:
+                        speed_kmh = distance_km / time_diff_hours
+
+                    if speed_kmh > 800.0:  # Exceeds commercial flight speed threshold
+                        risk_score += 45
+                        reasons.append(
+                            f"Impossible Travel Violation: Velocity {speed_kmh:,.0f} km/h "
+                            f"({distance_km:,.1f} km in {time_diff_hours * 60:,.1f} mins) exceeds physical human bounds"
+                        )
         except Exception as e:
             print(f"[Impossible Travel Calculation Error]: {e}")
 

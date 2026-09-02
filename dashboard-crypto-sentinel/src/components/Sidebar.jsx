@@ -17,66 +17,59 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
   const role = currentUser?.role || 'analyst';
 
   let navSections = [];
-  const operationsItems = [
-    { icon: LayoutDashboard, label: 'Operations Control', id: 'operations', badge: 'SLA' },
-    { icon: Activity, label: 'Transaction Monitoring', id: 'monitoring', badge: 'LIVE' },
-    { icon: ShieldAlert, label: 'Alert & Case Queue', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
-  ];
-  const investigationItems = [
-    { icon: Users, label: 'Customer / Account 360', id: 'investigation_360' },
-    { icon: GitBranch, label: 'Network & Graph Analysis', id: 'analysis' },
-  ];
 
   if (role === 'analyst') {
     navSections = [
-      { title: 'Operations', items: [{ icon: LayoutDashboard, label: 'Dashboard Operasional', id: 'dashboard', badge: 'TRIAGE' }, ...operationsItems.slice(1)] },
-      { title: 'Investigation', items: investigationItems },
+      {
+        title: 'Jalur Utama Investigasi',
+        items: [
+          { icon: LayoutDashboard, label: 'Command Center', id: 'dashboard' },
+          { icon: Activity, label: 'Live Detection', id: 'monitoring', badge: 'LIVE' },
+          { icon: GitBranch, label: 'GNN Network Investigation', id: 'analysis', badge: 'HERO · XAI' },
+          { icon: ShieldAlert, label: 'Cases & Compliance', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
+        ],
+      },
     ];
   } else if (role === 'admin_regulator') {
     navSections = [
       {
         title: 'Pengawasan Independen (Read-Only)',
         items: [
-          { icon: LayoutDashboard, label: 'Regulatory Compliance Overview', id: 'dashboard', badge: 'AUDIT' },
-          { icon: GitBranch, label: 'Transparansi Model GNN (XAI)', id: 'analysis', badge: 'XAI' },
+          { icon: LayoutDashboard, label: 'Command Center (Audit)', id: 'dashboard', badge: 'AUDIT' },
+          { icon: GitBranch, label: 'GNN Network Investigation', id: 'analysis', badge: 'XAI' },
+          { icon: GitBranch, label: 'Model Governance & XAI', id: 'model_governance' },
         ],
       },
       {
-        title: 'Kepatuhan Regulasi & Audit Trail',
+        title: 'Kepatuhan & Audit Trail',
         items: [
-          { icon: Shield, label: 'Audit Log & Traceability', id: 'compliance', badge: 'PPATK' },
-          { icon: FileCheck2, label: 'APOLO OJK Compliance Preview', id: 'apolo_governance', badge: 'APOLO' },
+          { icon: Shield, label: 'Audit Log PPATK & Traceability', id: 'compliance', badge: 'PPATK' },
+          { icon: FileCheck2, label: 'Pratinjau Pelaporan APOLO OJK', id: 'apolo_governance', badge: 'APOLO' },
         ],
       }
     ];
   } else {
     // compliance_officer (MLRO / Full Access)
     navSections = [
-      { title: 'Operations', items: operationsItems },
-      { title: 'Investigation', items: investigationItems },
       {
-        title: 'Manajemen Risiko Eksekutif',
+        title: 'Jalur Utama Investigasi',
         items: [
-          { icon: LayoutDashboard, label: 'Konsolidasi Risk Dashboard', id: 'dashboard' },
-          { icon: Activity, label: 'Live Sentinel Stream', id: 'monitoring', badge: 'LIVE' },
-          { icon: GitBranch, label: 'Analisis Graf Relasi (GNN)', id: 'analysis' },
-          { icon: ShieldAlert, label: 'Investigasi Alert (CMS / Approval)', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
+          { icon: LayoutDashboard, label: 'Command Center', id: 'dashboard' },
+          { icon: Activity, label: 'Live Detection', id: 'monitoring', badge: 'LIVE' },
+          { icon: GitBranch, label: 'GNN Network Investigation', id: 'analysis', badge: 'HERO · XAI' },
+          { icon: ShieldAlert, label: 'Cases & Compliance', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
         ],
       },
       {
-        title: 'Risk Controls & Compliance',
+        title: 'Advanced Platform & Tata Kelola',
         items: [
-          { icon: Sliders, label: 'Risk Rules & Thresholds', id: 'risk_controls' },
-          { icon: Sliders, label: 'Kalibrasi FDS (POJK 8/2023)', id: 'rules' },
-          { icon: Shield, label: 'Kepatuhan & Audit PPATK', id: 'compliance' },
-        ],
-      },
-      {
-        title: 'Platform & Governance',
-        items: [
+          { icon: Sliders, label: 'Risk Controls & Policies', id: 'risk_controls' },
+          { icon: Sliders, label: 'Kalibrasi Threshold (POJK 8)', id: 'rules' },
           { icon: GitBranch, label: 'Model Governance & XAI', id: 'model_governance' },
-          { icon: Database, label: 'Integration & Data Quality', id: 'integration' },
-          { icon: Lock, label: 'Administration & RBAC', id: 'administration' },
+          { icon: Database, label: 'Integrasi & Kualitas Data', id: 'integration' },
+          { icon: Shield, label: 'Kepatuhan PPATK (LTKM Draf)', id: 'compliance' },
+          { icon: FileCheck2, label: 'Pelaporan APOLO OJK', id: 'apolo_governance' },
+          { icon: Lock, label: 'Administrasi & RBAC', id: 'administration' },
         ],
       }
     ];
@@ -84,16 +77,16 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`} id="sidebar-nav">
-      <div className="sidebar-header" style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', minHeight: '74px' }}>
+      <div className="sidebar-header" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', minHeight: '64px' }}>
         <img
           src="/img/logo_dashboard.png"
           alt="Crypto-Sentinel 2026"
           style={{
             width: '100%',
-            maxWidth: '215px',
+            maxWidth: '168px',
             height: 'auto',
-            maxHeight: '56px',
-            marginLeft: '8px',
+            maxHeight: '42px',
+            marginLeft: '4px',
             objectFit: 'contain',
             objectPosition: 'left center',
             display: 'block'
@@ -192,4 +185,3 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
     </aside>
   );
 }
-

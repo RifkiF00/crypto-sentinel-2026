@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import {
   Brain,
   Cpu,
@@ -34,7 +35,8 @@ import {
   ChevronRight,
   ExternalLink,
   SlidersHorizontal,
-  Workflow
+  Workflow,
+  User
 } from 'lucide-react';
 import { formatCurrency } from '../data/mockData';
 
@@ -665,8 +667,9 @@ const SCENARIOS = {
 // 2. KOMPONEN UTAMA GNN VISUALIZATION (MAPS STYLE + DRAGGABLE + PINCH ZOOM)
 // ============================================================================
 
-export default function GNNVisualization({ addToast }) {
+export default function GNNVisualization({ addToast, onOpenCustomer360, onCreateCase, selectedEntity }) {
   const { theme } = useTheme();
+  const { currentUser, can } = useAuth();
   const isLight = theme === 'light';
 
   // Scenario State
@@ -689,11 +692,13 @@ export default function GNNVisualization({ addToast }) {
   const [temporalStep, setTemporalStep] = useState(0); // 0: Semua, 1: 09:01 WIB (Fan-Out), 2: 09:07 WIB (Transit), 3: 09:16 WIB (Crypto)
   const [isXaiExplainerActive, setIsXaiExplainerActive] = useState(true);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [selectedEdge, setSelectedEdge] = useState(null);
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
   const [isAnimationPlaying, setIsAnimationPlaying] = useState(true);
   const [isAutoLayout, setIsAutoLayout] = useState(true);
   const [showMetricsDrawer, setShowMetricsDrawer] = useState(true);
   const [showSummaryDrawer, setShowSummaryDrawer] = useState(true);
+  const [hopDepth, setHopDepth] = useState(3);
 
   // Minimal explanatory subgraph nodes identified by GNNExplainer (Mutual Info Optimization)
   const XAI_MINIMAL_SUBGRAPH_NODES = useMemo(() => ['A1', 'B1', 'B3', 'M1', 'C2', 'C4'], []);
@@ -712,6 +717,35 @@ export default function GNNVisualization({ addToast }) {
     setPan({ x: 0, y: 0 });
     setZoom(0.95);
   }, [selectedScenarioKey]);
+
+  // Select the node passed from Live Detection / Cases after the GNN view mounts.
+  // The source object may use either a graph node id or a banking account id.
+  useEffect(() => {
+    if (!selectedEntity || !scenario?.nodes?.length) return;
+
+    const candidateIds = [
+      selectedEntity.id,
+      selectedEntity.nodeId,
+      selectedEntity.account,
+      selectedEntity.account_id,
+      selectedEntity.account_number,
+      selectedEntity.senderAccount,
+      selectedEntity.sender_account,
+      selectedEntity.destinationAccount,
+      selectedEntity.receiver_account
+    ].filter(Boolean).map(String);
+
+    const matchedNode = scenario.nodes.find(node =>
+      candidateIds.includes(String(node.id)) || candidateIds.includes(String(node.account))
+    );
+
+    if (matchedNode) {
+      setSelectedNode(matchedNode);
+      setSelectedEdge(null);
+      const pos = nodePositions[matchedNode.id] || matchedNode;
+      setPan({ x: 320 - pos.x * zoom, y: 260 - pos.y * zoom });
+    }
+  }, [selectedEntity, scenario, nodePositions, zoom]);
 
   // Reset positions to default layout
   const handleResetLayout = () => {
@@ -860,23 +894,55 @@ export default function GNNVisualization({ addToast }) {
     });
 
     const nodeObj = scenario.nodes.find(n => n.id === nodeId);
-    if (nodeObj) setSelectedNode(nodeObj);
+    if (nodeObj) {
+      setSelectedNode(nodeObj);
+      setSelectedEdge(null);
+    }
   };
 
-  // Filter Nodes & Edges
+  // Filter Nodes & Edges. Hop depth uses real undirected BFS over the graph,
+  // rather than stage numbers, so cross-stage and device links behave correctly.
+  const hopNodeIds = useMemo(() => {
+    const selectedId = selectedNode?.id;
+    if (!selectedId || hopDepth >= 3) return null;
+
+    const adjacency = new Map(scenario.nodes.map(node => [node.id, new Set()]));
+    scenario.edges.forEach(edge => {
+      if (!adjacency.has(edge.from)) adjacency.set(edge.from, new Set());
+      if (!adjacency.has(edge.to)) adjacency.set(edge.to, new Set());
+      adjacency.get(edge.from).add(edge.to);
+      adjacency.get(edge.to).add(edge.from);
+    });
+
+    const distances = new Map([[selectedId, 0]]);
+    const queue = [selectedId];
+    while (queue.length) {
+      const current = queue.shift();
+      const distance = distances.get(current);
+      if (distance >= hopDepth) continue;
+      (adjacency.get(current) || []).forEach(next => {
+        if (!distances.has(next)) {
+          distances.set(next, distance + 1);
+          queue.push(next);
+        }
+      });
+    }
+    return new Set(distances.keys());
+  }, [scenario, selectedNode, hopDepth]);
+
   const filteredNodes = useMemo(() => {
-    if (activeFilter === 'all') return scenario.nodes;
-    if (activeFilter === 'crypto') return scenario.nodes.filter(n => n.type === 'crypto' || n.type === 'transit' || n.id === 'A1');
-    if (activeFilter === 'mule') return scenario.nodes.filter(n => n.type === 'mule' || n.type === 'source');
-    if (activeFilter === 'device') return scenario.nodes.filter(n => n.type === 'device' || n.type === 'mule' || n.type === 'source');
-    return scenario.nodes;
-  }, [scenario, activeFilter]);
+    let nodes = scenario.nodes;
+    if (activeFilter === 'crypto') nodes = nodes.filter(n => n.type === 'crypto' || n.type === 'transit' || n.type === 'source');
+    if (activeFilter === 'mule') nodes = nodes.filter(n => n.type === 'mule' || n.type === 'source');
+    if (activeFilter === 'device') nodes = nodes.filter(n => n.type === 'device' || n.type === 'mule' || n.type === 'source');
+    if (hopNodeIds) nodes = nodes.filter(node => hopNodeIds.has(node.id));
+    return nodes;
+  }, [scenario, activeFilter, hopNodeIds]);
 
   const filteredEdges = useMemo(() => {
     const visibleNodeIds = new Set(filteredNodes.map(n => n.id));
     return scenario.edges.filter(edge => {
-      const isVisible = visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to);
-      if (!isVisible) return false;
+      if (!visibleNodeIds.has(edge.from) || !visibleNodeIds.has(edge.to)) return false;
       if (activeFilter === 'crypto') return edge.type === 'crypto' || edge.type === 'transfer';
       if (activeFilter === 'device') return edge.type === 'device';
       return true;
@@ -923,26 +989,23 @@ export default function GNNVisualization({ addToast }) {
               width: 44,
               height: 44,
               borderRadius: 12,
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%)',
-              border: '1.5px solid rgba(99, 102, 241, 0.4)',
+              background: isLight ? '#f1f5f9' : '#0f172a',
+              border: `1px solid ${isLight ? '#cbd5e1' : '#334155'}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#818cf8'
+              color: isLight ? '#0f172a' : '#f8fafc'
             }}>
               <Brain size={24} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
-                  GNN Forensic Topology & Smurfing Flow Monitor
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
+                  GNN Network Workbench
                 </h2>
-                <span className="badge badge-blocked" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
-                  SOC LEVEL 4
-                </span>
               </div>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                Pemetaan Topologi Graf Relasional Otomatis untuk Analis AML, Satgas TPPU OJK & PPATK RI
+                Investigasi relasional multi-hop untuk analisis AML dan forensik transaksi lintas bank.
               </p>
             </div>
           </div>
@@ -966,8 +1029,8 @@ export default function GNNVisualization({ addToast }) {
                       fontSize: '0.76rem',
                       fontWeight: isSelected ? 800 : 600,
                       borderRadius: 8,
-                      border: isSelected ? '1px solid rgba(99, 102, 241, 0.5)' : 'none',
-                      background: isSelected ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(129, 140, 248, 0.15) 100%)' : 'transparent',
+                      border: isSelected ? `1px solid ${isLight ? '#0f172a' : '#f8fafc'}` : '1px solid transparent',
+                      background: isSelected ? (isLight ? '#e2e8f0' : '#1e293b') : 'transparent',
                       color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)',
                       cursor: 'pointer',
                       display: 'flex',
@@ -1047,7 +1110,7 @@ export default function GNNVisualization({ addToast }) {
                 height: 28,
                 padding: '0 12px',
                 borderRadius: 6,
-                background: isXaiExplainerActive ? 'linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(249, 115, 22, 0.2) 100%)' : 'var(--bg-card-subtle)',
+                background: isXaiExplainerActive ? (isLight ? '#fef3c7' : 'rgba(245, 158, 11, 0.15)') : 'var(--bg-card-subtle)',
                 border: isXaiExplainerActive ? '1px solid #f59e0b' : '1px solid var(--border-color)',
                 color: isXaiExplainerActive ? '#f59e0b' : 'var(--text-muted)',
                 fontWeight: 700,
@@ -1059,6 +1122,16 @@ export default function GNNVisualization({ addToast }) {
               <Sparkles size={13} />
               <span>GNNExplainer XAI ({isXaiExplainerActive ? 'AKTIF' : 'OFF'})</span>
             </button>
+          </div>
+
+          {/* Neighborhood depth controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'var(--bg-card-subtle)', padding: '3px 8px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)' }}>Neighborhood:</span>
+            {[1, 2, 3].map(depth => (
+              <button key={depth} onClick={() => setHopDepth(depth)} style={{ fontSize: '0.7rem', padding: '3px 8px', borderRadius: 5, border: hopDepth === depth ? '1px solid #38bdf8' : 'none', background: hopDepth === depth ? 'rgba(56, 189, 248, 0.2)' : 'transparent', color: hopDepth === depth ? '#38bdf8' : 'var(--text-muted)', fontWeight: hopDepth === depth ? 800 : 500, cursor: 'pointer' }}>
+                {depth}-hop
+              </button>
+            ))}
           </div>
 
           {/* Temporal Slider Controls */}
@@ -1168,7 +1241,7 @@ export default function GNNVisualization({ addToast }) {
               padding: '6px 10px',
               borderRadius: 8,
               background: isLight ? '#ffffff' : 'var(--bg-card)',
-              border: `1px dashed ${stg.color}60`,
+              border: `1px solid ${isLight ? '#cbd5e1' : '#334155'}`,
               display: 'flex',
               alignItems: 'center',
               gap: 8,
@@ -1179,9 +1252,9 @@ export default function GNNVisualization({ addToast }) {
               width: 22,
               height: 22,
               borderRadius: '50%',
-              background: `${stg.color}20`,
-              border: `1px solid ${stg.color}`,
-              color: stg.color,
+              background: isLight ? '#f1f5f9' : '#0f172a',
+              border: `1px solid ${isLight ? '#cbd5e1' : '#334155'}`,
+              color: isLight ? '#0f172a' : '#f8fafc',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1192,7 +1265,7 @@ export default function GNNVisualization({ addToast }) {
               {idx + 1}
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: 800, color: stg.color, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 800, color: isLight ? '#0f172a' : '#f8fafc', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                 {stg.title}
               </div>
               <div style={{ fontSize: '0.62rem', color: isLight ? '#64748b' : 'var(--text-muted)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
@@ -1502,7 +1575,7 @@ export default function GNNVisualization({ addToast }) {
           >
             <ZoomOut size={14} />
           </button>
-          
+
           <button
             className="btn btn-ghost btn-sm"
             onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
@@ -1611,7 +1684,7 @@ export default function GNNVisualization({ addToast }) {
 
               const isHighlighted = hoveredNodeId === edge.from || hoveredNodeId === edge.to;
               const isXaiEdge = XAI_MINIMAL_SUBGRAPH_NODES.includes(edge.from) && XAI_MINIMAL_SUBGRAPH_NODES.includes(edge.to);
-              
+
               const isTemporalEdge = temporalStep === 0
                 || (temporalStep === 1 && edge.flow === 'smurfing')
                 || (temporalStep === 2 && edge.flow === 'transit')
@@ -1621,7 +1694,12 @@ export default function GNNVisualization({ addToast }) {
               const markerId = edge.type === 'crypto' ? 'url(#arrow-red)' : edge.type === 'device' ? 'url(#arrow-cyan)' : edge.flow === 'transit' ? 'url(#arrow-amber)' : edge.flow === 'payroll' ? 'url(#arrow-green)' : 'url(#arrow-blue)';
 
               return (
-                <g key={`edge-${edge.from}-${edge.to}-${idx}`} opacity={edgeEffectiveOpacity} style={{ transition: 'opacity 0.3s ease' }}>
+                <g
+                  key={`edge-${edge.from}-${edge.to}-${idx}`}
+                  opacity={edgeEffectiveOpacity}
+                  style={{ transition: 'opacity 0.3s ease', cursor: 'pointer' }}
+                  onClick={(e) => { e.stopPropagation(); setSelectedEdge(edge); }}
+                >
                   {/* Outer Glow Line */}
                   <path
                     d={`M ${srcPos.x} ${srcPos.y} Q ${midX} ${midY} ${tgtPos.x} ${tgtPos.y}`}
@@ -1692,16 +1770,16 @@ export default function GNNVisualization({ addToast }) {
               const isHovered = hoveredNodeId === node.id;
               const isXaiNode = XAI_MINIMAL_SUBGRAPH_NODES.includes(node.id);
 
-              const isTemporalActiveNode = temporalStep === 0 
+              const isTemporalActiveNode = temporalStep === 0
                 || (temporalStep === 1 && (node.stage === 1 || node.stage === 2))
                 || (temporalStep === 2 && (node.stage === 2 || node.stage === 3))
                 || (temporalStep === 3 && (node.stage === 3 || node.stage === 4));
 
-              const nodeEffectiveOpacity = !isTemporalActiveNode 
-                ? 0.12 
-                : (isXaiExplainerActive && !isXaiNode && node.type !== 'source' && !isSelected && !isHovered) 
-                ? 0.3 
-                : 1;
+              const nodeEffectiveOpacity = !isTemporalActiveNode
+                ? 0.12
+                : (isXaiExplainerActive && !isXaiNode && node.type !== 'source' && !isSelected && !isHovered)
+                  ? 0.3
+                  : 1;
 
               const col = getNodeColor(node.type, node.riskScore);
               const nodeRadius = node.type === 'source' ? 26 : node.type === 'crypto' ? 24 : node.type === 'transit' ? 22 : 20;
@@ -1881,24 +1959,88 @@ export default function GNNVisualization({ addToast }) {
             </div>
 
             {/* Risk Badge and Quick Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ textAlign: 'right' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{ textAlign: 'right', marginRight: 4 }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>SKOR ANOMALI GNN</div>
                 <div style={{ fontSize: '1.4rem', fontWeight: 900, color: selectedNode.riskScore >= 80 ? '#ef4444' : '#10b981', fontFamily: 'var(--font-mono)' }}>
                   {selectedNode.riskScore}%
                 </div>
               </div>
+
+              {/* Customer 360 Drawer Trigger */}
+              <button
+                className="btn btn-sm"
+                onClick={() => {
+                  if (onOpenCustomer360) {
+                    onOpenCustomer360(selectedNode);
+                  } else if (addToast) {
+                    addToast(`👤 Membuka Customer 360 untuk ${selectedNode.label}`, 'info');
+                  }
+                }}
+                style={{
+                  fontSize: '0.78rem',
+                  height: 36,
+                  gap: 6,
+                  background: 'rgba(2, 132, 199, 0.15)',
+                  color: '#38bdf8',
+                  border: '1px solid rgba(2, 132, 199, 0.35)',
+                  fontWeight: 700
+                }}
+              >
+                <User size={14} /> Customer 360
+              </button>
+
+              {/* Action Button: Role-Aware Block / Escalate */}
               <button
                 className="btn btn-sm btn-primary"
                 onClick={() => {
-                  if (addToast) addToast(`Perintah Circuit Breaker dikirim: Akun ${selectedNode.account} dibekukan otomatis.`, 'warning');
+                  if (onCreateCase) {
+                    onCreateCase({
+                      account: selectedNode,
+                      edge: selectedEdge,
+                      graphSnapshot: { scenario: selectedScenarioKey, nodes: filteredNodes, edges: filteredEdges }
+                    });
+                  } else if (can('executeBlock')) {
+                    if (addToast) addToast(`⚡ Perintah Circuit Breaker dieksekusi oleh ${currentUser?.name || 'MLRO'}: Rekening ${selectedNode.account} dibekukan permanen.`, 'warning');
+                  } else {
+                    if (addToast) addToast(`ℹ️ Role AML Investigator telah mencatat eskalasi rekening ${selectedNode.account} ke Pejabat Kepatuhan (MLRO) di menu Cases & Compliance.`, 'info');
+                  }
                 }}
-                style={{ fontSize: '0.78rem', height: 36, gap: 6, background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', border: 'none' }}
+                style={{
+                  fontSize: '0.78rem',
+                  height: 36,
+                  gap: 6,
+                  background: can('executeBlock')
+                    ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                    : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  border: 'none',
+                  fontWeight: 700
+                }}
               >
-                <Lock size={14} /> Bekukan Akun Ini
+                {can('executeBlock') ? <Lock size={14} /> : <GitBranch size={14} />}
+                {can('executeBlock') ? 'Bekukan Akun Ini (MLRO)' : 'Eskalasikan ke MLRO'}
               </button>
             </div>
           </div>
+
+          {selectedEdge && (
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 10, background: isLight ? '#eff6ff' : 'rgba(14, 116, 144, 0.12)', border: `1px solid ${isLight ? '#bfdbfe' : 'rgba(56, 189, 248, 0.3)'}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <strong style={{ color: isLight ? '#075985' : '#7dd3fc' }}>Detail Edge Terpilih</strong>
+                <button className="btn btn-ghost btn-sm" onClick={() => setSelectedEdge(null)} style={{ padding: 3 }} title="Tutup detail edge"><X size={14} /></button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8, fontSize: '0.76rem' }}>
+                <div><span style={{ color: 'var(--text-muted)' }}>Jenis:</span> <strong>{selectedEdge.type || selectedEdge.flow || 'transfer'}</strong></div>
+                <div><span style={{ color: 'var(--text-muted)' }}>Nominal:</span> <strong>{selectedEdge.amount ? formatCurrency(selectedEdge.amount) : 'Relational link'}</strong></div>
+                <div><span style={{ color: 'var(--text-muted)' }}>Waktu:</span> <strong>{selectedEdge.timestamp || selectedEdge.time || 'N/A'}</strong></div>
+                <div><span style={{ color: 'var(--text-muted)' }}>Channel:</span> <strong>{selectedEdge.channel || selectedEdge.purpose_code || 'GNN topology'}</strong></div>
+                <div><span style={{ color: 'var(--text-muted)' }}>Relevansi:</span> <strong>{selectedEdge.importance || selectedEdge.weight || (selectedEdge.type === 'crypto' ? 'High' : 'Medium')}</strong></div>
+              </div>
+              <div style={{ marginTop: 10, fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                <strong>Penjelasan:</strong> {selectedEdge.explanation || `Edge ${selectedEdge.from} → ${selectedEdge.to} dipertahankan karena berkontribusi pada pola ${selectedEdge.flow || selectedEdge.type || 'relasional'} dalam subgraf investigasi.`}
+              </div>
+            </div>
+          )}
 
           {/* Detailed Forensic Meta Cards */}
           <div style={{
@@ -2011,52 +2153,52 @@ export default function GNNVisualization({ addToast }) {
             {Object.entries(scenario.metrics.subIndicators).map(([key, indicator], groupIdx) => {
               const groupThemes = [
                 {
-                  bgLight: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
-                  bgDark: 'linear-gradient(135deg, rgba(220, 38, 38, 0.22) 0%, rgba(153, 27, 27, 0.12) 100%)',
-                  borderLight: '#fecaca',
-                  borderDark: 'rgba(220, 38, 38, 0.35)',
-                  titleLight: '#991b1b',
-                  titleDark: '#fca5a5',
-                  subLight: '#b91c1c',
-                  subDark: '#f87171',
-                  cardBorderLight: '#fecaca',
-                  cardBorderDark: 'rgba(220, 38, 38, 0.3)'
+                  bgLight: '#f8fafc',
+                  bgDark: '#0f172a',
+                  borderLight: '#e2e8f0',
+                  borderDark: '#1e293b',
+                  titleLight: '#0f172a',
+                  titleDark: '#f8fafc',
+                  subLight: '#475569',
+                  subDark: '#94a3b8',
+                  cardBorderLight: '#e2e8f0',
+                  cardBorderDark: '#1e293b'
                 },
                 {
-                  bgLight: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-                  bgDark: 'linear-gradient(135deg, rgba(217, 119, 6, 0.22) 0%, rgba(180, 83, 9, 0.12) 100%)',
-                  borderLight: '#fde68a',
-                  borderDark: 'rgba(217, 119, 6, 0.35)',
-                  titleLight: '#92400e',
-                  titleDark: '#fde68a',
-                  subLight: '#b45309',
-                  subDark: '#fbbf24',
-                  cardBorderLight: '#fde68a',
-                  cardBorderDark: 'rgba(217, 119, 6, 0.3)'
+                  bgLight: '#f8fafc',
+                  bgDark: '#0f172a',
+                  borderLight: '#e2e8f0',
+                  borderDark: '#1e293b',
+                  titleLight: '#0f172a',
+                  titleDark: '#f8fafc',
+                  subLight: '#475569',
+                  subDark: '#94a3b8',
+                  cardBorderLight: '#e2e8f0',
+                  cardBorderDark: '#1e293b'
                 },
                 {
-                  bgLight: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
-                  bgDark: 'linear-gradient(135deg, rgba(124, 58, 237, 0.22) 0%, rgba(91, 33, 182, 0.12) 100%)',
-                  borderLight: '#e9d5ff',
-                  borderDark: 'rgba(124, 58, 237, 0.35)',
-                  titleLight: '#5b21b6',
-                  titleDark: '#d8b4fe',
-                  subLight: '#7c3aed',
-                  subDark: '#c084fc',
-                  cardBorderLight: '#e9d5ff',
-                  cardBorderDark: 'rgba(124, 58, 237, 0.3)'
+                  bgLight: '#f8fafc',
+                  bgDark: '#0f172a',
+                  borderLight: '#e2e8f0',
+                  borderDark: '#1e293b',
+                  titleLight: '#0f172a',
+                  titleDark: '#f8fafc',
+                  subLight: '#475569',
+                  subDark: '#94a3b8',
+                  cardBorderLight: '#e2e8f0',
+                  cardBorderDark: '#1e293b'
                 },
                 {
-                  bgLight: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-                  bgDark: 'linear-gradient(135deg, rgba(2, 132, 199, 0.22) 0%, rgba(3, 105, 161, 0.12) 100%)',
-                  borderLight: '#bfdbfe',
-                  borderDark: 'rgba(2, 132, 199, 0.35)',
-                  titleLight: '#075985',
-                  titleDark: '#7dd3fc',
-                  subLight: '#0284c7',
-                  subDark: '#38bdf8',
-                  cardBorderLight: '#bfdbfe',
-                  cardBorderDark: 'rgba(2, 132, 199, 0.3)'
+                  bgLight: '#f8fafc',
+                  bgDark: '#0f172a',
+                  borderLight: '#e2e8f0',
+                  borderDark: '#1e293b',
+                  titleLight: '#0f172a',
+                  titleDark: '#f8fafc',
+                  subLight: '#475569',
+                  subDark: '#94a3b8',
+                  cardBorderLight: '#e2e8f0',
+                  cardBorderDark: '#1e293b'
                 }
               ];
               const theme = groupThemes[groupIdx] || groupThemes[0];
@@ -2100,90 +2242,90 @@ export default function GNNVisualization({ addToast }) {
                     </div>
                   </div>
 
-                {/* Sub-Indicators: Symmetrical 3-Row Grid */}
-                <div style={{
-                  padding: '12px',
-                  display: 'grid',
-                  gridTemplateRows: 'repeat(3, 1fr)',
-                  gap: 10,
-                  flex: 1
-                }}>
-                  {indicator.subs.map((sub, subIdx) => {
-                    const statusColor = sub.status === 'critical' ? '#dc2626' : sub.status === 'high' ? '#d97706' : '#059669';
-                    const statusLabel = sub.status === 'critical' ? 'KRITIS' : sub.status === 'high' ? 'TINGGI' : 'SEDANG';
-                    return (
-                      <div key={sub.id} style={{
-                        background: isLight ? '#f8fafc' : '#0f172a',
-                        border: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b',
-                        borderLeft: `3px solid ${statusColor}`,
-                        borderRadius: 10,
-                        padding: '10px 12px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        height: '100%',
-                        boxSizing: 'border-box'
-                      }}>
-                        {/* Sub-indicator header */}
-                        <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6, marginBottom: 4 }}>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                                <span style={{
-                                  fontSize: '0.6rem', fontWeight: 800, padding: '1px 5px', borderRadius: 3,
-                                  background: `${statusColor}18`, color: statusColor, border: `1px solid ${statusColor}40`
-                                }}>
-                                  {statusLabel}
-                                </span>
-                                <span style={{ fontSize: '0.73rem', fontWeight: 700, color: isLight ? '#0f172a' : '#f8fafc', lineHeight: 1.25 }}>
-                                  Sub-{groupIdx + 1}.{subIdx + 1} — {sub.name}
-                                </span>
-                              </div>
-                              <div style={{ fontSize: '0.64rem', color: '#64748b' }}>{sub.source}</div>
-                            </div>
-                            {/* Score with bar */}
-                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                              <div style={{ fontSize: '0.98rem', fontWeight: 900, color: statusColor, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
-                                {sub.score}
-                              </div>
-                              <div style={{ width: 40, height: 3, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.08)', borderRadius: 2, marginTop: 3, overflow: 'hidden' }}>
-                                <div style={{ width: `${sub.score}%`, height: '100%', background: statusColor, borderRadius: 2 }} />
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Value badge */}
-                          <div style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                            padding: '3px 8px', borderRadius: 5,
-                            background: isLight ? '#ffffff' : '#020617',
-                            border: isLight ? '1px solid #cbd5e1' : '1px solid #1e293b',
-                            fontSize: '0.68rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
-                            color: isLight ? '#0f172a' : '#f8fafc', margin: '4px 0 6px 0'
-                          }}>
-                            <span style={{ color: '#64748b' }}>Nilai Aktual:</span>
-                            <span style={{ color: statusColor }}>{sub.value}</span>
-                          </div>
-                        </div>
-
-                        {/* Detail explanation with minimum height for symmetry */}
-                        <div style={{
-                          fontSize: '0.66rem', color: isLight ? '#475569' : '#94a3b8', lineHeight: 1.45,
-                          padding: '6px 8px', borderRadius: 6,
-                          background: isLight ? '#f1f5f9' : '#020617',
-                          minHeight: 38,
+                  {/* Sub-Indicators: Symmetrical 3-Row Grid */}
+                  <div style={{
+                    padding: '12px',
+                    display: 'grid',
+                    gridTemplateRows: 'repeat(3, 1fr)',
+                    gap: 10,
+                    flex: 1
+                  }}>
+                    {indicator.subs.map((sub, subIdx) => {
+                      const statusColor = sub.status === 'critical' ? '#dc2626' : sub.status === 'high' ? '#d97706' : '#059669';
+                      const statusLabel = sub.status === 'critical' ? 'KRITIS' : sub.status === 'high' ? 'TINGGI' : 'SEDANG';
+                      return (
+                        <div key={sub.id} style={{
+                          background: isLight ? '#f8fafc' : '#0f172a',
+                          border: isLight ? '1px solid #e2e8f0' : '1px solid #1e293b',
+                          borderLeft: `3px solid ${statusColor}`,
+                          borderRadius: 10,
+                          padding: '10px 12px',
                           display: 'flex',
-                          alignItems: 'center'
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          height: '100%',
+                          boxSizing: 'border-box'
                         }}>
-                          {sub.detail}
+                          {/* Sub-indicator header */}
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6, marginBottom: 4 }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                                  <span style={{
+                                    fontSize: '0.6rem', fontWeight: 800, padding: '1px 5px', borderRadius: 3,
+                                    background: `${statusColor}18`, color: statusColor, border: `1px solid ${statusColor}40`
+                                  }}>
+                                    {statusLabel}
+                                  </span>
+                                  <span style={{ fontSize: '0.73rem', fontWeight: 700, color: isLight ? '#0f172a' : '#f8fafc', lineHeight: 1.25 }}>
+                                    Sub-{groupIdx + 1}.{subIdx + 1} — {sub.name}
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '0.64rem', color: '#64748b' }}>{sub.source}</div>
+                              </div>
+                              {/* Score with bar */}
+                              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                <div style={{ fontSize: '0.98rem', fontWeight: 900, color: statusColor, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
+                                  {sub.score}
+                                </div>
+                                <div style={{ width: 40, height: 3, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.08)', borderRadius: 2, marginTop: 3, overflow: 'hidden' }}>
+                                  <div style={{ width: `${sub.score}%`, height: '100%', background: statusColor, borderRadius: 2 }} />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Value badge */}
+                            <div style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 6,
+                              padding: '3px 8px', borderRadius: 5,
+                              background: isLight ? '#ffffff' : '#020617',
+                              border: isLight ? '1px solid #cbd5e1' : '1px solid #1e293b',
+                              fontSize: '0.68rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
+                              color: isLight ? '#0f172a' : '#f8fafc', margin: '4px 0 6px 0'
+                            }}>
+                              <span style={{ color: '#64748b' }}>Nilai Aktual:</span>
+                              <span style={{ color: statusColor }}>{sub.value}</span>
+                            </div>
+                          </div>
+
+                          {/* Detail explanation with minimum height for symmetry */}
+                          <div style={{
+                            fontSize: '0.66rem', color: isLight ? '#475569' : '#94a3b8', lineHeight: 1.45,
+                            padding: '6px 8px', borderRadius: 6,
+                            background: isLight ? '#f1f5f9' : '#020617',
+                            minHeight: 38,
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}>
+                            {sub.detail}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
 
           {/* Bottom: Model Technical Details - Symmetrical 6-Column Grid */}

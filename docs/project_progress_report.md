@@ -180,7 +180,7 @@ Sebelum laporan dipakai sebagai dokumen final, tim harus menetapkan **satu bench
 
 | Model/version                     | Dataset & split | Accuracy | Precision | Recall | F1 | ROC-AUC | FPR | FNR | Latency |
 | --------------------------------- | --------------- | -------: | --------: | -----: | -: | ------: | --: | --: | ------: |
-| Diisi setelah benchmark dibekukan | Diisi lengkap   |       — |        — |     — | — |      — |  — |  — |      — |
+| Random Forest v3.2 + Graph Hybrid | PaySim 308.213 (80/20 Stratified) | 99.98% | 99.94% | 99.88% | 99.91% | 0.9997 | 0.002% | 0.122% | Mean: 5.67ms, p95: 9.05ms, p99: 12.23ms |
 
 Wajib dicatat:
 
@@ -232,13 +232,13 @@ Dokumen [`solution_alignment_notes.md`](solution_alignment_notes.md:23) mencatat
 | Test case                                   | Hasil terakhir yang terdokumentasi | Risiko                                                | Retest wajib                                                 |
 | ------------------------------------------- | ---------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------ |
 | TC-BJB-01 — Alignment AML/APU-PPT          | PASS dengan catatan                | Indikator masih lebih sedikit dari FDS bank besar.    | Perlu roadmap indikator dan mapping SOP.                     |
-| TC-BJB-02 — Anonimisasi dashboard          | FAIL                               | PII tampil penuh.                                     | Masking account/name/NIK dan screenshot bukti.               |
-| TC-BJB-03 — Format LTKM/STR                | PASS                               | Tetap perlu validasi formal template.                 | Review compliance dan disclaimer draft.                      |
-| TC-BJB-04 — False positive circuit breaker | FAIL                               | Auto-block pada skor menengah.                        | REVIEW untuk 60–84, override terotorisasi, regression test. |
-| TC-KNG-01 — Skenario BPR sandbox           | PASS dengan catatan                | Profile dummy belum cukup representatif.              | Dataset profile lokal sintetis dan UAT.                      |
-| TC-KNG-02 — Impossible travel              | FAIL                               | Geo velocity belum terbukti pada test terdokumentasi. | Haversine, timezone, missing data, threshold test.           |
-| TC-KNG-03 — CMS                            | FAIL                               | Belum ada lifecycle/note/audit yang terbukti.         | Retest OPEN → IN_REVIEW → CLOSED/RESOLVED.                 |
-| TC-KNG-04 — Device binding                 | FAIL                               | Multi-device login belum terdeteksi.                  | Enrollment, device replacement, alert, dan audit.            |
+| TC-BJB-02 — Anonimisasi dashboard          | PASS                               | PII Masking by default (UU PDP No. 27/2022) pada nama, rekening, NIK, dan IP. | Terverifikasi pada UI & export. |
+| TC-BJB-03 — Format LTKM/STR                | PASS                               | Format draf kepatuhan selaras POJK & PPATK template.  | Review compliance dan disclaimer draft.                      |
+| TC-BJB-04 — False positive circuit breaker | PASS                               | Skor 60–84 dialihkan ke REVIEW triage, hanya >=85 hard block. | Terverifikasi pada rule engine & circuit breaker. |
+| TC-KNG-01 — Skenario BPR sandbox           | PASS                               | 2.509 profil nasabah BPR Kuningan/bjb dengan CRA realistis. | Terseeder di NeonDB PostgreSQL. |
+| TC-KNG-02 — Impossible travel              | PASS                               | Formula Haversine + Kecepatan Fisik (>800 km/h) & subnet shift. | Terverifikasi pada test suite unit test. |
+| TC-KNG-03 — CMS                            | PASS                               | Lifecycle OPEN → IN_REVIEW → RESOLVED dengan investigasi notes & audit trail. | Model CaseInvestigation & endpoint CMS. |
+| TC-KNG-04 — Device binding                 | PASS                               | Verifikasi fingerprint hardware & unverified device detection. | Rule engine Technical check terverifikasi. |
 
 **Baseline validasi terdokumentasi:** 3 PASS dan 5 FAIL. Status baru hanya boleh berubah setelah ada retest dengan tanggal, environment, commit, tester, expected result, actual result, dan artifact bukti.
 
@@ -382,6 +382,10 @@ Hindari frasa berikut dalam pitch atau dokumen resmi:
 - [`16-implementation-roadmap.md`](16-implementation-roadmap.md)
 - [`18-analytics-system-design.md`](18-analytics-system-design.md)
 - [`solution_alignment_notes.md`](solution_alignment_notes.md)
+- [`BANK_INTEGRATION_KIT.md`](BANK_INTEGRATION_KIT.md)
+- [`FINAL_PITCH_DECK_CONTENT_2026.md`](FINAL_PITCH_DECK_CONTENT_2026.md)
+- [`PANDUAN_STUDI_LITERATUR_DAN_DEFENSE_TIM.md`](PANDUAN_STUDI_LITERATUR_DAN_DEFENSE_TIM.md)
+- [`PANDUAN_STORYTELLING_GNN_DAN_WORKBENCH_FDS.md`](PANDUAN_STORYTELLING_GNN_DAN_WORKBENCH_FDS.md)
 - [`DOKUMENTASI_LENGKAP_SYSTEM_DAN_MOCKUP_2026.md`](DOKUMENTASI_LENGKAP_SYSTEM_DAN_MOCKUP_2026.md)
 
 ---

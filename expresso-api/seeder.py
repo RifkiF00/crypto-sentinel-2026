@@ -9,7 +9,9 @@ try:
 except ImportError:
     pass
 
-from models.db_models import Base, Account
+from models.db_models import (
+    Base, Account, RegulatoryWatchlist, DeviceTelemetry, MuleGraphCommunity, ApoloRegulatoryFiling
+)
 
 database_url = os.getenv("DATABASE_URL", "sqlite:///./expresso.db")
 engine = create_engine(database_url, connect_args={"check_same_thread": False} if "sqlite" in database_url else {})
@@ -169,7 +171,7 @@ def generate_100_accounts():
 
     city_codes = ["3171", "3273", "3578", "3374", "3175", "3275", "3573", "3671", "5171", "6171"]
 
-    for i in range(1, 101):
+    for i in range(1, 2501):
         bank_modulo = i % 5
         if bank_modulo == 0:
             # BCA (10 digits)
@@ -223,7 +225,109 @@ def seed_data():
     Base.metadata.create_all(bind=engine)
     
     with Session(engine) as db:
-        print("Memeriksa & membuat 100+ akun nasabah realistis...")
+        print("Memeriksa & membuat 2.500+ akun nasabah realistis...")
+        
+        # 1. Seed Watchlists (DTTOT / Satgas PASTI / PEP / Crypto Blacklist)
+        watchlists = [
+            RegulatoryWatchlist(
+                watchlist_id="DTTOT-2026-001",
+                category="DTTOT",
+                entity_name="Jaringan Anomali Transaksi Internasional X",
+                alias_names=["JATI-X", "Global Transfer Network"],
+                identifier_number="3171099900010009",
+                identifier_type="NATIONAL_ID",
+                legal_basis="Keputusan PN Jaksel No. 44/DTTOT/2025 & PPATK RI",
+                risk_level="CRITICAL",
+                is_active=True
+            ),
+            RegulatoryWatchlist(
+                watchlist_id="WATCHLIST-CRYPTO-002",
+                category="HIGH_RISK_CRYPTO",
+                entity_name="Darknet Mixer Deposit Address",
+                alias_names=["TornadoMixerV2", "WasabiPool"],
+                identifier_number="0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+                identifier_type="WALLET_ADDRESS",
+                legal_basis="OFAC Sanctioned & Crypto-Sentinel Threat Intel",
+                risk_level="CRITICAL",
+                is_active=True
+            ),
+            RegulatoryWatchlist(
+                watchlist_id="SATGAS-PASTI-003",
+                category="SATGAS_PASTI",
+                entity_name="Pinjol Ilegal Mantap Dana",
+                alias_names=["MantapDana App", "PT Mantap Solusi"],
+                identifier_number="901288273645",
+                identifier_type="BANK_ACCOUNT",
+                legal_basis="Pengumuman Resmi Satgas PASTI OJK RI No. PENG-04/PASTI/2026",
+                risk_level="HIGH",
+                is_active=True
+            )
+        ]
+        for w in watchlists:
+            if not db.get(RegulatoryWatchlist, w.watchlist_id):
+                db.add(w)
+
+        # 2. Seed Mule Graph Communities
+        communities = [
+            MuleGraphCommunity(
+                cluster_id="MULE-RING-KNG-01",
+                cluster_name="Sindikat Smurfing Kuningan-Indodax Ring",
+                core_hub_account="1234567890",
+                total_mule_nodes=6,
+                aggregate_inflow=485000000,
+                aggregate_outflow=472000000,
+                target_crypto_exchange="Indodax",
+                graph_topology_type="FAN_OUT_SMURFING",
+                risk_score=98.4,
+                detection_algorithm="GraphSAGE + Leiden Community",
+                is_frozen=False
+            ),
+            MuleGraphCommunity(
+                cluster_id="MULE-RING-BJB-02",
+                cluster_name="Komunitas Mule Layering Antar BPR",
+                core_hub_account="0123456789",
+                total_mule_nodes=4,
+                aggregate_inflow=210000000,
+                aggregate_outflow=205000000,
+                target_crypto_exchange="Tokocrypto",
+                graph_topology_type="CYCLIC_LOOP",
+                risk_score=87.6,
+                detection_algorithm="GraphSAGE Embeddings (32-dim)",
+                is_frozen=False
+            )
+        ]
+        for c in communities:
+            if not db.get(MuleGraphCommunity, c.cluster_id):
+                db.add(c)
+
+        # 3. Seed APOLO Regulatory Filing
+        filings = [
+            ApoloRegulatoryFiling(
+                filing_id="APOLO-OJK-2026-M08",
+                reporting_period="2026-M08",
+                reporting_type="APOLO_OJK_POJK8_2023",
+                total_transactions=308250,
+                total_blocked_nominal=15200000000,
+                total_str_submitted=42,
+                xml_checksum="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                submission_status="ACCEPTED_OJK",
+                submitted_by="Pejabat Kepatuhan MLRO"
+            ),
+            ApoloRegulatoryFiling(
+                filing_id="APOLO-OJK-2026-M09",
+                reporting_period="2026-M09",
+                reporting_type="APOLO_OJK_POJK8_2023",
+                total_transactions=184200,
+                total_blocked_nominal=8400000000,
+                total_str_submitted=18,
+                xml_checksum="f4c8996fb92427ae41e4649b934ca495991b7852b855e3b0c44298fc1c149afb",
+                submission_status="SUBMITTED",
+                submitted_by="Pejabat Kepatuhan MLRO"
+            )
+        ]
+        for f in filings:
+            if not db.get(ApoloRegulatoryFiling, f.filing_id):
+                db.add(f)
         
         dummy_accounts = generate_100_accounts()
         inserted_count = 0
@@ -241,7 +345,7 @@ def seed_data():
                 db.add(existing)
 
         db.commit()
-        print(f"Seeding selesai! Total {inserted_count} akun baru berhasil ditambahkan (Total {len(dummy_accounts)} akun aktif di database).")
+        print(f"Seeding selesai! Total {inserted_count} akun baru berhasil ditambahkan (Target generator: {len(dummy_accounts)} akun; total database dapat mencakup akun historis).")
 
 if __name__ == "__main__":
     seed_data()
