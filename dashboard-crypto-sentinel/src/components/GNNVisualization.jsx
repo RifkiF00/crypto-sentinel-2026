@@ -241,8 +241,8 @@ const SCENARIOS = {
         stage: 1,
         code: 'A',
         type: 'source',
-        label: 'Rifki Firmansyah',
-        account: '0123456789',
+        label: 'Ahmad Fauzi',
+        account: '320800123456',
         bank: 'BPR Bank Kuningan',
         balance: 150000000,
         riskScore: 92,
@@ -250,7 +250,7 @@ const SCENARIOS = {
         role: 'Akun Sumber (Originator)',
         ip: '182.16.2.90 (Kuningan)',
         deviceId: 'DEV-ANDROID-S24-ULTRA',
-        nik: '3171092802092102',
+        nik: '3208012802092102',
         x: 120,
         y: 280,
         description: 'Rekening penerima dana awal Rp 150.000.000, melakukan fan-out transfer kilat dalam 5 menit.'
@@ -676,8 +676,52 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
   const [selectedScenarioKey, setSelectedScenarioKey] = useState(null);
   // The workbench starts in standby mode. A graph is loaded only after the investigator
   // selects a scenario or navigates here from an alert/transaction.
-  const hasActiveInvestigation = Boolean(selectedScenarioKey);
-  const scenario = SCENARIOS[selectedScenarioKey] || SCENARIOS.smurfing_crypto;
+  const hasActiveInvestigation = Boolean(selectedScenarioKey || selectedEntity);
+  const baseScenario = SCENARIOS[selectedScenarioKey] || SCENARIOS.smurfing_crypto;
+
+  const scenario = useMemo(() => {
+    if (!selectedEntity) return baseScenario;
+
+    const senderName = selectedEntity.senderName || selectedEntity.sender_name || selectedEntity.name || selectedEntity.holder || 'Ahmad Fauzi';
+    const senderAccount = selectedEntity.senderAccount || selectedEntity.sender_account || selectedEntity.account || selectedEntity.account_id || '320800123456';
+    const senderBank = selectedEntity.senderBank || selectedEntity.sender_bank || selectedEntity.bank || 'Bank Kuningan';
+    const amount = Number(selectedEntity.amount) || 150000000;
+    const riskScore = Number(selectedEntity.riskScore || selectedEntity.risk_score) || baseScenario.riskScore || 92;
+    const destName = selectedEntity.destination || selectedEntity.destinationName || selectedEntity.receiver_name || 'PT Indodax Nasional Indonesia';
+    const destAccount = selectedEntity.destinationAccount || selectedEntity.receiver_account || '9012666666';
+    const destBank = selectedEntity.destinationBank || selectedEntity.receiver_bank || 'BCA Escrow';
+    const desc = selectedEntity.reason || selectedEntity.description || selectedEntity.xai_explanation || baseScenario.summary;
+
+    const dynamicNodes = baseScenario.nodes.map(node => {
+      if (node.id === 'A1' || node.type === 'source') {
+        return {
+          ...node,
+          label: senderName,
+          account: senderAccount,
+          bank: senderBank,
+          balance: amount > 0 ? amount : node.balance,
+          riskScore: riskScore,
+          riskLevel: riskScore >= 85 ? 'high' : riskScore >= 60 ? 'medium' : 'low',
+          description: desc
+        };
+      }
+      if ((node.id === 'C1' || node.id === 'C2' || node.id === 'R5') && destName) {
+        return {
+          ...node,
+          label: destName.length > 22 ? destName.substring(0, 20) + '...' : destName,
+          account: destAccount,
+          bank: destBank
+        };
+      }
+      return node;
+    });
+
+    return {
+      ...baseScenario,
+      riskScore: riskScore,
+      nodes: dynamicNodes
+    };
+  }, [baseScenario, selectedEntity]);
 
   // Map Navigation State (Pan & Zoom)
   const [zoom, setZoom] = useState(1);
@@ -737,7 +781,6 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
     if (!selectedEntity) return;
     if (!selectedScenarioKey) {
       setSelectedScenarioKey('smurfing_crypto');
-      return;
     }
     if (!scenario?.nodes?.length) return;
 
@@ -755,7 +798,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
 
     const matchedNode = scenario.nodes.find(node =>
       candidateIds.includes(String(node.id)) || candidateIds.includes(String(node.account))
-    );
+    ) || scenario.nodes[0];
 
     if (matchedNode) {
       setSelectedNode(matchedNode);
@@ -763,7 +806,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
       const pos = nodePositions[matchedNode.id] || matchedNode;
       setPan({ x: 320 - pos.x * zoom, y: 260 - pos.y * zoom });
     }
-  }, [selectedEntity, scenario, nodePositions, zoom]);
+  }, [selectedEntity, scenario, nodePositions, zoom, selectedScenarioKey]);
 
   // Reset positions to default layout
   const handleResetLayout = () => {
