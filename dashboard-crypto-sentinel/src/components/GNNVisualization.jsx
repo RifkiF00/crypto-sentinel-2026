@@ -673,8 +673,11 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
   const isLight = theme === 'light';
 
   // Scenario State
-  const [selectedScenarioKey, setSelectedScenarioKey] = useState('smurfing_crypto');
-  const scenario = SCENARIOS[selectedScenarioKey];
+  const [selectedScenarioKey, setSelectedScenarioKey] = useState(null);
+  // The workbench starts in standby mode. A graph is loaded only after the investigator
+  // selects a scenario or navigates here from an alert/transaction.
+  const hasActiveInvestigation = Boolean(selectedScenarioKey);
+  const scenario = SCENARIOS[selectedScenarioKey] || SCENARIOS.smurfing_crypto;
 
   // Map Navigation State (Pan & Zoom)
   const [zoom, setZoom] = useState(1);
@@ -708,20 +711,35 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
 
   // Initialize node positions based on scenario
   useEffect(() => {
+    if (!hasActiveInvestigation) {
+      setNodePositions({});
+      setSelectedNode(null);
+      setSelectedEdge(null);
+      setPan({ x: 0, y: 0 });
+      setZoom(0.95);
+      return;
+    }
+
     const initialPos = {};
     scenario.nodes.forEach(node => {
       initialPos[node.id] = { x: node.x, y: node.y };
     });
     setNodePositions(initialPos);
-    setSelectedNode(scenario.nodes[0]); // Select source node by default
+    setSelectedNode(null);
+    setSelectedEdge(null);
     setPan({ x: 0, y: 0 });
     setZoom(0.95);
-  }, [selectedScenarioKey]);
+  }, [selectedScenarioKey, hasActiveInvestigation]);
 
   // Select the node passed from Live Detection / Cases after the GNN view mounts.
   // The source object may use either a graph node id or a banking account id.
   useEffect(() => {
-    if (!selectedEntity || !scenario?.nodes?.length) return;
+    if (!selectedEntity) return;
+    if (!selectedScenarioKey) {
+      setSelectedScenarioKey('smurfing_crypto');
+      return;
+    }
+    if (!scenario?.nodes?.length) return;
 
     const candidateIds = [
       selectedEntity.id,
@@ -1291,9 +1309,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
           position: 'relative',
           width: '100%',
           height: 620,
-          background: isLight
-            ? 'radial-gradient(ellipse at center, #ffffff 0%, #f1f5f9 100%)'
-            : 'radial-gradient(ellipse at center, rgba(15, 23, 42, 0.98) 0%, rgba(9, 13, 26, 1) 100%)',
+          background: '#090d16',
           borderRadius: 20,
           border: isLight ? '1px solid #cbd5e1' : '1px solid var(--border-color)',
           overflow: 'hidden',
@@ -1309,783 +1325,837 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundImage: isLight
-              ? `linear-gradient(to right, rgba(148, 163, 184, 0.18) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.18) 1px, transparent 1px)`
-              : `linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(99, 102, 241, 0.05) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px)`,
             backgroundSize: `${30 * zoom}px ${30 * zoom}px`,
             backgroundPosition: `${pan.x}px ${pan.y}px`,
             pointerEvents: 'none'
           }}
         />
 
-        {/* ------------------------------------------------------------------
-            FLOATING WIDGET 1: CRIMINAL ACTIVITIES (Kiri Bawah - Compact)
-        ------------------------------------------------------------------ */}
-        <motion.div
-          drag
-          dragConstraints={containerRef}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          style={{
-            position: 'absolute',
-            left: 16,
-            bottom: 16,
-            zIndex: 10,
-            width: 240,
-            background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.94)',
-            backdropFilter: 'blur(16px)',
-            border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(239, 68, 68, 0.35)',
-            borderRadius: 12,
-            padding: '12px 14px',
-            boxShadow: isLight ? '0 10px 25px rgba(0,0,0,0.1)' : '0 16px 32px rgba(0,0,0,0.6)',
-            color: isLight ? '#0f172a' : 'white',
-            cursor: 'default'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <ShieldAlert size={15} color="#ef4444" />
-              <span style={{ fontWeight: 800, fontSize: '0.8rem', color: isLight ? '#0f172a' : '#f8fafc' }}>Criminal activities</span>
-            </div>
-            <span style={{
-              background: '#ef4444',
-              color: 'white',
-              fontSize: '0.7rem',
-              fontWeight: 800,
-              padding: '1px 6px',
-              borderRadius: 4
-            }}>
-              {scenario.metrics.criminalActivities}%
-            </span>
-          </div>
+        {hasActiveInvestigation && (
+          <>
+            {/* ------------------------------------------------------------------
+                FLOATING WIDGET 1: CRIMINAL ACTIVITIES (Kiri Bawah - Compact)
+            ------------------------------------------------------------------ */}
+            <motion.div
+              drag
+              dragConstraints={containerRef}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              style={{
+                position: 'absolute',
+                left: 16,
+                bottom: 16,
+                zIndex: 10,
+                width: 240,
+                background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.94)',
+                backdropFilter: 'blur(16px)',
+                border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(239, 68, 68, 0.35)',
+                borderRadius: 12,
+                padding: '12px 14px',
+                boxShadow: isLight ? '0 10px 25px rgba(0,0,0,0.1)' : '0 16px 32px rgba(0,0,0,0.6)',
+                color: isLight ? '#0f172a' : 'white',
+                cursor: 'default'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <ShieldAlert size={15} color="#ef4444" />
+                  <span style={{ fontWeight: 800, fontSize: '0.8rem', color: isLight ? '#0f172a' : '#f8fafc' }}>Criminal activities</span>
+                </div>
+                <span style={{
+                  background: '#ef4444',
+                  color: 'white',
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  padding: '1px 6px',
+                  borderRadius: 4
+                }}>
+                  {scenario.metrics.criminalActivities}%
+                </span>
+              </div>
 
-          {/* Metric Bars */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: isLight ? '#475569' : '#cbd5e1' }}>
-                <span>Familiar Behavior</span>
-                <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.familiarBehavior}%</span>
-              </div>
-              <div style={{ width: '100%', height: 4, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ width: `${scenario.metrics.familiarBehavior}%`, height: '100%', background: '#0284c7', borderRadius: 2 }} />
-              </div>
-            </div>
+              {/* Metric Bars */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: isLight ? '#475569' : '#cbd5e1' }}>
+                    <span>Familiar Behavior</span>
+                    <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.familiarBehavior}%</span>
+                  </div>
+                  <div style={{ width: '100%', height: 4, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ width: `${scenario.metrics.familiarBehavior}%`, height: '100%', background: '#0284c7', borderRadius: 2 }} />
+                  </div>
+                </div>
 
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: isLight ? '#475569' : '#cbd5e1' }}>
-                <span>Suspicious patterns</span>
-                <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.suspiciousPatterns}%</span>
-              </div>
-              <div style={{ width: '100%', height: 4, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ width: `${scenario.metrics.suspiciousPatterns}%`, height: '100%', background: '#d97706', borderRadius: 2 }} />
-              </div>
-            </div>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: isLight ? '#475569' : '#cbd5e1' }}>
+                    <span>Suspicious patterns</span>
+                    <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.suspiciousPatterns}%</span>
+                  </div>
+                  <div style={{ width: '100%', height: 4, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ width: `${scenario.metrics.suspiciousPatterns}%`, height: '100%', background: '#d97706', borderRadius: 2 }} />
+                  </div>
+                </div>
 
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: isLight ? '#475569' : '#cbd5e1' }}>
-                <span>Historical data</span>
-                <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.historicalData}%</span>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: isLight ? '#475569' : '#cbd5e1' }}>
+                    <span>Historical data</span>
+                    <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.historicalData}%</span>
+                  </div>
+                  <div style={{ width: '100%', height: 4, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ width: `${scenario.metrics.historicalData}%`, height: '100%', background: '#059669', borderRadius: 2 }} />
+                  </div>
+                </div>
               </div>
-              <div style={{ width: '100%', height: 4, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ width: `${scenario.metrics.historicalData}%`, height: '100%', background: '#059669', borderRadius: 2 }} />
-              </div>
-            </div>
-          </div>
-        </motion.div>
+            </motion.div>
 
-        {/* ------------------------------------------------------------------
+            {/* ------------------------------------------------------------------
             FLOATING WIDGET 2: RISK SCORE & CLASSIFICATION (Kanan Atas - Compact)
         ------------------------------------------------------------------ */}
-        <motion.div
-          drag
-          dragConstraints={containerRef}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          style={{
-            position: 'absolute',
-            right: 16,
-            top: 16,
-            zIndex: 10,
-            width: 250,
-            background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.94)',
-            backdropFilter: 'blur(16px)',
-            border: isLight
-              ? (scenario.riskLevel === 'HIGH' ? '1.5px solid #ef4444' : '1.5px solid #10b981')
-              : `1.5px solid ${scenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.45)' : 'rgba(16, 185, 129, 0.45)'}`,
-            borderRadius: 14,
-            padding: '12px 14px',
-            boxShadow: isLight ? '0 10px 25px rgba(0,0,0,0.1)' : '0 16px 32px rgba(0,0,0,0.6)',
-            color: isLight ? '#0f172a' : 'white',
-            cursor: 'default'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <span style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: 0.8, color: isLight ? '#64748b' : '#94a3b8' }}>
-              GNN RISK SCORE
-            </span>
-            <span style={{
-              fontSize: '0.62rem',
-              fontWeight: 800,
-              padding: '1px 5px',
-              borderRadius: 4,
-              background: scenario.riskLevel === 'HIGH' ? '#fef2f2' : '#f0fdf4',
-              color: scenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
-              border: `1px solid ${scenario.riskLevel === 'HIGH' ? '#fca5a5' : '#86efac'}`
-            }}>
-              {scenario.riskLevel === 'HIGH' ? 'RISIKO TINGGI' : 'RISIKO RENDAH'}
-            </span>
-          </div>
+            <motion.div
+              drag
+              dragConstraints={containerRef}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              style={{
+                position: 'absolute',
+                right: 16,
+                top: 16,
+                zIndex: 10,
+                width: 250,
+                background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.94)',
+                backdropFilter: 'blur(16px)',
+                border: isLight
+                  ? (scenario.riskLevel === 'HIGH' ? '1.5px solid #ef4444' : '1.5px solid #10b981')
+                  : `1.5px solid ${scenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.45)' : 'rgba(16, 185, 129, 0.45)'}`,
+                borderRadius: 14,
+                padding: '12px 14px',
+                boxShadow: isLight ? '0 10px 25px rgba(0,0,0,0.1)' : '0 16px 32px rgba(0,0,0,0.6)',
+                color: isLight ? '#0f172a' : 'white',
+                cursor: 'default'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: 0.8, color: isLight ? '#64748b' : '#94a3b8' }}>
+                  GNN RISK SCORE
+                </span>
+                <span style={{
+                  fontSize: '0.62rem',
+                  fontWeight: 800,
+                  padding: '1px 5px',
+                  borderRadius: 4,
+                  background: scenario.riskLevel === 'HIGH' ? '#fef2f2' : '#f0fdf4',
+                  color: scenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
+                  border: `1px solid ${scenario.riskLevel === 'HIGH' ? '#fca5a5' : '#86efac'}`
+                }}>
+                  {scenario.riskLevel === 'HIGH' ? 'RISIKO TINGGI' : 'RISIKO RENDAH'}
+                </span>
+              </div>
 
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, margin: '2px 0 6px' }}>
-            <span style={{
-              fontSize: '1.8rem',
-              fontWeight: 900,
-              fontFamily: 'var(--font-mono)',
-              color: scenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
-              lineHeight: 1
-            }}>
-              {scenario.riskScore}
-            </span>
-            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b' }}>/ 100</span>
-          </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, margin: '2px 0 6px' }}>
+                <span style={{
+                  fontSize: '1.8rem',
+                  fontWeight: 900,
+                  fontFamily: 'var(--font-mono)',
+                  color: scenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
+                  lineHeight: 1
+                }}>
+                  {scenario.riskScore}
+                </span>
+                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b' }}>/ 100</span>
+              </div>
 
-          <div style={{
-            fontSize: '0.65rem',
-            padding: '5px 8px',
-            borderRadius: 6,
-            background: scenario.riskLevel === 'HIGH' ? (isLight ? '#fef2f2' : 'rgba(239, 68, 68, 0.15)') : (isLight ? '#f0fdf4' : 'rgba(16, 185, 129, 0.15)'),
-            color: scenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
-            fontWeight: 800,
-            marginBottom: 6
-          }}>
-            {scenario.classification}
-          </div>
+              <div style={{
+                fontSize: '0.65rem',
+                padding: '5px 8px',
+                borderRadius: 6,
+                background: scenario.riskLevel === 'HIGH' ? (isLight ? '#fef2f2' : 'rgba(239, 68, 68, 0.15)') : (isLight ? '#f0fdf4' : 'rgba(16, 185, 129, 0.15)'),
+                color: scenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
+                fontWeight: 800,
+                marginBottom: 6
+              }}>
+                {scenario.classification}
+              </div>
 
-          <ul style={{ margin: 0, paddingLeft: 14, fontSize: '0.65rem', color: isLight ? '#334155' : '#cbd5e1', lineHeight: 1.5 }}>
-            <li>Banyak akun perantara (fan-out)</li>
-            <li>Nominal pecahan seragam (structuring)</li>
-            <li>Waktu singkat &lt; 5 menit</li>
-            <li>Alur bermuara ke bursa kripto</li>
-          </ul>
-        </motion.div>
+              <ul style={{ margin: 0, paddingLeft: 14, fontSize: '0.65rem', color: isLight ? '#334155' : '#cbd5e1', lineHeight: 1.5 }}>
+                <li>Banyak akun perantara (fan-out)</li>
+                <li>Nominal pecahan seragam (structuring)</li>
+                <li>Waktu singkat &lt; 5 menit</li>
+                <li>Alur bermuara ke bursa kripto</li>
+              </ul>
+            </motion.div>
 
-        {/* ------------------------------------------------------------------
+            {/* ------------------------------------------------------------------
             FLOATING WIDGET 3: LEGENDA (Kiri Atas - Compact & Adaptive)
         ------------------------------------------------------------------ */}
-        <div style={{
-          position: 'absolute',
-          left: 16,
-          top: 16,
-          zIndex: 10,
-          background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.94)',
-          backdropFilter: 'blur(16px)',
-          border: isLight ? '1px solid #cbd5e1' : '1.5px solid rgba(99, 102, 241, 0.35)',
-          borderRadius: 12,
-          padding: '10px 12px',
-          boxShadow: isLight ? '0 10px 25px rgba(0,0,0,0.1)' : '0 16px 32px rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 5,
-          minWidth: 195,
-          pointerEvents: 'auto'
-        }}>
-          <div style={{
-            fontWeight: 900,
-            color: isLight ? '#1e40af' : '#93c5fd',
-            fontSize: '0.65rem',
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
-            marginBottom: 2
-          }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#0284c7' }} />
-            LEGENDA ENTITAS &amp; ALIRAN
-          </div>
+            <div style={{
+              position: 'absolute',
+              left: 16,
+              top: 16,
+              zIndex: 10,
+              background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.94)',
+              backdropFilter: 'blur(16px)',
+              border: isLight ? '1px solid #cbd5e1' : '1.5px solid rgba(99, 102, 241, 0.35)',
+              borderRadius: 12,
+              padding: '10px 12px',
+              boxShadow: isLight ? '0 10px 25px rgba(0,0,0,0.1)' : '0 16px 32px rgba(0, 0, 0, 0.7)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 5,
+              minWidth: 195,
+              pointerEvents: 'auto'
+            }}>
+              <div style={{
+                fontWeight: 900,
+                color: isLight ? '#1e40af' : '#93c5fd',
+                fontSize: '0.65rem',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                marginBottom: 2
+              }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#0284c7' }} />
+                LEGENDA ENTITAS &amp; ALIRAN
+              </div>
 
-          {/* Node Category Legend */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0284c7', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Akun Sumber (Originator)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#059669', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Akun Mule / Perantara (L1)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#d97706', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Merchant / Transit (L2)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Bursa Kripto / Cold Wallet</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#64748b', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Perangkat / Shared IP</span>
-            </div>
-          </div>
+              {/* Node Category Legend */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0284c7', flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Akun Sumber (Originator)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#059669', flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Akun Mule / Perantara (L1)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#d97706', flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Merchant / Transit (L2)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626', flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Bursa Kripto / Cold Wallet</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#64748b', flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.67rem', color: isLight ? '#0f172a' : '#ffffff', fontWeight: 700 }}>Perangkat / Shared IP</span>
+                </div>
+              </div>
 
-          {/* Edge Stream Legend */}
-          <div style={{ borderTop: isLight ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.12)', paddingTop: 5, marginTop: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 14, height: 2.5, background: '#0284c7', borderRadius: 1, flexShrink: 0 }} />
-              <span style={{ fontSize: '0.65rem', color: isLight ? '#334155' : '#e2e8f0', fontWeight: 600 }}>Transfer Pecahan (Smurfing)</span>
+              {/* Edge Stream Legend */}
+              <div style={{ borderTop: isLight ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.12)', paddingTop: 5, marginTop: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 14, height: 2.5, background: '#0284c7', borderRadius: 1, flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.65rem', color: isLight ? '#334155' : '#e2e8f0', fontWeight: 600 }}>Transfer Pecahan (Smurfing)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 14, height: 2.5, background: '#d97706', borderRadius: 1, flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.65rem', color: isLight ? '#334155' : '#e2e8f0', fontWeight: 600 }}>Agregasi Transit (Layering)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 14, height: 2.5, background: '#dc2626', borderRadius: 1, flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.65rem', color: '#dc2626', fontWeight: 700 }}>Outflow Kripto (High Risk)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 14, height: 0, borderTop: '1.5px dotted #0284c7', flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.65rem', color: isLight ? '#0369a1' : '#67e8f9', fontWeight: 600 }}>Relasi IP / Perangkat</span>
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 14, height: 2.5, background: '#d97706', borderRadius: 1, flexShrink: 0 }} />
-              <span style={{ fontSize: '0.65rem', color: isLight ? '#334155' : '#e2e8f0', fontWeight: 600 }}>Agregasi Transit (Layering)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 14, height: 2.5, background: '#dc2626', borderRadius: 1, flexShrink: 0 }} />
-              <span style={{ fontSize: '0.65rem', color: '#dc2626', fontWeight: 700 }}>Outflow Kripto (High Risk)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 14, height: 0, borderTop: '1.5px dotted #0284c7', flexShrink: 0 }} />
-              <span style={{ fontSize: '0.65rem', color: isLight ? '#0369a1' : '#67e8f9', fontWeight: 600 }}>Relasi IP / Perangkat</span>
-            </div>
-          </div>
-        </div>
 
-        {/* ------------------------------------------------------------------
+            {/* ------------------------------------------------------------------
             FLOATING WIDGET 4: ON-CANVAS ZOOM CONTROLS (Kanan Bawah - Icon Controls)
         ------------------------------------------------------------------ */}
-        <div style={{
-          position: 'absolute',
-          right: 16,
-          bottom: 16,
-          zIndex: 10,
-          background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.92)',
-          backdropFilter: 'blur(14px)',
-          border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(99, 102, 241, 0.35)',
-          borderRadius: 10,
-          padding: '4px 6px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 4,
-          boxShadow: isLight ? '0 8px 20px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.6)'
-        }}>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={handleZoomOut}
-            title="Zoom Out (-)"
-            style={{ padding: 4, height: 26, width: 26, color: isLight ? '#0f172a' : '#f8fafc' }}
-          >
-            <ZoomOut size={14} />
-          </button>
+            <div style={{
+              position: 'absolute',
+              right: 16,
+              bottom: 16,
+              zIndex: 10,
+              background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.92)',
+              backdropFilter: 'blur(14px)',
+              border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(99, 102, 241, 0.35)',
+              borderRadius: 10,
+              padding: '4px 6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              boxShadow: isLight ? '0 8px 20px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.6)'
+            }}>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleZoomOut}
+                title="Zoom Out (-)"
+                style={{ padding: 4, height: 26, width: 26, color: isLight ? '#0f172a' : '#f8fafc' }}
+              >
+                <ZoomOut size={14} />
+              </button>
 
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
-            title="Klik untuk Reset ke 100%"
-            style={{
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              minWidth: 46,
-              textAlign: 'center',
-              fontFamily: 'var(--font-mono)',
-              color: isLight ? '#0284c7' : '#38bdf8',
-              padding: '0 4px',
-              height: 24
-            }}
-          >
-            {Math.round(zoom * 100)}%
-          </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
+                title="Klik untuk Reset ke 100%"
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  minWidth: 46,
+                  textAlign: 'center',
+                  fontFamily: 'var(--font-mono)',
+                  color: isLight ? '#0284c7' : '#38bdf8',
+                  padding: '0 4px',
+                  height: 24
+                }}
+              >
+                {Math.round(zoom * 100)}%
+              </button>
 
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={handleZoomIn}
-            title="Zoom In (+)"
-            style={{ padding: 4, height: 26, width: 26, color: isLight ? '#0f172a' : '#f8fafc' }}
-          >
-            <ZoomIn size={14} />
-          </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleZoomIn}
+                title="Zoom In (+)"
+                style={{ padding: 4, height: 26, width: 26, color: isLight ? '#0f172a' : '#f8fafc' }}
+              >
+                <ZoomIn size={14} />
+              </button>
 
-          <span style={{ width: 1, height: 16, background: isLight ? '#cbd5e1' : 'rgba(255,255,255,0.15)', margin: '0 2px' }} />
+              <span style={{ width: 1, height: 16, background: isLight ? '#cbd5e1' : 'rgba(255,255,255,0.15)', margin: '0 2px' }} />
 
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={handleFitView}
-            title="Paskan Tampilan (Fit View)"
-            style={{ padding: 4, height: 26, width: 26, color: '#10b981' }}
-          >
-            <Maximize2 size={14} />
-          </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleFitView}
+                title="Paskan Tampilan (Fit View)"
+                style={{ padding: 4, height: 26, width: 26, color: '#10b981' }}
+              >
+                <Maximize2 size={14} />
+              </button>
 
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={handleResetLayout}
-            title="Reset Posisi Node"
-            style={{ padding: 4, height: 26, width: 26, color: '#ef4444' }}
-          >
-            <RotateCcw size={14} />
-          </button>
-        </div>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleResetLayout}
+                title="Reset Posisi Node"
+                style={{ padding: 4, height: 26, width: 26, color: '#ef4444' }}
+              >
+                <RotateCcw size={14} />
+              </button>
+            </div>
 
-        {/* ------------------------------------------------------------------
+            {/* ------------------------------------------------------------------
             SVG GRAPH RENDERER WITH PAN & ZOOM TRANSFORM
         ------------------------------------------------------------------ */}
-        <svg
-          ref={svgRef}
-          width="100%"
-          height="100%"
-          style={{ width: '100%', height: '100%' }}
-        >
-          {/* SVG Definitions for Gradients, Glows and Arrowheads */}
-          <defs>
-            <filter id="glow-red" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3.5" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            <filter id="glow-blue" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="2.5" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-              <path d="M0,1 L7,4 L0,7 Z" fill={isLight ? '#0284c7' : '#38bdf8'} />
-            </marker>
-            <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-              <path d="M0,1 L7,4 L0,7 Z" fill="#d97706" />
-            </marker>
-            <marker id="arrow-red" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
-              <path d="M0,1 L8,4.5 L0,8 Z" fill="#dc2626" />
-            </marker>
-            <marker id="arrow-cyan" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-              <path d="M0,1 L5,3 L0,5 Z" fill={isLight ? '#0284c7' : '#06b6d4'} />
-            </marker>
-            <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-              <path d="M0,1 L7,4 L0,7 Z" fill="#059669" />
-            </marker>
-          </defs>
+            <svg
+              ref={svgRef}
+              width="100%"
+              height="100%"
+              style={{ width: '100%', height: '100%' }}
+            >
+              {/* SVG Definitions for Gradients, Glows and Arrowheads */}
+              <defs>
+                <filter id="glow-red" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3.5" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+                <filter id="glow-blue" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="2.5" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+                <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                  <path d="M0,1 L7,4 L0,7 Z" fill={isLight ? '#0284c7' : '#38bdf8'} />
+                </marker>
+                <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                  <path d="M0,1 L7,4 L0,7 Z" fill="#d97706" />
+                </marker>
+                <marker id="arrow-red" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+                  <path d="M0,1 L8,4.5 L0,8 Z" fill="#dc2626" />
+                </marker>
+                <marker id="arrow-cyan" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                  <path d="M0,1 L5,3 L0,5 Z" fill={isLight ? '#0284c7' : '#06b6d4'} />
+                </marker>
+                <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                  <path d="M0,1 L7,4 L0,7 Z" fill="#059669" />
+                </marker>
+              </defs>
 
-          {/* Transform Group for Pan & Zoom */}
-          <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
-            {/* --------------------------------------------------------------
+              {/* Transform Group for Pan & Zoom */}
+              <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
+                {/* --------------------------------------------------------------
                 1. RENDER EDGES (TRANSAKSI & DEVICE LINKAGE)
             -------------------------------------------------------------- */}
-            {filteredEdges.map((edge, idx) => {
-              const srcPos = nodePositions[edge.from] || { x: 0, y: 0 };
-              const tgtPos = nodePositions[edge.to] || { x: 0, y: 0 };
-              const edgeStyle = getEdgeStyle(edge);
+                {filteredEdges.map((edge, idx) => {
+                  const srcPos = nodePositions[edge.from] || { x: 0, y: 0 };
+                  const tgtPos = nodePositions[edge.to] || { x: 0, y: 0 };
+                  const edgeStyle = getEdgeStyle(edge);
 
-              // Calculate curve
-              const dx = tgtPos.x - srcPos.x;
-              const dy = tgtPos.y - srcPos.y;
-              const midX = srcPos.x + dx * 0.5;
-              const midY = srcPos.y + dy * 0.5 + (Math.abs(dx) > 150 ? (dy > 0 ? 10 : -10) : 0);
+                  // Calculate curve
+                  const dx = tgtPos.x - srcPos.x;
+                  const dy = tgtPos.y - srcPos.y;
+                  const midX = srcPos.x + dx * 0.5;
+                  const midY = srcPos.y + dy * 0.5 + (Math.abs(dx) > 150 ? (dy > 0 ? 10 : -10) : 0);
 
-              const isHighlighted = hoveredNodeId === edge.from || hoveredNodeId === edge.to;
-              const isXaiEdge = XAI_MINIMAL_SUBGRAPH_NODES.includes(edge.from) && XAI_MINIMAL_SUBGRAPH_NODES.includes(edge.to);
+                  const isHighlighted = hoveredNodeId === edge.from || hoveredNodeId === edge.to;
+                  const isXaiEdge = XAI_MINIMAL_SUBGRAPH_NODES.includes(edge.from) && XAI_MINIMAL_SUBGRAPH_NODES.includes(edge.to);
 
-              const isTemporalEdge = temporalStep === 0
-                || (temporalStep === 1 && edge.flow === 'smurfing')
-                || (temporalStep === 2 && edge.flow === 'transit')
-                || (temporalStep === 3 && (edge.flow === 'crypto_outflow' || edge.type === 'crypto'));
+                  const isTemporalEdge = temporalStep === 0
+                    || (temporalStep === 1 && edge.flow === 'smurfing')
+                    || (temporalStep === 2 && edge.flow === 'transit')
+                    || (temporalStep === 3 && (edge.flow === 'crypto_outflow' || edge.type === 'crypto'));
 
-              const edgeEffectiveOpacity = !isTemporalEdge ? 0.08 : (isXaiExplainerActive && !isXaiEdge && !isHighlighted ? 0.3 : (isHighlighted ? 1 : 0.85));
-              const markerId = edge.type === 'crypto' ? 'url(#arrow-red)' : edge.type === 'device' ? 'url(#arrow-cyan)' : edge.flow === 'transit' ? 'url(#arrow-amber)' : edge.flow === 'payroll' ? 'url(#arrow-green)' : 'url(#arrow-blue)';
+                  const edgeEffectiveOpacity = !isTemporalEdge ? 0.08 : (isXaiExplainerActive && !isXaiEdge && !isHighlighted ? 0.3 : (isHighlighted ? 1 : 0.85));
+                  const markerId = edge.type === 'crypto' ? 'url(#arrow-red)' : edge.type === 'device' ? 'url(#arrow-cyan)' : edge.flow === 'transit' ? 'url(#arrow-amber)' : edge.flow === 'payroll' ? 'url(#arrow-green)' : 'url(#arrow-blue)';
 
-              return (
-                <g
-                  key={`edge-${edge.from}-${edge.to}-${idx}`}
-                  opacity={edgeEffectiveOpacity}
-                  style={{ transition: 'opacity 0.3s ease', cursor: 'pointer' }}
-                  onClick={(e) => { e.stopPropagation(); setSelectedEdge(edge); }}
-                >
-                  {/* Outer Glow Line */}
-                  <path
-                    d={`M ${srcPos.x} ${srcPos.y} Q ${midX} ${midY} ${tgtPos.x} ${tgtPos.y}`}
-                    stroke={isXaiEdge && isXaiExplainerActive ? '#f59e0b' : edgeStyle.glow}
-                    strokeWidth={isXaiEdge && isXaiExplainerActive ? edgeStyle.width + 6 : edgeStyle.width + 4}
-                    fill="none"
-                    opacity={isHighlighted || (isXaiEdge && isXaiExplainerActive) ? 0.85 : 0.3}
-                  />
-
-                  {/* Main Dashed Flow Line */}
-                  <path
-                    d={`M ${srcPos.x} ${srcPos.y} Q ${midX} ${midY} ${tgtPos.x} ${tgtPos.y}`}
-                    stroke={isXaiEdge && isXaiExplainerActive ? '#f59e0b' : edgeStyle.stroke}
-                    strokeWidth={isHighlighted || (isXaiEdge && isXaiExplainerActive) ? edgeStyle.width + 1.8 : edgeStyle.width}
-                    strokeDasharray={edgeStyle.dash}
-                    fill="none"
-                    markerEnd={markerId}
-                    opacity={isHighlighted ? 1 : 0.85}
-                  >
-                    {isAnimationPlaying && edge.type !== 'device' && (
-                      <animate
-                        attributeName="stroke-dashoffset"
-                        from="40"
-                        to="0"
-                        dur={edge.type === 'crypto' ? '0.8s' : '1.4s'}
-                        repeatCount="indefinite"
+                  return (
+                    <g
+                      key={`edge-${edge.from}-${edge.to}-${idx}`}
+                      opacity={edgeEffectiveOpacity}
+                      style={{ transition: 'opacity 0.3s ease', cursor: 'pointer' }}
+                      onClick={(e) => { e.stopPropagation(); setSelectedEdge(edge); }}
+                    >
+                      {/* Outer Glow Line */}
+                      <path
+                        d={`M ${srcPos.x} ${srcPos.y} Q ${midX} ${midY} ${tgtPos.x} ${tgtPos.y}`}
+                        stroke={isXaiEdge && isXaiExplainerActive ? '#f59e0b' : edgeStyle.glow}
+                        strokeWidth={isXaiEdge && isXaiExplainerActive ? edgeStyle.width + 6 : edgeStyle.width + 4}
+                        fill="none"
+                        opacity={isHighlighted || (isXaiEdge && isXaiExplainerActive) ? 0.85 : 0.3}
                       />
-                    )}
-                  </path>
 
-                  {/* Edge Label (Nominal & Time) */}
-                  {edge.amount > 0 && (
-                    <g transform={`translate(${midX}, ${midY})`}>
-                      <rect
-                        x="-48"
-                        y="-10"
-                        width="96"
-                        height="20"
-                        rx="5"
-                        fill={isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(15, 23, 42, 0.9)'}
-                        stroke={isLight ? '#cbd5e1' : edgeStyle.stroke}
-                        strokeWidth="1"
-                        opacity="0.95"
-                      />
-                      <text
-                        x="0"
-                        y="3"
-                        textAnchor="middle"
-                        fill={isLight ? '#0f172a' : 'white'}
-                        fontSize="8.5"
-                        fontWeight="700"
-                        fontFamily="var(--font-mono)"
+                      {/* Main Dashed Flow Line */}
+                      <path
+                        d={`M ${srcPos.x} ${srcPos.y} Q ${midX} ${midY} ${tgtPos.x} ${tgtPos.y}`}
+                        stroke={isXaiEdge && isXaiExplainerActive ? '#f59e0b' : edgeStyle.stroke}
+                        strokeWidth={isHighlighted || (isXaiEdge && isXaiExplainerActive) ? edgeStyle.width + 1.8 : edgeStyle.width}
+                        strokeDasharray={edgeStyle.dash}
+                        fill="none"
+                        markerEnd={markerId}
+                        opacity={isHighlighted ? 1 : 0.85}
                       >
-                        {formatCurrency(edge.amount).replace(',00', '')}
-                      </text>
-                    </g>
-                  )}
-                </g>
-              );
-            })}
+                        {isAnimationPlaying && edge.type !== 'device' && (
+                          <animate
+                            attributeName="stroke-dashoffset"
+                            from="40"
+                            to="0"
+                            dur={edge.type === 'crypto' ? '0.8s' : '1.4s'}
+                            repeatCount="indefinite"
+                          />
+                        )}
+                      </path>
 
-            {/* --------------------------------------------------------------
+                      {/* Edge Label (Nominal & Time) */}
+                      {edge.amount > 0 && (
+                        <g transform={`translate(${midX}, ${midY})`}>
+                          <rect
+                            x="-48"
+                            y="-10"
+                            width="96"
+                            height="20"
+                            rx="5"
+                            fill={isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(15, 23, 42, 0.9)'}
+                            stroke={isLight ? '#cbd5e1' : edgeStyle.stroke}
+                            strokeWidth="1"
+                            opacity="0.95"
+                          />
+                          <text
+                            x="0"
+                            y="3"
+                            textAnchor="middle"
+                            fill={isLight ? '#0f172a' : 'white'}
+                            fontSize="8.5"
+                            fontWeight="700"
+                            fontFamily="var(--font-mono)"
+                          >
+                            {formatCurrency(edge.amount).replace(',00', '')}
+                          </text>
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
+
+                {/* --------------------------------------------------------------
                 2. RENDER NODES (DRAGGABLE ENTITIES)
             -------------------------------------------------------------- */}
-            {filteredNodes.map((node) => {
-              const pos = nodePositions[node.id] || { x: node.x, y: node.y };
-              const isSelected = selectedNode?.id === node.id;
-              const isHovered = hoveredNodeId === node.id;
-              const isXaiNode = XAI_MINIMAL_SUBGRAPH_NODES.includes(node.id);
+                {filteredNodes.map((node) => {
+                  const pos = nodePositions[node.id] || { x: node.x, y: node.y };
+                  const isSelected = selectedNode?.id === node.id;
+                  const isHovered = hoveredNodeId === node.id;
+                  const isXaiNode = XAI_MINIMAL_SUBGRAPH_NODES.includes(node.id);
 
-              const isTemporalActiveNode = temporalStep === 0
-                || (temporalStep === 1 && (node.stage === 1 || node.stage === 2))
-                || (temporalStep === 2 && (node.stage === 2 || node.stage === 3))
-                || (temporalStep === 3 && (node.stage === 3 || node.stage === 4));
+                  const isTemporalActiveNode = temporalStep === 0
+                    || (temporalStep === 1 && (node.stage === 1 || node.stage === 2))
+                    || (temporalStep === 2 && (node.stage === 2 || node.stage === 3))
+                    || (temporalStep === 3 && (node.stage === 3 || node.stage === 4));
 
-              const nodeEffectiveOpacity = !isTemporalActiveNode
-                ? 0.12
-                : (isXaiExplainerActive && !isXaiNode && node.type !== 'source' && !isSelected && !isHovered)
-                  ? 0.3
-                  : 1;
+                  const nodeEffectiveOpacity = !isTemporalActiveNode
+                    ? 0.12
+                    : (isXaiExplainerActive && !isXaiNode && node.type !== 'source' && !isSelected && !isHovered)
+                      ? 0.3
+                      : 1;
 
-              const col = getNodeColor(node.type, node.riskScore);
-              const nodeRadius = node.type === 'source' ? 26 : node.type === 'crypto' ? 24 : node.type === 'transit' ? 22 : 20;
+                  const col = getNodeColor(node.type, node.riskScore);
+                  const nodeRadius = node.type === 'source' ? 26 : node.type === 'crypto' ? 24 : node.type === 'transit' ? 22 : 20;
 
-              return (
-                <g
-                  key={node.id}
-                  transform={`translate(${pos.x}, ${pos.y})`}
-                  opacity={nodeEffectiveOpacity}
-                  onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
-                  onMouseEnter={() => setHoveredNodeId(node.id)}
-                  onMouseLeave={() => setHoveredNodeId(null)}
-                  onClick={() => setSelectedNode(node)}
-                  style={{ cursor: 'pointer', transition: 'opacity 0.3s ease' }}
-                >
-                  {/* Pulse wave for high-risk, XAI highlighted, or selected node */}
-                  {(node.riskScore >= 85 || isSelected || (isXaiNode && isXaiExplainerActive)) && (
-                    <circle r={nodeRadius + 8} fill="none" stroke={isXaiNode && isXaiExplainerActive ? '#f59e0b' : col.border} strokeWidth="1.5" opacity="0.7">
-                      <animate attributeName="r" values={`${nodeRadius + 4};${nodeRadius + 18};${nodeRadius + 4}`} dur="2s" repeatCount="indefinite" />
-                      <animate attributeName="opacity" values="0.7;0;0.7" dur="2s" repeatCount="indefinite" />
-                    </circle>
-                  )}
-
-                  {/* Node Background Body */}
-                  <circle
-                    r={nodeRadius}
-                    fill={col.bg}
-                    stroke={isXaiNode && isXaiExplainerActive ? '#f59e0b' : col.border}
-                    strokeWidth={isSelected ? 3.5 : (isXaiNode && isXaiExplainerActive ? 3 : 2.2)}
-                    filter={isSelected || (isXaiNode && isXaiExplainerActive) ? 'url(#glow-red)' : 'none'}
-                  />
-
-                  {/* Node Icon or Code */}
-                  <text
-                    x="0"
-                    y="4"
-                    textAnchor="middle"
-                    fill={col.text}
-                    fontSize={nodeRadius * 0.62}
-                    fontWeight="900"
-                    fontFamily="var(--font-mono)"
-                    pointerEvents="none"
-                  >
-                    {node.code}
-                  </text>
-
-                  {/* Unified High-Contrast Label Pill below node */}
-                  <g transform={`translate(0, ${nodeRadius + 15})`}>
-                    <rect
-                      x="-70"
-                      y="-9"
-                      width="140"
-                      height="30"
-                      rx="6"
-                      fill={isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.94)'}
-                      stroke={isSelected ? col.border : isLight ? '#cbd5e1' : 'rgba(148, 163, 184, 0.35)'}
-                      strokeWidth={isSelected ? 1.5 : 1}
-                    />
-                    {/* Primary Name */}
-                    <text
-                      x="0"
-                      y="4"
-                      textAnchor="middle"
-                      fill={isLight ? '#0f172a' : '#ffffff'}
-                      fontSize="9.5"
-                      fontWeight="800"
-                      pointerEvents="none"
+                  return (
+                    <g
+                      key={node.id}
+                      transform={`translate(${pos.x}, ${pos.y})`}
+                      opacity={nodeEffectiveOpacity}
+                      onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
+                      onMouseEnter={() => setHoveredNodeId(node.id)}
+                      onMouseLeave={() => setHoveredNodeId(null)}
+                      onClick={() => setSelectedNode(node)}
+                      style={{ cursor: 'pointer', transition: 'opacity 0.3s ease' }}
                     >
-                      {node.label.length > 17 ? node.label.substring(0, 15) + '...' : node.label}
-                    </text>
-                    {/* Secondary Bank & Account */}
-                    <text
-                      x="0"
-                      y="16"
-                      textAnchor="middle"
-                      fill={isLight ? '#0284c7' : '#93c5fd'}
-                      fontSize="7.8"
-                      fontWeight="700"
-                      fontFamily="var(--font-mono)"
-                      pointerEvents="none"
-                    >
-                      {node.bank} • {node.account ? (node.account.length > 11 ? node.account.substring(0, 9) + '..' : node.account) : ''}
-                    </text>
-                  </g>
-                </g>
-              );
-            })}
-          </g>
-        </svg>
+                      {/* Pulse wave for high-risk, XAI highlighted, or selected node */}
+                      {(node.riskScore >= 85 || isSelected || (isXaiNode && isXaiExplainerActive)) && (
+                        <circle r={nodeRadius + 8} fill="none" stroke={isXaiNode && isXaiExplainerActive ? '#f59e0b' : col.border} strokeWidth="1.5" opacity="0.7">
+                          <animate attributeName="r" values={`${nodeRadius + 4};${nodeRadius + 18};${nodeRadius + 4}`} dur="2s" repeatCount="indefinite" />
+                          <animate attributeName="opacity" values="0.7;0;0.7" dur="2s" repeatCount="indefinite" />
+                        </circle>
+                      )}
 
-        {/* ------------------------------------------------------------------
+                      {/* Node Background Body */}
+                      <circle
+                        r={nodeRadius}
+                        fill={col.bg}
+                        stroke={isXaiNode && isXaiExplainerActive ? '#f59e0b' : col.border}
+                        strokeWidth={isSelected ? 3.5 : (isXaiNode && isXaiExplainerActive ? 3 : 2.2)}
+                        filter={isSelected || (isXaiNode && isXaiExplainerActive) ? 'url(#glow-red)' : 'none'}
+                      />
+
+                      {/* Node Icon or Code */}
+                      <text
+                        x="0"
+                        y="4"
+                        textAnchor="middle"
+                        fill={col.text}
+                        fontSize={nodeRadius * 0.62}
+                        fontWeight="900"
+                        fontFamily="var(--font-mono)"
+                        pointerEvents="none"
+                      >
+                        {node.code}
+                      </text>
+
+                      {/* Unified High-Contrast Label Pill below node */}
+                      <g transform={`translate(0, ${nodeRadius + 15})`}>
+                        <rect
+                          x="-70"
+                          y="-9"
+                          width="140"
+                          height="30"
+                          rx="6"
+                          fill={isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.94)'}
+                          stroke={isSelected ? col.border : isLight ? '#cbd5e1' : 'rgba(148, 163, 184, 0.35)'}
+                          strokeWidth={isSelected ? 1.5 : 1}
+                        />
+                        {/* Primary Name */}
+                        <text
+                          x="0"
+                          y="4"
+                          textAnchor="middle"
+                          fill={isLight ? '#0f172a' : '#ffffff'}
+                          fontSize="9.5"
+                          fontWeight="800"
+                          pointerEvents="none"
+                        >
+                          {node.label.length > 17 ? node.label.substring(0, 15) + '...' : node.label}
+                        </text>
+                        {/* Secondary Bank & Account */}
+                        <text
+                          x="0"
+                          y="16"
+                          textAnchor="middle"
+                          fill={isLight ? '#0284c7' : '#93c5fd'}
+                          fontSize="7.8"
+                          fontWeight="700"
+                          fontFamily="var(--font-mono)"
+                          pointerEvents="none"
+                        >
+                          {node.bank} • {node.account ? (node.account.length > 11 ? node.account.substring(0, 9) + '..' : node.account) : ''}
+                        </text>
+                      </g>
+                    </g>
+                  );
+                })}
+              </g>
+            </svg>
+
+            {/* ------------------------------------------------------------------
             CANVAS HINT BAR (Bawah Tengah - Touchpad Guidance)
         ------------------------------------------------------------------ */}
-        <div style={{
-          position: 'absolute',
-          bottom: 16,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 8,
-          background: isLight ? 'rgba(255, 255, 255, 0.94)' : 'rgba(8, 14, 30, 0.88)',
-          backdropFilter: 'blur(12px)',
-          border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(148, 163, 184, 0.25)',
-          borderRadius: 20,
-          padding: '7px 18px',
-          fontSize: '0.74rem',
-          color: isLight ? '#334155' : '#cbd5e1',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 14,
-          boxShadow: isLight ? '0 6px 16px rgba(0,0,0,0.08)' : '0 8px 24px rgba(0,0,0,0.6)',
-          pointerEvents: 'none'
-        }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: isLight ? '#0284c7' : '#93c5fd', fontWeight: 600 }}>
-            <Move size={13} color={isLight ? '#0284c7' : '#38bdf8'} /> Geser Touchpad 2 Jari untuk Pan Peta
-          </span>
-          <span style={{ color: isLight ? '#cbd5e1' : 'rgba(255,255,255,0.2)' }}>|</span>
-          <span style={{ color: isLight ? '#059669' : '#86efac', fontWeight: 600 }}>
-            Pinch Touchpad 2 Jari untuk Zoom In / Out
-          </span>
-          <span style={{ color: isLight ? '#cbd5e1' : 'rgba(255,255,255,0.2)' }}>|</span>
-          <span style={{ color: isLight ? '#dc2626' : '#fca5a5', fontWeight: 600 }}>
-            Klik &amp; Tarik Node untuk Reposisi
-          </span>
-        </div>
-      </div>
+            <div style={{
+              position: 'absolute',
+              bottom: 16,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 8,
+              background: isLight ? 'rgba(255, 255, 255, 0.94)' : 'rgba(8, 14, 30, 0.88)',
+              backdropFilter: 'blur(12px)',
+              border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(148, 163, 184, 0.25)',
+              borderRadius: 20,
+              padding: '7px 18px',
+              fontSize: '0.74rem',
+              color: isLight ? '#334155' : '#cbd5e1',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              boxShadow: isLight ? '0 6px 16px rgba(0,0,0,0.08)' : '0 8px 24px rgba(0,0,0,0.6)',
+              pointerEvents: 'none'
+            }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: isLight ? '#0284c7' : '#93c5fd', fontWeight: 600 }}>
+                <Move size={13} color={isLight ? '#0284c7' : '#38bdf8'} /> Geser Touchpad 2 Jari untuk Pan Peta
+              </span>
+              <span style={{ color: isLight ? '#cbd5e1' : 'rgba(255,255,255,0.2)' }}>|</span>
+              <span style={{ color: isLight ? '#059669' : '#86efac', fontWeight: 600 }}>
+                Pinch Touchpad 2 Jari untuk Zoom In / Out
+              </span>
+              <span style={{ color: isLight ? '#cbd5e1' : 'rgba(255,255,255,0.2)' }}>|</span>
+              <span style={{ color: isLight ? '#dc2626' : '#fca5a5', fontWeight: 600 }}>
+                Klik &amp; Tarik Node untuk Reposisi
+              </span>
+            </div>
+          </>
+        )}
+        {!hasActiveInvestigation && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            padding: 24,
+            pointerEvents: 'none'
+          }}>
+            <div style={{ maxWidth: 430, color: '#cbd5e1' }}>
+              <div style={{
+                width: 56,
+                height: 56,
+                margin: '0 auto 14px',
+                borderRadius: 16,
+                border: '1px solid rgba(56, 189, 248, 0.45)',
+                background: 'rgba(15, 23, 42, 0.7)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#38bdf8'
+              }}>
+                <Brain size={26} />
+              </div>
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc' }}>
+                Canvas investigasi siap digunakan
+              </div>
+              <div style={{ fontSize: '0.78rem', lineHeight: 1.6, marginTop: 6, color: '#94a3b8' }}>
+                Pilih skenario di atas, atau buka GNN dari transaksi Live Detection / alert agar subgraf relasional dimuat.
+              </div>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+                marginTop: 14,
+                padding: '6px 10px',
+                borderRadius: 6,
+                border: '1px solid rgba(148, 163, 184, 0.25)',
+                background: 'rgba(15, 23, 42, 0.55)',
+                color: '#64748b',
+                fontSize: '0.68rem'
+              }}>
+                Standby · belum ada entitas yang dipilih
+              </div>
+            </div>
+          </div>
+        )
+        }
+      </div >
 
       {/* ----------------------------------------------------------------------
           FORENSIC AML NODE INSPECTOR (DRAWER DETAIL SAAT NODE DIKLIK)
       ---------------------------------------------------------------------- */}
-      {selectedNode && (
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="card"
-          style={{
-            padding: 20,
-            background: 'var(--bg-card)',
-            border: `1.5px solid ${selectedNode.riskScore >= 80 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(99, 102, 241, 0.4)'}`,
-            boxShadow: '0 8px 30px rgba(0,0,0,0.3)'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{
-                width: 52,
-                height: 52,
-                borderRadius: 16,
-                background: selectedNode.riskScore >= 80 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(56, 189, 248, 0.15)',
-                border: `2px solid ${selectedNode.riskScore >= 80 ? '#ef4444' : '#38bdf8'}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: selectedNode.riskScore >= 80 ? '#ef4444' : '#38bdf8',
-                fontWeight: 900,
-                fontSize: '1.2rem'
-              }}>
-                {selectedNode.code}
-              </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>{selectedNode.label}</h3>
-                  <span style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 800,
-                    padding: '2px 8px',
-                    borderRadius: 6,
-                    background: selectedNode.riskScore >= 80 ? '#ef4444' : '#10b981',
-                    color: 'white'
-                  }}>
-                    {selectedNode.role}
-                  </span>
+      {
+        selectedNode && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="card"
+            style={{
+              padding: 20,
+              background: 'var(--bg-card)',
+              border: `1.5px solid ${selectedNode.riskScore >= 80 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(99, 102, 241, 0.4)'}`,
+              boxShadow: '0 8px 30px rgba(0,0,0,0.3)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 16,
+                  background: selectedNode.riskScore >= 80 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                  border: `2px solid ${selectedNode.riskScore >= 80 ? '#ef4444' : '#38bdf8'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: selectedNode.riskScore >= 80 ? '#ef4444' : '#38bdf8',
+                  fontWeight: 900,
+                  fontSize: '1.2rem'
+                }}>
+                  {selectedNode.code}
                 </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 3 }}>
-                  {selectedNode.bank} • No. Rekening: <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{selectedNode.account}</strong> • NIK: <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{selectedNode.nik}</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Risk Badge and Quick Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <div style={{ textAlign: 'right', marginRight: 4 }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>SKOR ANOMALI GNN</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: selectedNode.riskScore >= 80 ? '#ef4444' : '#10b981', fontFamily: 'var(--font-mono)' }}>
-                  {selectedNode.riskScore}%
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>{selectedNode.label}</h3>
+                    <span style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      padding: '2px 8px',
+                      borderRadius: 6,
+                      background: selectedNode.riskScore >= 80 ? '#ef4444' : '#10b981',
+                      color: 'white'
+                    }}>
+                      {selectedNode.role}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 3 }}>
+                    {selectedNode.bank} • No. Rekening: <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{selectedNode.account}</strong> • NIK: <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{selectedNode.nik}</strong>
+                  </div>
                 </div>
               </div>
 
-              {/* Customer 360 Drawer Trigger */}
-              <button
-                className="btn btn-sm"
-                onClick={() => {
-                  if (onOpenCustomer360) {
-                    onOpenCustomer360(selectedNode);
-                  } else if (addToast) {
-                    addToast(`👤 Membuka Customer 360 untuk ${selectedNode.label}`, 'info');
-                  }
-                }}
-                style={{
-                  fontSize: '0.78rem',
-                  height: 36,
-                  gap: 6,
-                  background: 'rgba(2, 132, 199, 0.15)',
-                  color: '#38bdf8',
-                  border: '1px solid rgba(2, 132, 199, 0.35)',
-                  fontWeight: 700
-                }}
-              >
-                <User size={14} /> Customer 360
-              </button>
+              {/* Risk Badge and Quick Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ textAlign: 'right', marginRight: 4 }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>SKOR ANOMALI GNN</div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 900, color: selectedNode.riskScore >= 80 ? '#ef4444' : '#10b981', fontFamily: 'var(--font-mono)' }}>
+                    {selectedNode.riskScore}%
+                  </div>
+                </div>
 
-              {/* Action Button: Role-Aware Block / Escalate */}
-              <button
-                className="btn btn-sm btn-primary"
-                onClick={() => {
-                  if (onCreateCase) {
-                    onCreateCase({
-                      account: selectedNode,
-                      edge: selectedEdge,
-                      graphSnapshot: { scenario: selectedScenarioKey, nodes: filteredNodes, edges: filteredEdges }
-                    });
-                  } else if (can('executeBlock')) {
-                    if (addToast) addToast(`⚡ Perintah Circuit Breaker dieksekusi oleh ${currentUser?.name || 'MLRO'}: Rekening ${selectedNode.account} dibekukan permanen.`, 'warning');
-                  } else {
-                    if (addToast) addToast(`ℹ️ Role AML Investigator telah mencatat eskalasi rekening ${selectedNode.account} ke Pejabat Kepatuhan (MLRO) di menu Cases & Compliance.`, 'info');
-                  }
-                }}
-                style={{
-                  fontSize: '0.78rem',
-                  height: 36,
-                  gap: 6,
-                  background: can('executeBlock')
-                    ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-                    : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                  border: 'none',
-                  fontWeight: 700
-                }}
-              >
-                {can('executeBlock') ? <Lock size={14} /> : <GitBranch size={14} />}
-                {can('executeBlock') ? 'Bekukan Akun Ini (MLRO)' : 'Eskalasikan ke MLRO'}
-              </button>
-            </div>
-          </div>
+                {/* Customer 360 Drawer Trigger */}
+                <button
+                  className="btn btn-sm"
+                  onClick={() => {
+                    if (onOpenCustomer360) {
+                      onOpenCustomer360(selectedNode);
+                    } else if (addToast) {
+                      addToast(`👤 Membuka Customer 360 untuk ${selectedNode.label}`, 'info');
+                    }
+                  }}
+                  style={{
+                    fontSize: '0.78rem',
+                    height: 36,
+                    gap: 6,
+                    background: 'rgba(2, 132, 199, 0.15)',
+                    color: '#38bdf8',
+                    border: '1px solid rgba(2, 132, 199, 0.35)',
+                    fontWeight: 700
+                  }}
+                >
+                  <User size={14} /> Customer 360
+                </button>
 
-          {selectedEdge && (
-            <div style={{ marginTop: 16, padding: 14, borderRadius: 10, background: isLight ? '#eff6ff' : 'rgba(14, 116, 144, 0.12)', border: `1px solid ${isLight ? '#bfdbfe' : 'rgba(56, 189, 248, 0.3)'}` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <strong style={{ color: isLight ? '#075985' : '#7dd3fc' }}>Detail Edge Terpilih</strong>
-                <button className="btn btn-ghost btn-sm" onClick={() => setSelectedEdge(null)} style={{ padding: 3 }} title="Tutup detail edge"><X size={14} /></button>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8, fontSize: '0.76rem' }}>
-                <div><span style={{ color: 'var(--text-muted)' }}>Jenis:</span> <strong>{selectedEdge.type || selectedEdge.flow || 'transfer'}</strong></div>
-                <div><span style={{ color: 'var(--text-muted)' }}>Nominal:</span> <strong>{selectedEdge.amount ? formatCurrency(selectedEdge.amount) : 'Relational link'}</strong></div>
-                <div><span style={{ color: 'var(--text-muted)' }}>Waktu:</span> <strong>{selectedEdge.timestamp || selectedEdge.time || 'N/A'}</strong></div>
-                <div><span style={{ color: 'var(--text-muted)' }}>Channel:</span> <strong>{selectedEdge.channel || selectedEdge.purpose_code || 'GNN topology'}</strong></div>
-                <div><span style={{ color: 'var(--text-muted)' }}>Relevansi:</span> <strong>{selectedEdge.importance || selectedEdge.weight || (selectedEdge.type === 'crypto' ? 'High' : 'Medium')}</strong></div>
-              </div>
-              <div style={{ marginTop: 10, fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                <strong>Penjelasan:</strong> {selectedEdge.explanation || `Edge ${selectedEdge.from} → ${selectedEdge.to} dipertahankan karena berkontribusi pada pola ${selectedEdge.flow || selectedEdge.type || 'relasional'} dalam subgraf investigasi.`}
-              </div>
-            </div>
-          )}
-
-          {/* Detailed Forensic Meta Cards */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
-            gap: 12,
-            marginTop: 16,
-            paddingTop: 16,
-            borderTop: '1px solid var(--border-color)'
-          }}>
-            <div style={{ background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>SALDO TERAKHIR</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
-                {formatCurrency(selectedNode.balance)}
+                {/* Action Button: Role-Aware Block / Escalate */}
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={() => {
+                    if (onCreateCase) {
+                      onCreateCase({
+                        account: selectedNode,
+                        edge: selectedEdge,
+                        graphSnapshot: { scenario: selectedScenarioKey, nodes: filteredNodes, edges: filteredEdges }
+                      });
+                    } else if (can('executeBlock')) {
+                      if (addToast) addToast(`⚡ Perintah Circuit Breaker dieksekusi oleh ${currentUser?.name || 'MLRO'}: Rekening ${selectedNode.account} dibekukan permanen.`, 'warning');
+                    } else {
+                      if (addToast) addToast(`ℹ️ Role AML Investigator telah mencatat eskalasi rekening ${selectedNode.account} ke Pejabat Kepatuhan (MLRO) di menu Cases & Compliance.`, 'info');
+                    }
+                  }}
+                  style={{
+                    fontSize: '0.78rem',
+                    height: 36,
+                    gap: 6,
+                    background: can('executeBlock')
+                      ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                      : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    border: 'none',
+                    fontWeight: 700
+                  }}
+                >
+                  {can('executeBlock') ? <Lock size={14} /> : <GitBranch size={14} />}
+                  {can('executeBlock') ? 'Bekukan Akun Ini (MLRO)' : 'Eskalasikan ke MLRO'}
+                </button>
               </div>
             </div>
 
-            <div style={{ background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>PERANGKAT & DEVICE ID</div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0284c7', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
-                {selectedNode.deviceId}
+            {selectedEdge && (
+              <div style={{ marginTop: 16, padding: 14, borderRadius: 10, background: isLight ? '#eff6ff' : 'rgba(14, 116, 144, 0.12)', border: `1px solid ${isLight ? '#bfdbfe' : 'rgba(56, 189, 248, 0.3)'}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <strong style={{ color: isLight ? '#075985' : '#7dd3fc' }}>Detail Edge Terpilih</strong>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setSelectedEdge(null)} style={{ padding: 3 }} title="Tutup detail edge"><X size={14} /></button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8, fontSize: '0.76rem' }}>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Jenis:</span> <strong>{selectedEdge.type || selectedEdge.flow || 'transfer'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Nominal:</span> <strong>{selectedEdge.amount ? formatCurrency(selectedEdge.amount) : 'Relational link'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Waktu:</span> <strong>{selectedEdge.timestamp || selectedEdge.time || 'N/A'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Channel:</span> <strong>{selectedEdge.channel || selectedEdge.purpose_code || 'GNN topology'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Relevansi:</span> <strong>{selectedEdge.importance || selectedEdge.weight || (selectedEdge.type === 'crypto' ? 'High' : 'Medium')}</strong></div>
+                </div>
+                <div style={{ marginTop: 10, fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  <strong>Penjelasan:</strong> {selectedEdge.explanation || `Edge ${selectedEdge.from} → ${selectedEdge.to} dipertahankan karena berkontribusi pada pola ${selectedEdge.flow || selectedEdge.type || 'relasional'} dalam subgraf investigasi.`}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div style={{ background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>ALAMAT IP ASAL (GEOLOKASI)</div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#d97706', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
-                {selectedNode.ip}
+            {/* Detailed Forensic Meta Cards */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
+              gap: 12,
+              marginTop: 16,
+              paddingTop: 16,
+              borderTop: '1px solid var(--border-color)'
+            }}>
+              <div style={{ background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>SALDO TERAKHIR</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+                  {formatCurrency(selectedNode.balance)}
+                </div>
               </div>
-            </div>
 
-            <div style={{ background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>INDIKASI POLA FORENSIK</div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-primary)', marginTop: 2 }}>
-                {selectedNode.description}
+              <div style={{ background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>PERANGKAT & DEVICE ID</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0284c7', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+                  {selectedNode.deviceId}
+                </div>
+              </div>
+
+              <div style={{ background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>ALAMAT IP ASAL (GEOLOKASI)</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#d97706', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+                  {selectedNode.ip}
+                </div>
+              </div>
+
+              <div style={{ background: isLight ? '#f8fafc' : 'var(--bg-card-subtle)', padding: '10px 14px', borderRadius: 10, border: isLight ? '1px solid #e2e8f0' : '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>INDIKASI POLA FORENSIK</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-primary)', marginTop: 2 }}>
+                  {selectedNode.description}
+                </div>
               </div>
             </div>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
 
       {/* ----------------------------------------------------------------------
           PANEL: 4 INDIKATOR UTAMA + 15 SUB-INDIKATOR REAL (RF + GNN + Rule Engine)
       ---------------------------------------------------------------------- */}
-      {scenario.metrics.subIndicators && (
+      {hasActiveInvestigation && scenario.metrics.subIndicators && (
         <div style={{
           padding: 20,
           background: isLight ? '#ffffff' : '#0f172a',
@@ -2362,7 +2432,8 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
             ))}
           </div>
         </div>
-      )}
+      )
+      }
 
       {/* ----------------------------------------------------------------------
           FOOTER EXPLANATION CARD (PENJELASAN POLA GRAF SMURFING PPATK & OJK)
@@ -2398,7 +2469,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }
 
