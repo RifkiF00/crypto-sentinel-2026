@@ -72,7 +72,7 @@ import { maskName, maskAccount, maskNik, maskIp } from '../utils/masking';
 // ==========================================
 // 1. LIVE MONITORING VIEW
 // ==========================================
-export function MonitoringView({ transactions, setTransactions, addToast, rules, isMasked = true, onNavigateToGNN, onOpenCustomer360 }) {
+export function MonitoringView({ transactions, setTransactions, setAlerts, addToast, rules, isMasked = true, onNavigateToGNN, onOpenCustomer360 }) {
   const [isLive, setIsLive] = useState(true);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationSummary, setSimulationSummary] = useState(null);
@@ -91,6 +91,10 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules,
     try {
       const result = await trigger150AttackSimulation();
       setTransactions(result.transactions || []);
+      if (setAlerts && result.alerts) {
+        const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
+        setAlerts(result.alerts.filter(alert => !storedResolved.includes(alert.id)));
+      }
       setSimulationSummary(result.summary || null);
       if (addToast) addToast('Simulasi selesai: 135 normal, 15 fraud anomaly, seluruh IND-01—IND-15 teruji.', 'success');
       setTickerLogs(prev => [{

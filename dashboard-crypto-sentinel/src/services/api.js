@@ -74,7 +74,11 @@ async function fetchWithTimeout(resource, options = {}) {
 
 // Convert API logs to Dashboard transaction format
 export function mapApiLogToTx(log) {
-  const txn = log.transaction;
+  const txn = log.transaction || {
+    amount: log.amount || 0,
+    destinationAccount: log.destinationAccount || log.receiver_account || '',
+    sender_account: log.senderAccount || log.sender_account || '',
+  };
   const isBlocked = log.decision === 'BLOCK';
   const isFlagged = log.decision === 'REVIEW';
   const status = isBlocked ? 'blocked' : isFlagged ? 'flagged' : 'approved';
@@ -88,25 +92,13 @@ export function mapApiLogToTx(log) {
   const destAcc = txn.destinationAccount || '';
   const isCrypto = destAcc.startsWith('9012') || destAcc.toLowerCase().includes('exchange') || destAcc.toLowerCase().includes('mule');
 
-  let senderAccount = log.senderAccount || txn.sender_account || '0123456789';
-  let senderName = log.senderName || (senderAccount === '0123456789' ? 'Ahmad Faisal' : 'Budi Santoso');
-  let senderBank = log.senderBank || (senderAccount === '0123456789' || senderAccount === '1122334455' ? 'Bank bjb' : 'Bank Kuningan');
+  const senderAccount = log.senderAccount || txn.sender_account || '0123456789';
+  const senderName = log.senderName || log.sender_name || 'Nasabah Uji';
+  const senderBank = log.senderBank || log.sender_bank || 'Bank Kuningan';
 
-  if (senderAccount === '1234567890') {
-    senderName = 'Budi Santoso';
-    senderBank = 'Bank Kuningan';
-  } else if (senderAccount === '0123456789') {
-    senderName = 'Ahmad Faisal';
-    senderBank = 'Bank bjb';
-  } else if (senderAccount === '1122334455') {
-    senderName = 'Hendro Wijaya';
-    senderBank = 'Bank bjb';
-  } else if (senderAccount === '9876543210') {
-    senderName = 'Siti Rahmawati';
-    senderBank = 'Bank bjb';
-  }
-
-  let destDisplay = log.destinationName ? `${log.destinationName} (${log.destinationBank || 'Bank bjb'})` : destAcc;
+  let destDisplay = log.destinationName
+    ? `${log.destinationName} (${log.destinationBank || log.destination_bank || 'Bank bjb'})`
+    : (log.receiver_name ? `${log.receiver_name} (${log.receiver_bank || 'Bank'})` : destAcc);
   if (destAcc === '9876543210' || destAcc === '098765432100') {
     destDisplay = 'Siti Rahma (Bank bjb)';
 
@@ -351,25 +343,41 @@ export async function trigger150AttackSimulation() {
     throw new Error(`Attack simulation failed (${response.status})`);
   }
   const payload = await response.json();
-  return {
-    ...payload,
-    transactions: (payload.transactions || []).map(tx => ({
-      ...tx,
-      id: tx.id || tx.transaction_id,
-      timestamp: tx.timestamp,
-      senderName: tx.sender_name,
-      senderAccount: tx.sender_account,
-      senderBank: tx.sender_bank,
-      destination: tx.receiver_name || tx.destinationAccount,
-      destinationAccount: tx.destinationAccount,
-      destinationBank: tx.receiver_bank,
-      destinationType: String(tx.destinationAccount || '').startsWith('9012') ? 'Crypto Exchange' : 'Transfer Bank',
-      riskScore: tx.risk_score,
-      status: tx.status,
-      reason: tx.description,
-      flaggedRules: tx.is_fraud ? [tx.metric_name, tx.metric_code] : []
-    }))
-  };
+  const transactions = (payload.transactions || []).map(tx => ({
+    ...tx,
+    id: tx.id || tx.transaction_id,
+    timestamp: tx.timestamp,
+    senderName: tx.sender_name,
+    senderAccount: tx.sender_account,
+    senderBank: tx.sender_bank,
+    destination: tx.receiver_name || tx.destinationAccount,
+    destinationAccount: tx.destinationAccount,
+    destinationBank: tx.receiver_bank,
+    destinationType: String(tx.destinationAccount || '').startsWith('9012') ? 'Crypto Exchange' : 'Transfer Bank',
+    riskScore: tx.risk_score,
+    status: tx.status,
+    reason: tx.description,
+    flaggedRules: tx.is_fraud ? [tx.metric_name, tx.metric_code] : []
+  }));
+
+  const fraudAlerts = transactions
+    .filter(tx => tx.is_fraud)
+    .map(tx => ({
+      id: tx.id,
+      transaction_id: tx.id,
+      type: tx.decision === 'BLOCK' ? 'critical' : 'warning',
+      title: tx.decision === 'BLOCK' ? 'Pencegahan Otomatis' : 'Transaksi Ditandai',
+      description: `${tx.senderName} (${tx.senderBank}) mengirim ke ${tx.destination}. Alasan: ${tx.reason}`,
+      time: tx.timestamp,
+      rawTimestamp: tx.timestamp,
+      riskScore: tx.riskScore,
+      metricCode: tx.metric_code,
+      metricName: tx.metric_name,
+      dataSource: DATA_SOURCES.LIVE_SENTINEL,
+      sourceMeta: createDataMeta(DATA_SOURCES.LIVE_SENTINEL)
+    }));
+
+  return { ...payload, transactions, alerts: fraudAlerts };
 }
 
 export async function triggerSmurfingSimulation() {

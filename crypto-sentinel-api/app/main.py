@@ -1140,8 +1140,55 @@ def trigger_smurfing_simulation():
 
 @app.post("/api/v1/sentinel/simulate-attack-150")
 def simulate_attack_150():
-    """Generate a deterministic-shape sandbox batch: 135 normal + 15 fraud anomalies."""
+    """Generate a sandbox batch and publish every item to the live transaction feed."""
     dataset = generate_150_attack_dataset()
+
+    # The sandbox dataset has a flatter shape than the normal FDS payload. Keep
+    # the original batch response for Live Detection, while also publishing
+    # equivalent log records so /alerts can surface the 15 fraud transactions.
+    published_logs = []
+    for tx in dataset["transactions"]:
+        if not tx.get("is_fraud"):
+            continue
+
+        published_logs.append({
+            "transaction_id": tx["transaction_id"],
+            "timestamp": tx["timestamp"],
+            "transaction": {
+                "type": "TRANSFER",
+                "amount": tx["amount"],
+                "oldbalanceOrg": tx["amount"],
+                "newbalanceOrig": 0,
+                "destinationAccount": tx["destinationAccount"],
+                "sender_account": tx["sender_account"],
+                "purpose_code": tx.get("purpose_code"),
+                "description": tx.get("description"),
+            },
+            "senderAccount": tx["sender_account"],
+            "senderName": tx["sender_name"],
+            "national_id": get_profile_for_account(tx["sender_account"])["national_id"],
+            "risk_score": tx["risk_score"],
+            "risk_level": tx["risk_level"],
+            "decision": tx["decision"],
+            "reasons": [tx["description"]],
+            "threat_match": tx["metric_name"],
+            "indicator_id": tx["indicator_id"],
+            "metric_code": tx["metric_code"],
+            "metric_name": tx["metric_name"],
+            "engine": tx["engine"],
+            "senderBank": tx["sender_bank"],
+            "destinationBank": tx["receiver_bank"],
+        })
+
+    # Replace a previous sandbox batch rather than duplicating the same 15 IDs
+    # when the operator runs the simulation again.
+    sandbox_ids = {log["transaction_id"] for log in published_logs}
+    transaction_logs[:] = [
+        log for log in transaction_logs
+        if log.get("transaction_id") not in sandbox_ids
+    ]
+    transaction_logs.extend(published_logs)
+
     return {
         "status": "SUCCESS",
         "message": "Simulasi serangan 150 transaksi selesai: 135 normal dan 15 anomaly fraud.",

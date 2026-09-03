@@ -295,6 +295,7 @@ function DashboardLayout({ onBackToLanding }) {
                 <MonitoringView
                   transactions={transactions}
                   setTransactions={setTransactions}
+                  setAlerts={setAlerts}
                   addToast={addToast}
                   rules={rules}
                   isMasked={privacyMasking}
