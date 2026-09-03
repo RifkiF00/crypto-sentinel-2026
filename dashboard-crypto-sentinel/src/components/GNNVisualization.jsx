@@ -1935,20 +1935,6 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
             pointerEvents: 'none'
           }}>
             <div style={{ maxWidth: 430, color: '#cbd5e1' }}>
-              <div style={{
-                width: 56,
-                height: 56,
-                margin: '0 auto 14px',
-                borderRadius: 16,
-                border: '1px solid rgba(56, 189, 248, 0.45)',
-                background: 'rgba(15, 23, 42, 0.7)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#38bdf8'
-              }}>
-                <Brain size={26} />
-              </div>
               <div style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc' }}>
                 Canvas investigasi siap digunakan
               </div>
