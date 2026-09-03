@@ -2400,6 +2400,12 @@ a:hover {
 .gnn-metrics-catalog-view {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.gnn-metrics-catalog-view * {
+  box-sizing: border-box;
 }
 
 .catalog-grid-layout {
@@ -2407,6 +2413,14 @@ a:hover {
   grid-template-columns: 360px 1fr;
   gap: 20px;
   align-items: start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.catalog-grid-layout>* {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .catalog-compare-grid {

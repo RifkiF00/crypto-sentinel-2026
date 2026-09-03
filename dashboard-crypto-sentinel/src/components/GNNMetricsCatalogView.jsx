@@ -668,7 +668,7 @@ export default function GNNMetricsCatalogView({ addToast, onOpenCustomer360, onC
                             <Network size={24} />
                         </div>
                         <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                 <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: 4, background: '#dbeafe', color: '#1d4ed8' }}>
                                     STANDAR BLUEPRINT 4 SIGNAL GROUPS
                                 </span>
@@ -952,7 +952,7 @@ export default function GNNMetricsCatalogView({ addToast, onOpenCustomer360, onC
                                     {currentIndicator.name}
                                 </h3>
 
-                                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45, maxWidth: '750px' }}>
+                                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45, maxWidth: '100%' }}>
                                     {currentIndicator.description}
                                 </p>
                             </div>
