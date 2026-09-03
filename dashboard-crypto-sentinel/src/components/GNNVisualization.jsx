@@ -682,44 +682,210 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
   const scenario = useMemo(() => {
     if (!selectedEntity) return baseScenario;
 
-    const senderName = selectedEntity.senderName || selectedEntity.sender_name || selectedEntity.name || selectedEntity.holder || 'Ahmad Fauzi';
+    const senderName = selectedEntity.senderName || selectedEntity.sender_name || selectedEntity.name || selectedEntity.holder || 'Nasabah Terlapor';
     const senderAccount = selectedEntity.senderAccount || selectedEntity.sender_account || selectedEntity.account || selectedEntity.account_id || '320800123456';
     const senderBank = selectedEntity.senderBank || selectedEntity.sender_bank || selectedEntity.bank || 'Bank Kuningan';
     const amount = Number(selectedEntity.amount) || 150000000;
     const riskScore = Number(selectedEntity.riskScore || selectedEntity.risk_score) || baseScenario.riskScore || 92;
+    const metricCode = selectedEntity.metric_code || selectedEntity.metricCode || selectedEntity.indicator_id || '';
+    const metricName = selectedEntity.metric_name || selectedEntity.metricName || selectedEntity.title || 'Deteksi Anomali Transaksi';
+    const reasonStr = selectedEntity.reason || selectedEntity.description || selectedEntity.xai_explanation || baseScenario.summary;
+
     const destName = selectedEntity.destination || selectedEntity.destinationName || selectedEntity.receiver_name || 'PT Indodax Nasional Indonesia';
     const destAccount = selectedEntity.destinationAccount || selectedEntity.receiver_account || '9012666666';
-    const destBank = selectedEntity.destinationBank || selectedEntity.receiver_bank || 'BCA Escrow';
-    const desc = selectedEntity.reason || selectedEntity.description || selectedEntity.xai_explanation || baseScenario.summary;
+    const destBank = selectedEntity.destinationBank || selectedEntity.receiver_bank || 'BCA Escrow Indodax';
 
-    const dynamicNodes = baseScenario.nodes.map(node => {
-      if (node.id === 'A1' || node.type === 'source') {
-        return {
-          ...node,
-          label: senderName,
-          account: senderAccount,
-          bank: senderBank,
-          balance: amount > 0 ? amount : node.balance,
-          riskScore: riskScore,
-          riskLevel: riskScore >= 85 ? 'high' : riskScore >= 60 ? 'medium' : 'low',
-          description: desc
-        };
-      }
-      if ((node.id === 'C1' || node.id === 'C2' || node.id === 'R5') && destName) {
-        return {
-          ...node,
-          label: destName.length > 22 ? destName.substring(0, 20) + '...' : destName,
-          account: destAccount,
-          bank: destBank
-        };
-      }
-      return node;
+    // Dinamis menentukan jumlah akun mule berdasarkan nominal & indikator kasus
+    let muleCount = 5;
+    if (amount < 30000000) {
+      muleCount = 2;
+    } else if (amount < 80000000) {
+      muleCount = 3;
+    }
+
+    if (metricCode.includes('IND-03') || metricCode.includes('dormant')) {
+      muleCount = 2;
+    } else if (metricCode.includes('IND-01') || metricCode.includes('velocity')) {
+      muleCount = 4;
+    } else if (metricCode.includes('IND-04') || metricCode.includes('profile')) {
+      muleCount = 3;
+    }
+
+    const poolMules = [
+      { name: 'Budi Santoso', bank: 'BCA', acc: '8012000005', ip: '192.168.1.10 (Proxy)' },
+      { name: 'Ahmad Faisal', bank: 'Bank Mandiri', acc: '1370000000001', ip: '192.168.1.10 (Proxy)' },
+      { name: 'Desta Erlangga', bank: 'BNI', acc: '0912000002', ip: '192.168.1.11 (Shared)' },
+      { name: 'Siti Rahma', bank: 'BRI', acc: '888801000000003', ip: '192.168.1.11 (Shared)' },
+      { name: 'Hendri Gunawan', bank: 'CIMB Niaga', acc: '705400000004', ip: '192.168.1.12 (Shared)' }
+    ];
+
+    const selectedMules = poolMules.slice(0, muleCount);
+    const muleAmount = Math.floor(amount / muleCount);
+
+    // Dynamic Nodes Generation
+    const dynamicNodes = [];
+
+    // Stage 1: Originator Node
+    dynamicNodes.push({
+      id: 'A1',
+      stage: 1,
+      code: 'A',
+      type: 'source',
+      label: senderName,
+      account: senderAccount,
+      bank: senderBank,
+      balance: amount,
+      riskScore: riskScore,
+      riskLevel: riskScore >= 85 ? 'high' : riskScore >= 60 ? 'medium' : 'low',
+      role: 'Akun Sumber (Originator)',
+      ip: '182.16.2.90 (Location Proxy)',
+      deviceId: 'DEV-MOBILE-BANKING',
+      nik: '320801' + String(Math.abs(senderAccount.split('').reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 10000000000, 1234567890))),
+      x: 120,
+      y: 280,
+      description: `Rekening pengirim dana Rp ${amount.toLocaleString('id-ID')} atas nama ${senderName} (${senderBank} - ${senderAccount}). Alasan Flag: ${reasonStr}`
     });
+
+    // Stage 2: Mule Nodes
+    const yStart = 280 - (muleCount - 1) * 50;
+    selectedMules.forEach((m, idx) => {
+      dynamicNodes.push({
+        id: `B${idx + 1}`,
+        stage: 2,
+        code: `B${idx + 1}`,
+        type: 'mule',
+        label: m.name,
+        account: m.acc,
+        bank: m.bank,
+        balance: muleAmount,
+        riskScore: Math.max(75, riskScore - 4 + idx),
+        riskLevel: 'high',
+        role: `Akun Perantara (Mule ${idx + 1})`,
+        ip: m.ip,
+        deviceId: `DEV-MULE-${idx + 1}`,
+        nik: '320801230495000' + (idx + 1),
+        x: 380,
+        y: yStart + idx * 100,
+        description: `Menerima pecahan transfer Rp ${muleAmount.toLocaleString('id-ID')}, diteruskan ke agregasi transit.`
+      });
+    });
+
+    // Stage 3: Transit Nodes
+    const transitCount = Math.min(2, muleCount);
+    for (let idx = 0; idx < transitCount; idx++) {
+      const transitAmount = Math.floor(amount / transitCount);
+      dynamicNodes.push({
+        id: `M${idx + 1}`,
+        stage: 3,
+        code: `M${idx + 1}`,
+        type: 'transit',
+        label: idx === 0 ? 'Payment Gateway Transit' : 'P2P Merchant Escrow',
+        account: `VA-908821900${idx + 1}`,
+        bank: idx === 0 ? 'BCA Virtual Account' : 'Mandiri Merchant',
+        balance: transitAmount,
+        riskScore: Math.max(80, riskScore - 2),
+        riskLevel: 'high',
+        role: 'Merchant Transit Layer 2',
+        ip: `103.152.88.${idx + 1} (Gateway)`,
+        deviceId: `SERVER-GATEWAY-0${idx + 1}`,
+        nik: `COMPANY-REG-99${idx + 1}`,
+        x: 650,
+        y: 200 + idx * 160,
+        description: `Mengumpulkan dana pecahan Rp ${transitAmount.toLocaleString('id-ID')}, memfasilitasi transfer ke bursa.`
+      });
+    }
+
+    // Stage 4: Destination Node
+    dynamicNodes.push({
+      id: 'C1',
+      stage: 4,
+      code: 'C1',
+      type: 'crypto',
+      label: destName.length > 22 ? destName.substring(0, 20) + '...' : destName,
+      account: destAccount,
+      bank: destBank,
+      balance: amount,
+      riskScore: Math.min(99, riskScore + 3),
+      riskLevel: 'high',
+      role: 'Tujuan Akhir Transfer',
+      ip: 'API Gateway Settle',
+      deviceId: 'VA-ESCROW-VAULT',
+      nik: 'VASP-OFFICIAL',
+      x: 920,
+      y: 280,
+      description: `Tujuan akhir pengiriman dana ke ${destName} (${destBank}).`
+    });
+
+    // Stage 5: Shared Device Linkage Node
+    dynamicNodes.push({
+      id: 'D1',
+      stage: 5,
+      code: 'D1',
+      type: 'device',
+      label: 'Shared IP: 192.168.1.10',
+      account: 'Shared Network Infrastructure',
+      bank: 'ISP Telecommunication',
+      balance: 0,
+      riskScore: 88,
+      riskLevel: 'high',
+      role: 'Shared IP Linkage',
+      ip: '192.168.1.10',
+      deviceId: 'MAC-SHARED-DEVICE',
+      nik: 'INFRA-DEVICE-LINK',
+      x: 380,
+      y: Math.max(580, yStart + muleCount * 100 + 40),
+      description: 'Terdeteksi pengoperasian beberapa akun mule dari jaringan IP yang identik.'
+    });
+
+    // Dynamic Edges Generation
+    const dynamicEdges = [];
+    selectedMules.forEach((m, idx) => {
+      dynamicEdges.push({
+        from: 'A1',
+        to: `B${idx + 1}`,
+        amount: muleAmount,
+        time: `09:0${idx + 1} WIB`,
+        type: 'transfer',
+        flow: 'smurfing',
+        risk: 'high'
+      });
+
+      const targetTransit = `M${(idx % transitCount) + 1}`;
+      dynamicEdges.push({
+        from: `B${idx + 1}`,
+        to: targetTransit,
+        amount: muleAmount,
+        time: `09:0${idx + 6} WIB`,
+        type: 'transfer',
+        flow: 'transit',
+        risk: 'high'
+      });
+    });
+
+    for (let idx = 0; idx < transitCount; idx++) {
+      dynamicEdges.push({
+        from: `M${idx + 1}`,
+        to: 'C1',
+        amount: Math.floor(amount / transitCount),
+        time: `09:1${idx + 6} WIB`,
+        type: 'crypto',
+        flow: 'crypto_outflow',
+        risk: 'critical'
+      });
+    }
+
+    if (selectedMules.length >= 2) {
+      dynamicEdges.push({ from: 'B1', to: 'D1', amount: 0, time: 'Shared IP', type: 'device', flow: 'device_link', risk: 'medium' });
+      dynamicEdges.push({ from: 'B2', to: 'D1', amount: 0, time: 'Shared IP', type: 'device', flow: 'device_link', risk: 'medium' });
+    }
 
     return {
       ...baseScenario,
       riskScore: riskScore,
-      nodes: dynamicNodes
+      classification: metricName,
+      summary: `Deteksi Kasus Transaksi ${metricName}: Akun pengirim ${senderName} (${senderBank} - ${senderAccount}) memecah dana Rp ${amount.toLocaleString('id-ID')} ke ${muleCount} akun mule perantara sebelum dilarikan ke ${destName}.`,
+      nodes: dynamicNodes,
+      edges: dynamicEdges
     };
   }, [baseScenario, selectedEntity]);
 
