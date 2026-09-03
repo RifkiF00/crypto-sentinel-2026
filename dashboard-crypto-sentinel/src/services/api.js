@@ -341,6 +341,37 @@ export async function resolveAlertApi(alertId, reason = 'Hasil investigasi manua
   return { persisted: true, dataSource: DATA_SOURCES.LIVE_CORE };
 }
 
+export async function trigger150AttackSimulation() {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/api/v1/sentinel/simulate-attack-150`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    timeout: 10000
+  });
+  if (!response.ok) {
+    throw new Error(`Attack simulation failed (${response.status})`);
+  }
+  const payload = await response.json();
+  return {
+    ...payload,
+    transactions: (payload.transactions || []).map(tx => ({
+      ...tx,
+      id: tx.id || tx.transaction_id,
+      timestamp: tx.timestamp,
+      senderName: tx.sender_name,
+      senderAccount: tx.sender_account,
+      senderBank: tx.sender_bank,
+      destination: tx.receiver_name || tx.destinationAccount,
+      destinationAccount: tx.destinationAccount,
+      destinationBank: tx.receiver_bank,
+      destinationType: String(tx.destinationAccount || '').startsWith('9012') ? 'Crypto Exchange' : 'Transfer Bank',
+      riskScore: tx.risk_score,
+      status: tx.status,
+      reason: tx.description,
+      flaggedRules: tx.is_fraud ? [tx.metric_name, tx.metric_code] : []
+    }))
+  };
+}
+
 export async function triggerSmurfingSimulation() {
   try {
     const res = await fetchWithTimeout(`${CORE_API_BASE_URL}/api/v1/bri/simulate-smurfing`, {

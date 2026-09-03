@@ -14,6 +14,7 @@ import numpy as np
 
 from app.rule_engine import evaluate_transaction
 from app.str_generator import generate_str_draft, generate_str_html
+from app.attack_simulation import generate_150_attack_dataset
 
 
 app = FastAPI(
@@ -1135,6 +1136,17 @@ def trigger_smurfing_simulation():
         "results": results
     }
 
+
+
+@app.post("/api/v1/sentinel/simulate-attack-150")
+def simulate_attack_150():
+    """Generate a deterministic-shape sandbox batch: 135 normal + 15 fraud anomalies."""
+    dataset = generate_150_attack_dataset()
+    return {
+        "status": "SUCCESS",
+        "message": "Simulasi serangan 150 transaksi selesai: 135 normal dan 15 anomaly fraud.",
+        **dataset,
+    }
 
 
 @app.post("/gnn-inference")

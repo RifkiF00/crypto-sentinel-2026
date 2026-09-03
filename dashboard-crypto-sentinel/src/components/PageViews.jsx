@@ -66,7 +66,7 @@ import GNNVisualization from './GNNVisualization';
 import ResponsiveChartWrapper from './ResponsiveChartWrapper';
 
 // Dynamic API Integration
-import { checkHealth, analyzeTransaction, mapApiLogToTx, fetchCryptoExchanges, fetchBlockedPatterns, fetchMuleAccounts, fetchStatistics, fetchTransactions, resolveAlertApi, blockAccountInNeon, generateInvestigationLtkm, exportMaskedEvidence, fetchRegulatoryWatchlists, fetchMuleCommunities, fetchApoloFilings } from '../services/api';
+import { checkHealth, analyzeTransaction, mapApiLogToTx, fetchCryptoExchanges, fetchBlockedPatterns, fetchMuleAccounts, fetchStatistics, fetchTransactions, resolveAlertApi, blockAccountInNeon, generateInvestigationLtkm, exportMaskedEvidence, fetchRegulatoryWatchlists, fetchMuleCommunities, fetchApoloFilings, trigger150AttackSimulation } from '../services/api';
 import { maskName, maskAccount, maskNik, maskIp } from '../utils/masking';
 
 // ==========================================
@@ -75,6 +75,7 @@ import { maskName, maskAccount, maskNik, maskIp } from '../utils/masking';
 export function MonitoringView({ transactions, setTransactions, addToast, rules, isMasked = true, onNavigateToGNN, onOpenCustomer360 }) {
   const [isLive, setIsLive] = useState(true);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [simulationSummary, setSimulationSummary] = useState(null);
   const [autoBlock] = useState(rules.autoBlockEnabled);
   const [timeFilter, setTimeFilter] = useState('1day'); // '1day' | '7days' | 'all'
   const [tenantFilter, setTenantFilter] = useState('all'); // 'all' (Apex) | 'kuningan' | 'bjb'
@@ -83,15 +84,21 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules,
     { time: new Date().toLocaleTimeString(), text: 'Active scanning enabled. Source freshness is shown per transaction.' }
   ]);
 
-  const handleSimulateSmurfing = async () => {
+  const handleSimulateAttack = async () => {
     setIsSimulating(true);
-    if (addToast) addToast('🔥 Menjalankan 10 transfer smurfing beruntun ke engine...', 'warning');
+    setSimulationSummary(null);
+    if (addToast) addToast('Menjalankan sandbox attack: 150 transaksi sedang dianalisis...', 'warning');
     try {
-      const { triggerSmurfingSimulation } = await import('../services/api');
-      const res = await triggerSmurfingSimulation();
-      if (addToast) addToast(`✅ Simulasi Selesai! ${res.message || ''}`, 'success');
+      const result = await trigger150AttackSimulation();
+      setTransactions(result.transactions || []);
+      setSimulationSummary(result.summary || null);
+      if (addToast) addToast('Simulasi selesai: 135 normal, 15 fraud anomaly, seluruh IND-01—IND-15 teruji.', 'success');
+      setTickerLogs(prev => [{
+        time: new Date().toLocaleTimeString(),
+        text: '[SANDBOX] 150 transaksi diproses · 15 indikator anomaly ter-cover'
+      }, ...prev.slice(0, 9)]);
     } catch (e) {
-      if (addToast) addToast(`⚠️ Gagal menjalankan simulasi: ${e.message}`, 'error');
+      if (addToast) addToast(`Gagal menjalankan simulasi sandbox: ${e.message}`, 'error');
     } finally {
       setIsSimulating(false);
     }
@@ -194,9 +201,9 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules,
         {/* Simulasi Sandbox — dipindah dari global header ke sini agar kontekstual */}
         <button
           className="btn btn-ghost btn-sm"
-          onClick={handleSimulateSmurfing}
+          onClick={handleSimulateAttack}
           disabled={isSimulating}
-          title="Injeksi 10 transaksi smurfing ke engine untuk pengujian"
+          title="Injeksi 150 transaksi sandbox: 135 normal + 15 fraud anomaly"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -213,7 +220,7 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules,
           }}
         >
           <Zap size={14} style={{ color: isSimulating ? '#b45309' : '#f59e0b' }} className={isSimulating ? 'animate-spin' : ''} />
-          <span>{isSimulating ? 'Memproses...' : 'Simulasi Sandbox'}</span>
+          <span>{isSimulating ? 'Memproses 150 TX...' : 'Simulasi Sandbox · 150 TX'}</span>
         </button>
 
         <button
@@ -228,6 +235,22 @@ export function MonitoringView({ transactions, setTransactions, addToast, rules,
           <span style={{ fontSize: '0.8rem', marginLeft: 8 }}>{isLive ? 'SCANNING ACTIVE' : 'STANDBY'}</span>
         </div>
       </div>
+
+      {simulationSummary && (
+        <div className="card" style={{ marginBottom: 24, borderColor: 'rgba(37, 99, 235, 0.35)', background: 'rgba(37, 99, 235, 0.06)' }}>
+          <div className="card-body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', padding: '12px 16px' }}>
+            <div>
+              <strong style={{ color: 'var(--accent-primary)' }}>SANDBOX ATTACK SELESAI</strong>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 4 }}>Batch 150 transaksi · 15 fraud anomaly · 15 indikator teruji</div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <span className="badge badge-approved">{simulationSummary.normal_transactions_count} Normal</span>
+              <span className="badge badge-blocked">{simulationSummary.fraud_anomalies_count} Fraud</span>
+              <span className="badge badge-flagged">IND-01—IND-15</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="content-grid-wide">
         {/* Left Side: Live Feed & Stats */}
