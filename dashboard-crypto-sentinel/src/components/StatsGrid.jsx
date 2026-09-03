@@ -37,7 +37,7 @@ export default function StatsGrid({ transactions = [] }) {
   let bannerTitle = '';
 
   if (role === 'analyst') {
-    bannerTitle = '💼 DASHBOARD OPERASIONAL ANALIS — Status Beban Kerja & Triage Personal (Unit Forensik AML)';
+    bannerTitle = 'DASHBOARD OPERASIONAL ANALIS — Status Beban Kerja & Triage Personal (Unit Forensik AML)';
     statsList = [
       {
         label: 'Alert Ditugaskan Hari Ini',
@@ -73,7 +73,7 @@ export default function StatsGrid({ transactions = [] }) {
       },
     ];
   } else if (role === 'admin_regulator') {
-    bannerTitle = '🏛️ REGULATORY COMPLIANCE OVERVIEW — Pengawasan Independen Ekosistem Apex (OJK / BI Audit)';
+    bannerTitle = 'REGULATORY COMPLIANCE OVERVIEW — Pengawasan Independen Ekosistem Apex (OJK / BI Audit)';
     statsList = [
       {
         label: 'Total Transaksi Ekosistem',
@@ -110,7 +110,7 @@ export default function StatsGrid({ transactions = [] }) {
     ];
   } else {
     // compliance_officer (MLRO)
-    bannerTitle = '📊 KONSOLIDASI RISK DASHBOARD — Manajemen Risiko Eksekutif & Penyelamatan Dana (Apex Holding)';
+    bannerTitle = 'KONSOLIDASI RISK DASHBOARD — Manajemen Risiko Eksekutif & Penyelamatan Dana (Apex Holding)';
     statsList = [
       {
         label: 'Total Transaksi Masuk',
@@ -156,7 +156,7 @@ export default function StatsGrid({ transactions = [] }) {
           <span>{bannerTitle}</span>
         </div>
         <span className="dataset-source-tag">
-          {liveCount > 0 ? `🟢 ${liveCount} LIVE TX · API` : demoCount > 0 ? `🟠 ${demoCount} DEMO FIXTURE` : '⚪ NO DATA · MENUNGGU API'}
+          {liveCount > 0 ? `${liveCount} LIVE TX · API` : demoCount > 0 ? `${demoCount} DEMO FIXTURE` : 'NO DATA · MENUNGGU API'}
         </span>
       </div>
 
@@ -185,8 +185,9 @@ export default function StatsGrid({ transactions = [] }) {
             </div>
             <div className="stat-value">{stat.value}</div>
             <div className="stat-label">{stat.label}</div>
-            <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 4, fontWeight: 500 }}>
-              {stat.sourceNote}
+            <div style={{ fontSize: '0.73rem', color: '#1d4ed8', marginTop: 6, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#2563eb', flexShrink: 0 }} />
+              <span>{stat.sourceNote}</span>
             </div>
           </motion.div>
         ))}

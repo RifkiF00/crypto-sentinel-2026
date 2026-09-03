@@ -9,22 +9,22 @@ echo.
 echo [1/5] Starting Expresso Core Banking API (port 8080)...
 start "Expresso API :8080" cmd /k "cd /d d:\Crypto-Sentinel 2026\expresso-api && uvicorn main:app --reload --port 8080 --host 0.0.0.0"
 
-timeout /t 2 /nobreak >nul
+ping 127.0.0.1 -n 3 >nul
 
 echo [2/5] Starting Crypto-Sentinel AI Engine (port 8000)...
 start "Sentinel AI :8000" cmd /k "cd /d d:\Crypto-Sentinel 2026\crypto-sentinel-api && uvicorn app.main:app --reload --port 8000 --host 0.0.0.0"
 
-timeout /t 3 /nobreak >nul
+ping 127.0.0.1 -n 4 >nul
 
 echo [3/5] Starting Dashboard Forensik (port 5173)...
 start "Dashboard :5173" cmd /k "cd /d d:\Crypto-Sentinel 2026\dashboard-crypto-sentinel && npm run dev"
 
-timeout /t 2 /nobreak >nul
+ping 127.0.0.1 -n 3 >nul
 
 echo [4/5] Starting Flutter 1: Bank bjb DIGI (Port 8081)...
 start "Flutter bjb DIGI" cmd /k "cd /d d:\Crypto-Sentinel 2026\mobile-banking-bjb && flutter run -d chrome --web-port 8081"
 
-timeout /t 2 /nobreak >nul
+ping 127.0.0.1 -n 3 >nul
 
 echo [5/5] Starting Flutter 2: Bank Kuningan (Port 8082)...
 start "Flutter Bank Kuningan" cmd /k "cd /d d:\Crypto-Sentinel 2026\crypto-sentinel-bank-kng && flutter run -d chrome --web-port 8082"

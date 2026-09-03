@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Materi Mentoring Backend - Crypto-Sentinel 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root{--primary:#4f46e5;--primary-dark:#3730a3;--bg:#f8fafc;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;--code-bg:#0f172a;}
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
+    .hdr{background:linear-gradient(135deg,#1e1b4b 0%,#312e81 40%,#1e40af 70%,#0369a1 100%);color:white;padding:44px 56px 36px;position:relative;overflow:hidden;}
+    .hdr::before{content:'';position:absolute;top:-80px;right:-80px;width:300px;height:300px;border-radius:50%;background:rgba(99,102,241,0.2);}
+    .hdr h1{font-size:1.9rem;font-weight:800;position:relative;z-index:1;}
+    .hdr h1 span{color:#67e8f9;}
+    .hdr .sub{margin-top:10px;font-size:0.9rem;opacity:0.85;position:relative;z-index:1;}
+    .tags{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:1;}
+    .tag{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:20px;padding:3px 12px;font-size:0.76rem;font-weight:500;}
+    .layout{display:flex;max-width:1280px;margin:0 auto;}
+    .nav{width:210px;flex-shrink:0;padding:22px 0 22px 18px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+    .nav-lbl{font-size:0.63rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;padding-left:4px;}
+    .nav ul{list-style:none;}
+    .nav ul li a{display:block;padding:5px 8px;border-radius:6px;color:var(--muted);text-decoration:none;font-size:0.79rem;font-weight:500;transition:all 0.15s;}
+    .nav ul li a:hover{background:#e0e7ff;color:var(--primary);}
+    .nav ul li a.s{padding-left:16px;font-size:0.75rem;font-weight:400;}
+    .main{flex:1;padding:34px 42px 56px 34px;min-width:0;}
+    section{margin-bottom:50px;}
+    .stitle{font-size:1.35rem;font-weight:800;color:var(--primary-dark);border-bottom:3px solid #c7d2fe;padding-bottom:9px;margin-bottom:20px;display:flex;align-items:center;gap:9px;}
+    .sicon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.95rem;flex-shrink:0;}
+    .ib{background:#e0e7ff;}.it{background:#ccfbf1;}.ip{background:#f3e8ff;}.ia{background:#fef3c7;}.ir{background:#ffe4e6;}
+    h3{font-size:0.97rem;font-weight:700;margin:24px 0 11px;display:flex;align-items:center;gap:7px;}
+    h3 .n{background:var(--primary);color:white;border-radius:50%;width:21px;height:21px;display:flex;align-items:center;justify-content:center;font-size:0.68rem;font-weight:700;flex-shrink:0;}
+    p{color:#334155;margin-bottom:11px;}
+    .arch{background:var(--code-bg);border-radius:12px;padding:20px 24px;font-family:'Fira Code',monospace;font-size:0.77rem;color:#94a3b8;line-height:1.8;overflow-x:auto;margin:16px 0;}
+    .c1{color:#67e8f9;}.c2{color:#a78bfa;}.c3{color:#86efac;}.c4{color:#fbbf24;}
+    .fl{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin:13px 0;}
+    .fs{background:white;border:1px solid var(--border);border-radius:10px;padding:13px;position:relative;}
+    .fn_{position:absolute;top:-9px;left:11px;background:var(--primary);color:white;width:21px;height:21px;border-radius:50%;font-size:0.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;}
+    .fs p{font-size:0.79rem;margin:7px 0 0;color:var(--muted);}
+    .tw{overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin:13px 0;}
+    table{width:100%;border-collapse:collapse;font-size:0.81rem;}
+    thead{background:linear-gradient(135deg,#4f46e5,#7c3aed);}
+    thead th{color:white;font-weight:600;padding:10px 13px;text-align:left;font-size:0.76rem;}
+    tbody tr{border-bottom:1px solid #f1f5f9;}
+    tbody tr:last-child{border-bottom:none;}
+    tbody tr:hover{background:#f8fafc;}
+    tbody td{padding:9px 13px;vertical-align:top;color:#334155;}
+    code.f{font-family:'Fira Code',monospace;background:#f1f5f9;color:#4f46e5;padding:2px 6px;border-radius:4px;font-size:0.76rem;}
+    code.t{font-family:'Fira Code',monospace;background:#ecfdf5;color:#065f46;padding:2px 6px;border-radius:4px;font-size:0.73rem;}
+    .bge{display:inline-flex;padding:3px 9px;border-radius:20px;font-size:0.71rem;font-weight:600;}
+    .bg-g{background:#d1fae5;color:#065f46;}.bg-y{background:#fef3c7;color:#92400e;}.bg-r{background:#fee2e2;color:#991b1b;}.bg-b{background:#f1f5f9;color:#475569;}
+    .cb{background:var(--code-bg);border-radius:10px;padding:17px 21px;font-family:'Fira Code',monospace;font-size:0.77rem;color:#e2e8f0;line-height:1.7;overflow-x:auto;margin:10px 0;position:relative;}
+    .cb .ll{position:absolute;top:8px;right:12px;font-size:0.62rem;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;font-weight:600;}
+    .cb .kw{color:#c084fc;}.cb .st{color:#86efac;}.cb .cm{color:#475569;font-style:italic;}.cb .nm{color:#fbbf24;}.cb .ky{color:#f9a8d4;}
+    .ic{background:white;border:1px solid var(--border);border-radius:12px;padding:17px 20px;margin:10px 0;}
+    .ic.bl{border-left:4px solid #4f46e5;}.ic.tl{border-left:4px solid #06b6d4;}.ic.gn{border-left:4px solid #10b981;}
+    .el{display:flex;flex-direction:column;gap:7px;}
+    .ei{display:flex;align-items:flex-start;gap:9px;background:white;border:1px solid var(--border);border-radius:8px;padding:9px 13px;}
+    .mt{display:inline-block;padding:3px 9px;border-radius:5px;font-size:0.67rem;font-weight:700;font-family:'Fira Code',monospace;flex-shrink:0;min-width:48px;text-align:center;}
+    .mg{background:#d1fae5;color:#065f46;}.mp{background:#dbeafe;color:#1e40af;}
+    .ep{font-family:'Fira Code',monospace;font-size:0.78rem;color:#1e293b;font-weight:500;}
+    .sd{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin:16px 0;}
+    .sc{background:white;border:1px solid var(--border);border-radius:12px;padding:15px;text-align:center;}
+    .sc .si{font-size:1.7rem;margin-bottom:7px;}
+    .sc h4{font-size:0.84rem;font-weight:700;}
+    .sc p{font-size:0.73rem;color:var(--muted);margin:4px 0 0;}
+    .sc .sw{margin-top:9px;font-size:1.2rem;font-weight:800;color:var(--primary);}
+    .dm{display:flex;border-radius:10px;overflow:hidden;margin:13px 0;height:44px;}
+    .da{background:linear-gradient(135deg,#059669,#34d399);flex:0 0 59%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.8rem;}
+    .dv{background:linear-gradient(135deg,#d97706,#fbbf24);flex:0 0 25%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.8rem;}
+    .db{background:linear-gradient(135deg,#dc2626,#f87171);flex:0 0 16%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.8rem;}
+    .dl{display:flex;justify-content:space-between;font-size:0.71rem;color:var(--muted);margin-top:4px;}
+    .rh{color:#dc2626;font-weight:700;}.rm{color:#d97706;font-weight:700;}.rl{color:#059669;font-weight:700;}
+    .sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin:13px 0;}
+    .si_{background:white;border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+    .si_ .ico{font-size:1.45rem;margin-bottom:5px;}
+    .si_ .nm_{font-size:0.82rem;font-weight:700;}
+    .si_ .ds{font-size:0.7rem;color:var(--muted);margin-top:2px;}
+    .er{display:flex;flex-direction:column;gap:5px;margin:13px 0;}
+    .er .r{display:flex;align-items:center;gap:7px;font-size:0.8rem;padding:7px 11px;background:white;border:1px solid var(--border);border-radius:8px;}
+    .et{font-family:'Fira Code',monospace;color:#4f46e5;font-weight:600;font-size:0.78rem;}
+    .ea{color:#94a3b8;}.erl{color:#475569;font-size:0.73rem;}
+    .trm{background:#0f172a;border-radius:10px;overflow:hidden;margin:10px 0;}
+    .tb{background:#1e293b;padding:7px 14px;display:flex;align-items:center;gap:5px;}
+    .td_{width:9px;height:9px;border-radius:50%;}
+    .tr{background:#ef4444;}.ty{background:#f59e0b;}.tg{background:#10b981;}
+    .tt{font-size:0.7rem;color:#64748b;margin-left:7px;font-family:'Fira Code',monospace;}
+    .tb_{padding:13px 18px;font-family:'Fira Code',monospace;font-size:0.78rem;color:#94a3b8;line-height:1.8;}
+    .tp{color:#4ade80;}.tc{color:#e2e8f0;}.tm{color:#475569;}
+    @media print{.nav{display:none;}.main{padding:18px;}.hdr{padding:26px;}}
+    @media (max-width:860px){.nav{display:none;}.main{padding:20px;}.sd{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+<div class="hdr">
+  <h1>&#x1F6E1;&#xFE0F; Materi Mentoring Backend<br><span>Crypto-Sentinel 2026</span></h1>
+  <div class="sub">Dokumentasi Teknis API, Database, dan Arsitektur AI untuk Tim EXPRESSO</div>
+  <div class="tags">
+    <span class="tag">&#x1F4C5; 3 September 2026</span>
+    <span class="tag">&#x1F3EB; Universitas Kuningan</span>
+    <span class="tag">&#x1F464; Bagian: API &amp; Database</span>
+    <span class="tag">&#x1F525; Digdaya x Hackathon 2026</span>
+  </div>
+</div>
+<div class="layout">
+<nav class="nav">
+  <div class="nav-lbl">Navigasi</div>
+  <ul>
+    <li><a href="#arsitektur">&#x1F5FA;&#xFE0F; Arsitektur</a></li>
+    <li><a href="#database">&#x1F5C4;&#xFE0F; Database (10 Tabel)</a></li>
+    <li><a href="#t1" class="s">&#x2192; accounts</a></li>
+    <li><a href="#t2" class="s">&#x2192; transactions</a></li>
+    <li><a href="#t3" class="s">&#x2192; sentinel_alerts</a></li>
+    <li><a href="#t4" class="s">&#x2192; str_drafts</a></li>
+    <li><a href="#t5" class="s">&#x2192; audit_logs</a></li>
+    <li><a href="#t6" class="s">&#x2192; case_investigations</a></li>
+    <li><a href="#t7" class="s">&#x2192; regulatory_watchlists</a></li>
+    <li><a href="#t8" class="s">&#x2192; device_telemetry</a></li>
+    <li><a href="#t9" class="s">&#x2192; mule_communities</a></li>
+    <li><a href="#t10" class="s">&#x2192; apolo_filings</a></li>
+    <li><a href="#relasi">&#x1F517; Relasi (ERD)</a></li>
+    <li><a href="#api-expresso">&#x1F310; API Core Banking</a></li>
+    <li><a href="#api-sentinel">&#x1F916; API Sentinel AI</a></li>
+    <li><a href="#ai-engine">&#x1F9E0; Cara Kerja AI</a></li>
+    <li><a href="#rules" class="s">&#x2192; 13 Aturan Fraud</a></li>
+    <li><a href="#purpose" class="s">&#x2192; Purpose Code</a></li>
+    <li><a href="#stack">&#x1F6E0;&#xFE0F; Tech Stack</a></li>
+    <li><a href="#run">&#x1F680; Menjalankan</a></li>
+  </ul>
+</nav>
+<main class="main">
+
+<section id="arsitektur">
+  <div class="stitle"><div class="sicon ib">&#x1F5FA;&#xFE0F;</div>Arsitektur Backend</div>
+  <p>Crypto-Sentinel 2026 memiliki <strong>2 backend service</strong> yang berjalan terpisah dan saling berkomunikasi real-time.</p>
+  <div class="arch">
+<span class="c1">expresso-api :8080</span>  ─────────────────────►  <span class="c2">crypto-sentinel-api :8000</span><br>
+<span class="c1">Core Banking API</span>     POST /analyze-tx         <span class="c2">AI Engine + GNN</span><br>
+<span class="c1">SQLite / Neon PG</span>  &lt;──── Risk Score, Decision ──  <span class="c2">Rule Engine + ML + GNN</span><br>
+<br>
+<span class="c3">&#x25B2;</span>                                                   <span class="c3">&#x25B2;</span><br>
+<span class="c4">Flutter Mobile Apps (bjb :8081 + Kuningan :8082)</span>   <span class="c4">React Dashboard :5173</span>
+  </div>
+  <p><strong>Alur Transaksi:</strong></p>
+  <div class="fl">
+    <div class="fs"><div class="fn_">1</div><p>User transfer dari Aplikasi Mobile Flutter</p></div>
+    <div class="fs"><div class="fn_">2</div><p>Request ke <strong>expresso-api :8080</strong></p></div>
+    <div class="fs"><div class="fn_">3</div><p>Validasi HMAC-SHA256 signature</p></div>
+    <div class="fs"><div class="fn_">4</div><p>Rekam ke DB status PENDING</p></div>
+    <div class="fs"><div class="fn_">5</div><p>Call <strong>sentinel-api :8000</strong> untuk analisis AI</p></div>
+    <div class="fs"><div class="fn_">6</div><p>Decision: ALLOW / REVIEW / BLOCK</p></div>
+  </div>
+</section>
+
+<section id="database">
+  <div class="stitle"><div class="sicon it">&#x1F5C4;&#xFE0F;</div>Database — 10 Tabel</div>
+  <div class="ic bl">
+    <strong>Database:</strong> Local dev = SQLite (expresso.db) | Production = <strong>Neon PostgreSQL (Cloud Singapore)</strong><br>
+    Dikontrol via env variable <code class="f">DATABASE_URL</code> di file <code class="f">.env</code>
+  </div>
+
+  <h3 id="t1"><span class="n">1</span> Tabel: <code class="f">accounts</code> — Data Nasabah KYC</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Field</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+    <tbody>
+      <tr><td><code class="f">account_id</code></td><td><code class="t">VARCHAR(100) PK</code></td><td>Nomor rekening nasabah</td></tr>
+      <tr><td><code class="f">national_id</code></td><td><code class="t">VARCHAR(100) UNIQUE</code></td><td>NIK KTP 16 digit (KYC &amp; UU PDP)</td></tr>
+      <tr><td><code class="f">owner_name</code></td><td><code class="t">VARCHAR(255) NOT NULL</code></td><td>Nama lengkap nasabah</td></tr>
+      <tr><td><code class="f">balance</code></td><td><code class="t">BIGINT</code></td><td>Saldo rekening (Rupiah/IDR)</td></tr>
+      <tr><td><code class="f">risk_profile</code></td><td><code class="t">VARCHAR(50)</code></td><td>LOW / MEDIUM / HIGH</td></tr>
+      <tr><td><code class="f">risk_score</code></td><td><code class="t">FLOAT</code></td><td>CRA Score 0-100</td></tr>
+      <tr><td><code class="f">mule_probability</code></td><td><code class="t">FLOAT</code></td><td>Probabilitas rekening mule GNN (0.00-1.00)</td></tr>
+      <tr><td><code class="f">occupation</code></td><td><code class="t">VARCHAR(100)</code></td><td>Pekerjaan nasabah</td></tr>
+      <tr><td><code class="f">monthly_income</code></td><td><code class="t">BIGINT</code></td><td>Penghasilan bulanan (IDR)</td></tr>
+      <tr><td><code class="f">pep_status</code></td><td><code class="t">BOOLEAN</code></td><td>Politically Exposed Person?</td></tr>
+      <tr><td><code class="f">cdd_edd_status</code></td><td><code class="t">VARCHAR(50)</code></td><td>CDD_STANDARD / EDD_REQUIRED / EDD_COMPLETED</td></tr>
+      <tr><td><code class="f">is_active</code></td><td><code class="t">BOOLEAN</code></td><td>Status rekening aktif</td></tr>
+      <tr><td><code class="f">is_blocked</code></td><td><code class="t">BOOLEAN</code></td><td>Diblokir otomatis Sentinel?</td></tr>
+      <tr><td><code class="f">registered_device</code></td><td><code class="t">VARCHAR(100)</code></td><td>Device Fingerprint terdaftar</td></tr>
+      <tr><td><code class="f">registered_ip</code></td><td><code class="t">VARCHAR(50)</code></td><td>IP terdaftar nasabah</td></tr>
+      <tr><td><code class="f">last_activity / created_at</code></td><td><code class="t">TIMESTAMP</code></td><td>Waktu aktif terakhir / Waktu buat akun</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="t2"><span class="n">2</span> Tabel: <code class="f">transactions</code> — Riwayat Transaksi</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Field</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+    <tbody>
+      <tr><td><code class="f">transaction_id</code></td><td><code class="t">VARCHAR(100) PK</code></td><td>Format: TXN-20260903-AB1C23</td></tr>
+      <tr><td><code class="f">sender_account</code></td><td><code class="t">VARCHAR(100) NOT NULL</code></td><td>FK ke accounts (Pengirim)</td></tr>
+      <tr><td><code class="f">receiver_account</code></td><td><code class="t">VARCHAR(100) NOT NULL</code></td><td>FK ke accounts (Penerima)</td></tr>
+      <tr><td><code class="f">amount</code></td><td><code class="t">BIGINT NOT NULL</code></td><td>Nominal transfer (IDR)</td></tr>
+      <tr><td><code class="f">purpose_code</code></td><td><code class="t">VARCHAR(50)</code></td><td>Kode ISO 20022: SALA, CRYP, GOVT, dll</td></tr>
+      <tr><td><code class="f">description</code></td><td><code class="t">TEXT</code></td><td>Deskripsi bebas transaksi</td></tr>
+      <tr><td><code class="f">destination_type</code></td><td><code class="t">VARCHAR(50)</code></td><td>DOMESTIC / CRYPTO_VASP / EXTERNAL_BANK</td></tr>
+      <tr><td><code class="f">ip_address</code></td><td><code class="t">VARCHAR(50)</code></td><td>IP pengirim saat transaksi</td></tr>
+      <tr><td><code class="f">country_code</code></td><td><code class="t">VARCHAR(10)</code></td><td>Kode negara (e.g. ID)</td></tr>
+      <tr><td><code class="f">latitude / longitude</code></td><td><code class="t">FLOAT</code></td><td>Koordinat GPS (Impossible Travel detection)</td></tr>
+      <tr><td><code class="f">timestamp</code></td><td><code class="t">TIMESTAMP NOT NULL</code></td><td>Waktu transaksi UTC</td></tr>
+      <tr><td><code class="f">sentinel_score</code></td><td><code class="t">FLOAT</code></td><td>Risk score AI Engine (0-100)</td></tr>
+      <tr><td><code class="f">sentinel_decision</code></td><td><code class="t">VARCHAR(50)</code></td><td>ALLOW / REVIEW / BLOCK / PENDING</td></tr>
+      <tr><td><code class="f">status</code></td><td><code class="t">VARCHAR(50)</code></td><td>PENDING / SUCCESS / REVIEW / FAILED</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="t3"><span class="n">3</span> Tabel: <code class="f">sentinel_alerts</code> — Alert Fraud</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Field</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+    <tbody>
+      <tr><td><code class="f">alert_id</code></td><td><code class="t">INTEGER PK AUTO</code></td><td>ID alert (auto increment)</td></tr>
+      <tr><td><code class="f">transaction_id</code></td><td><code class="t">VARCHAR(100)</code></td><td>FK ke transactions</td></tr>
+      <tr><td><code class="f">risk_score</code></td><td><code class="t">FLOAT</code></td><td>Risk score 0-100</td></tr>
+      <tr><td><code class="f">indicators_json</code></td><td><code class="t">JSON</code></td><td>List alasan fraud (array of strings)</td></tr>
+      <tr><td><code class="f">shap_values_json</code></td><td><code class="t">JSON</code></td><td>Penjelasan fitur AI (SHAP Explainability)</td></tr>
+      <tr><td><code class="f">cluster_id</code></td><td><code class="t">VARCHAR(100)</code></td><td>ID klaster mule GNN</td></tr>
+      <tr><td><code class="f">resolved</code></td><td><code class="t">BOOLEAN</code></td><td>Sudah diselesaikan analis?</td></tr>
+      <tr><td><code class="f">created_at</code></td><td><code class="t">TIMESTAMP</code></td><td>Waktu alert dibuat</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="t4"><span class="n">4</span> Tabel: <code class="f">str_drafts</code> — Laporan STR ke PPATK</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Field</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+    <tbody>
+      <tr><td><code class="f">str_id</code></td><td><code class="t">VARCHAR(100) PK</code></td><td>Format: STR-20260903-XY789Z</td></tr>
+      <tr><td><code class="f">alert_id</code></td><td><code class="t">INTEGER</code></td><td>FK ke sentinel_alerts</td></tr>
+      <tr><td><code class="f">summary_text</code></td><td><code class="t">TEXT</code></td><td>Narasi otomatis oleh AI</td></tr>
+      <tr><td><code class="f">risk_factors</code></td><td><code class="t">JSON</code></td><td>Faktor risiko (copy dari indicators)</td></tr>
+      <tr><td><code class="f">status</code></td><td><code class="t">VARCHAR(50)</code></td><td>DRAFT / REVIEWED / SENT</td></tr>
+      <tr><td><code class="f">analyst_id</code></td><td><code class="t">VARCHAR(100)</code></td><td>ID analis / SYSTEM jika otomatis</td></tr>
+      <tr><td><code class="f">created_at</code></td><td><code class="t">TIMESTAMP</code></td><td>Waktu dibuat</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="t5"><span class="n">5</span> Tabel: <code class="f">audit_logs</code> — Immutable Audit Trail</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Field</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+    <tbody>
+      <tr><td><code class="f">id</code></td><td><code class="t">INTEGER PK AUTO</code></td><td>ID log</td></tr>
+      <tr><td><code class="f">actor</code></td><td><code class="t">VARCHAR(100) NOT NULL</code></td><td>User yang melakukan aksi</td></tr>
+      <tr><td><code class="f">role</code></td><td><code class="t">VARCHAR(50) NOT NULL</code></td><td>analyst / compliance_officer / admin_regulator</td></tr>
+      <tr><td><code class="f">action</code></td><td><code class="t">VARCHAR(100) NOT NULL</code></td><td>BLOCK_ACCOUNT, RESOLVE_ALERT, CASE_CREATE, dll</td></tr>
+      <tr><td><code class="f">target_id</code></td><td><code class="t">VARCHAR(100)</code></td><td>ID akun / transaksi yang ditarget</td></tr>
+      <tr><td><code class="f">reason</code></td><td><code class="t">TEXT NOT NULL</code></td><td>Alasan aksi (wajib diisi)</td></tr>
+      <tr><td><code class="f">ip_address</code></td><td><code class="t">VARCHAR(50)</code></td><td>IP pelaku aksi</td></tr>
+      <tr><td><code class="f">tenant_id</code></td><td><code class="t">VARCHAR(50)</code></td><td>Multi-tenant: all / bjb / kuningan</td></tr>
+      <tr><td><code class="f">created_at</code></td><td><code class="t">TIMESTAMP</code></td><td>Waktu aksi</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="t6"><span class="n">6</span> Tabel: <code class="f">case_investigations</code> — Manajemen Kasus</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Field</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+    <tbody>
+      <tr><td><code class="f">case_id</code></td><td><code class="t">VARCHAR(100) PK</code></td><td>ID kasus investigasi</td></tr>
+      <tr><td><code class="f">alert_id / transaction_id</code></td><td><code class="t">VARCHAR(100)</code></td><td>FK ke sentinel_alerts / transactions</td></tr>
+      <tr><td><code class="f">account_id</code></td><td><code class="t">VARCHAR(100) NOT NULL</code></td><td>Akun yang diinvestigasi</td></tr>
+      <tr><td><code class="f">status</code></td><td><code class="t">VARCHAR(50)</code></td><td>OPEN / IN_REVIEW / ESCALATED / RESOLVED / CLOSED</td></tr>
+      <tr><td><code class="f">priority</code></td><td><code class="t">VARCHAR(50)</code></td><td>LOW / MEDIUM / HIGH / CRITICAL</td></tr>
+      <tr><td><code class="f">assigned_to</code></td><td><code class="t">VARCHAR(100)</code></td><td>Nama analis yang ditugaskan</td></tr>
+      <tr><td><code class="f">lifecycle_history</code></td><td><code class="t">JSON</code></td><td>Riwayat perubahan status [{from, to, actor, note}]</td></tr>
+      <tr><td><code class="f">notes</code></td><td><code class="t">JSON</code></td><td>Catatan investigasi [{author, text, timestamp}]</td></tr>
+      <tr><td><code class="f">resolution</code></td><td><code class="t">TEXT</code></td><td>Kesimpulan akhir investigasi</td></tr>
+      <tr><td><code class="f">graph_snapshot</code></td><td><code class="t">JSON</code></td><td>Snapshot graf GNN sebagai evidence</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="t7"><span class="n">7</span> Tabel: <code class="f">regulatory_watchlists</code> — Blacklist OJK/PPATK</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Field</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+    <tbody>
+      <tr><td><code class="f">watchlist_id</code></td><td><code class="t">VARCHAR(100) PK</code></td><td>ID entitas blacklist</td></tr>
+      <tr><td><code class="f">category</code></td><td><code class="t">VARCHAR(50) NOT NULL</code></td><td>DTTOT / DPPSPM / SATGAS_PASTI / PEP / HIGH_RISK_CRYPTO</td></tr>
+      <tr><td><code class="f">entity_name</code></td><td><code class="t">VARCHAR(255) NOT NULL</code></td><td>Nama entitas / orang</td></tr>
+      <tr><td><code class="f">alias_names</code></td><td><code class="t">JSON</code></td><td>Nama alias / AKA</td></tr>
+      <tr><td><code class="f">identifier_number</code></td><td><code class="t">VARCHAR(100)</code></td><td>NIK / NPWP / Wallet / Rekening</td></tr>
+      <tr><td><code class="f">identifier_type</code></td><td><code class="t">VARCHAR(50)</code></td><td>NATIONAL_ID / WALLET_ADDRESS / BANK_ACCOUNT</td></tr>
+      <tr><td><code class="f">legal_basis</code></td><td><code class="t">VARCHAR(255)</code></td><td>Surat Edaran PPATK / OJK RI</td></tr>
+      <tr><td><code class="f">risk_level</code></td><td><code class="t">VARCHAR(50)</code></td><td>CRITICAL / HIGH / MEDIUM</td></tr>
+      <tr><td><code class="f">is_active</code></td><td><code class="t">BOOLEAN</code></td><td>Masih aktif di watchlist?</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="t8"><span class="n">8</span> Tabel: <code class="f">device_telemetry_history</code> — Riwayat Device</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Field</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+    <tbody>
+      <tr><td><code class="f">telemetry_id</code></td><td><code class="t">VARCHAR(100) PK</code></td><td>ID log telemetri</td></tr>
+      <tr><td><code class="f">account_id</code></td><td><code class="t">VARCHAR(100) NOT NULL</code></td><td>FK ke accounts</td></tr>
+      <tr><td><code class="f">device_fingerprint</code></td><td><code class="t">VARCHAR(128) NOT NULL</code></td><td>Hash fingerprint perangkat</td></tr>
+      <tr><td><code class="f">device_model / os_version</code></td><td><code class="t">VARCHAR</code></td><td>Model HP &amp; versi OS</td></tr>
+      <tr><td><code class="f">ip_address / isp_provider</code></td><td><code class="t">VARCHAR</code></td><td>IP saat login &amp; provider internet</td></tr>
+      <tr><td><code class="f">is_rooted_jailbroken</code></td><td><code class="t">BOOLEAN</code></td><td>HP di-root / jailbreak?</td></tr>
+      <tr><td><code class="f">is_mock_location_active</code></td><td><code class="t">BOOLEAN</code></td><td>GPS palsu aktif? (Fake GPS)</td></tr>
+      <tr><td><code class="f">is_vpn_proxy</code></td><td><code class="t">BOOLEAN</code></td><td>Pakai VPN / Proxy?</td></tr>
+      <tr><td><code class="f">associated_accounts_count</code></td><td><code class="t">INTEGER</code></td><td>Jumlah akun terhubung ke device ini</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="t9"><span class="n">9</span> Tabel: <code class="f">mule_graph_communities</code> — Sindikat Mule GNN</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Field</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+    <tbody>
+      <tr><td><code class="f">cluster_id</code></td><td><code class="t">VARCHAR(100) PK</code></td><td>e.g. MULE-CLUSTER-001</td></tr>
+      <tr><td><code class="f">cluster_name</code></td><td><code class="t">VARCHAR(255) NOT NULL</code></td><td>Nama sindikat</td></tr>
+      <tr><td><code class="f">core_hub_account</code></td><td><code class="t">VARCHAR(100) NOT NULL</code></td><td>Rekening pusat jaringan mule</td></tr>
+      <tr><td><code class="f">total_mule_nodes</code></td><td><code class="t">INTEGER</code></td><td>Total rekening dalam sindikat</td></tr>
+      <tr><td><code class="f">aggregate_inflow / aggregate_outflow</code></td><td><code class="t">BIGINT</code></td><td>Total uang masuk / keluar sindikat</td></tr>
+      <tr><td><code class="f">target_crypto_exchange</code></td><td><code class="t">VARCHAR(100)</code></td><td>Bursa kripto tujuan pencucian</td></tr>
+      <tr><td><code class="f">graph_topology_type</code></td><td><code class="t">VARCHAR(100)</code></td><td>FAN_OUT_SMURFING / CYCLIC_LOOP / BIPARTITE_HUB</td></tr>
+      <tr><td><code class="f">risk_score</code></td><td><code class="t">FLOAT</code></td><td>Risk score klaster (0-100)</td></tr>
+      <tr><td><code class="f">detection_algorithm</code></td><td><code class="t">VARCHAR(100)</code></td><td>GraphSAGE + Leiden Community</td></tr>
+      <tr><td><code class="f">is_frozen</code></td><td><code class="t">BOOLEAN</code></td><td>Klaster sudah dibekukan?</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="t10"><span class="n">10</span> Tabel: <code class="f">apolo_regulatory_filings</code> — Pelaporan OJK/PPATK</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Field</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+    <tbody>
+      <tr><td><code class="f">filing_id</code></td><td><code class="t">VARCHAR(100) PK</code></td><td>ID laporan</td></tr>
+      <tr><td><code class="f">reporting_period</code></td><td><code class="t">VARCHAR(50) NOT NULL</code></td><td>Periode: e.g. 2026-M09</td></tr>
+      <tr><td><code class="f">reporting_type</code></td><td><code class="t">VARCHAR(100)</code></td><td>APOLO_OJK_POJK8_2023 / PPATK_GRIPS_XML</td></tr>
+      <tr><td><code class="f">total_transactions</code></td><td><code class="t">INTEGER</code></td><td>Jumlah transaksi dilaporkan</td></tr>
+      <tr><td><code class="f">total_blocked_nominal</code></td><td><code class="t">BIGINT</code></td><td>Total nilai transaksi diblokir (IDR)</td></tr>
+      <tr><td><code class="f">total_str_submitted</code></td><td><code class="t">INTEGER</code></td><td>Jumlah STR dikirim ke PPATK</td></tr>
+      <tr><td><code class="f">xml_checksum</code></td><td><code class="t">VARCHAR(128)</code></td><td>Checksum file XML laporan</td></tr>
+      <tr><td><code class="f">submission_status</code></td><td><code class="t">VARCHAR(50)</code></td><td>DRAFT / VALIDATED / SUBMITTED / ACCEPTED_OJK</td></tr>
+      <tr><td><code class="f">submitted_by</code></td><td><code class="t">VARCHAR(100)</code></td><td>Petugas pelapor (MLRO)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="relasi">
+  <div class="stitle"><div class="sicon ip">&#x1F517;</div>Relasi Antar Tabel (ERD)</div>
+  <div class="er">
+    <div class="r"><span class="et">accounts</span><span class="ea">1 ---- N</span><span class="et">transactions</span><span class="erl">(sender_account &amp; receiver_account)</span></div>
+    <div class="r"><span class="et">transactions</span><span class="ea">1 ---- N</span><span class="et">sentinel_alerts</span><span class="erl">(transaction_id)</span></div>
+    <div class="r"><span class="et">sentinel_alerts</span><span class="ea">1 ---- 1</span><span class="et">str_drafts</span><span class="erl">(alert_id - otomatis saat BLOCK)</span></div>
+    <div class="r"><span class="et">sentinel_alerts</span><span class="ea">1 ---- N</span><span class="et">case_investigations</span><span class="erl">(alert_id)</span></div>
+    <div class="r"><span class="et">accounts</span><span class="ea">1 ---- N</span><span class="et">device_telemetry_history</span><span class="erl">(account_id)</span></div>
+    <div class="r"><span class="et">audit_logs</span><span class="ea">standalone</span><span class="erl">Immutable trail - semua aksi sensitif</span></div>
+    <div class="r"><span class="et">regulatory_watchlists</span><span class="ea">standalone</span><span class="erl">Blacklist eksternal OJK/PPATK</span></div>
+    <div class="r"><span class="et">mule_graph_communities</span><span class="ea">standalone</span><span class="erl">Hasil klasterisasi GNN</span></div>
+  </div>
+</section>
+
+<section id="api-expresso">
+  <div class="stitle"><div class="sicon ib">&#x1F310;</div>API Core Banking - expresso-api (Port 8080)</div>
+  <p>Base URL: <code class="f">http://localhost:8080/api/v1</code> &nbsp;|&nbsp; Swagger: <code class="f">http://localhost:8080/docs</code></p>
+  <h3>Transfer &amp; Transaksi</h3>
+  <div class="el">
+    <div class="ei"><span class="mt mp">POST</span><div><div class="ep">/bjb/transfer</div><div style="font-size:0.73rem;color:#64748b">Transfer nasabah Bank bjb (SNAP BI signature wajib)</div></div></div>
+    <div class="ei"><span class="mt mp">POST</span><div><div class="ep">/kuningan/transfer</div><div style="font-size:0.73rem;color:#64748b">Transfer nasabah Bank Kuningan (SNAP BI signature wajib)</div></div></div>
+    <div class="ei"><span class="mt mg">GET</span><div><div class="ep">/bri/transfer-via-url?sender=...&amp;receiver=...&amp;amount=...</div><div style="font-size:0.73rem;color:#64748b">Transfer via URL browser (TESTING saja - tanpa signature)</div></div></div>
+    <div class="ei"><span class="mt mp">POST</span><div><div class="ep">/bri/transfer-interbank</div><div style="font-size:0.73rem;color:#64748b">Transfer ke bank lain (SKNBI/BI-Fast) + biaya admin Rp2.500</div></div></div>
+  </div>
+  <h3>Keamanan - SNAP BI HMAC-SHA256</h3>
+  <div class="cb"><span class="ll">Python</span>
+<span class="cm"># Header wajib setiap request transfer:</span>
+X-Partner-Id  : <span class="st">"BJB-PARTNER-Billy"</span>
+X-Timestamp   : <span class="st">"1725321600"</span>
+X-Signature   : <span class="st">"(HMAC-SHA256)"</span>
+
+<span class="cm"># Formula generate signature:</span>
+<span class="kw">import</span> hmac, hashlib
+message = f<span class="st">"{partner_id}|{timestamp}|{sender}|{receiver}|{amount}"</span>.encode()
+sig = hmac.new(b<span class="st">"BJB_SECRET_DIGDAYA_2026"</span>, message, hashlib.sha256).hexdigest()
+  </div>
+  <h3>Akun &amp; Transaksi</h3>
+  <div class="el">
+    <div class="ei"><span class="mt mg">GET</span><div><div class="ep">/bjb/account/{account_id}</div><div style="font-size:0.73rem;color:#64748b">Info detail akun + CRA score + mule_probability</div></div></div>
+    <div class="ei"><span class="mt mg">GET</span><div><div class="ep">/bjb/accounts?limit=150</div></div></div>
+    <div class="ei"><span class="mt mg">GET</span><div><div class="ep">/bri/transactions?limit=100</div></div></div>
+    <div class="ei"><span class="mt mg">GET</span><div><div class="ep">/bri/transactions/{account_id}</div><div style="font-size:0.73rem;color:#64748b">Riwayat transaksi per akun (as sender OR receiver)</div></div></div>
+  </div>
+  <h3>Compliance &amp; Investigasi</h3>
+  <div class="el">
+    <div class="ei"><span class="mt mg">GET</span><div><div class="ep">/audit-logs</div></div></div>
+    <div class="ei"><span class="mt mp">POST</span><div><div class="ep">/audit-logs</div><div style="font-size:0.73rem;color:#64748b">Catat aksi sensitif (perlu header X-User-Role)</div></div></div>
+    <div class="ei"><span class="mt mg">GET</span><div><div class="ep">/cases?status=OPEN</div></div></div>
+    <div class="ei"><span class="mt mp">POST</span><div><div class="ep">/cases/create</div><div style="font-size:0.73rem;color:#64748b">Buat kasus investigasi + simpan snapshot GNN</div></div></div>
+    <div class="ei"><span class="mt mp">POST</span><div><div class="ep">/cases/update</div><div style="font-size:0.73rem;color:#64748b">Update status kasus + catatan investigasi</div></div></div>
+    <div class="ei"><span class="mt mp">POST</span><div><div class="ep">/bri/account/block/{account_id}</div><div style="font-size:0.73rem;color:#64748b">Blokir akun - perlu role compliance_officer</div></div></div>
+    <div class="ei"><span class="mt mp">POST</span><div><div class="ep">/sentinel/alerts/resolve/{tx_id}</div></div></div>
+    <div class="ei"><span class="mt mg">GET</span><div><div class="ep">/regulatory-watchlists | /device-telemetry/{id} | /mule-communities | /apolo-filings</div></div></div>
+    <div class="ei"><span class="mt mp">POST</span><div><div class="ep">/bri/simulate-smurfing</div><div style="font-size:0.73rem;color:#64748b">Simulasi serangan smurfing 6 transaksi beruntun</div></div></div>
+  </div>
+</section>
+
+<section id="api-sentinel">
+  <div class="stitle"><div class="sicon ip">&#x1F916;</div>API Sentinel AI - crypto-sentinel-api (Port 8000)</div>
+  <p>Base URL: <code class="f">http://localhost:8000</code> &nbsp;|&nbsp; Swagger: <code class="f">http://localhost:8000/docs</code></p>
+  <div class="el">
+    <div class="ei"><span class="mt mp">POST</span><div><div class="ep">/analyze-transaction</div><div style="font-size:0.73rem;color:#64748b"><strong>Core endpoint</strong> - analisis risiko real-time</div></div></div>
+    <div class="ei"><span class="mt mg">GET</span><div><div class="ep">/threat-intel</div></div></div>
+    <div class="ei"><span class="mt mg">GET</span><div><div class="ep">/transactions?limit=10</div><div style="font-size:0.73rem;color:#64748b">Dataset PaySim (data latih model)</div></div></div>
+  </div>
+  <h3>Contoh Request &amp; Response /analyze-transaction</h3>
+  <div class="cb"><span class="ll">JSON Request</span>
+{ <span class="ky">"type"</span>:<span class="st">"TRANSFER"</span>, <span class="ky">"amount"</span>:<span class="nm">60000000</span>, <span class="ky">"oldbalanceOrg"</span>:<span class="nm">85000000</span>,
+  <span class="ky">"newbalanceOrig"</span>:<span class="nm">25000000</span>, <span class="ky">"destinationAccount"</span>:<span class="st">"9012666666"</span>,
+  <span class="ky">"sender_account"</span>:<span class="st">"0123456789"</span>, <span class="ky">"ip_address"</span>:<span class="st">"182.16.2.90"</span>,
+  <span class="ky">"purpose_code"</span>:<span class="st">"SALA"</span>, <span class="ky">"latitude"</span>:<span class="nm">-6.9744</span>, <span class="ky">"longitude"</span>:<span class="nm">108.4832</span>,
+  <span class="ky">"past_transactions"</span>: [...] }
+  </div>
+  <div class="cb"><span class="ll">JSON Response</span>
+{ <span class="ky">"decision"</span>:<span class="st">"BLOCK"</span>, <span class="ky">"risk_score"</span>:<span class="nm">90</span>, <span class="ky">"risk_level"</span>:<span class="st">"HIGH"</span>,
+  <span class="ky">"reasons"</span>: [<span class="st">"High-risk channel"</span>, <span class="st">"Threat Intel Match"</span>, <span class="st">"Smurfing Pattern"</span>],
+  <span class="ky">"gnn_score"</span>:<span class="nm">87.5</span>, <span class="ky">"hybrid_score"</span>:<span class="nm">90.0</span>, <span class="ky">"gnn_loaded"</span>:<span class="kw">true</span> }
+  </div>
+</section>
+
+<section id="ai-engine">
+  <div class="stitle"><div class="sicon ia">&#x1F9E0;</div>Cara Kerja AI - Hybrid Scoring Engine</div>
+  <div class="sd">
+    <div class="sc"><div class="si">&#x1F4CF;</div><h4>Rule Engine</h4><p>13 aturan deterministik berbasis domain AML</p><div class="sw">40%</div></div>
+    <div class="sc"><div class="si">&#x1F332;</div><h4>ML Model</h4><p>Random Forest terlatih 50K dataset PaySim</p><div class="sw">Backup</div></div>
+    <div class="sc"><div class="si">&#x1F578;&#xFE0F;</div><h4>GNN Scorer</h4><p>Graph Neural Network + PageRank</p><div class="sw">60%</div></div>
+  </div>
+  <p><strong>Decision Threshold:</strong></p>
+  <div class="dm">
+    <div class="da">&#x1F7E2; ALLOW (0-59)</div>
+    <div class="dv">&#x1F7E1; REVIEW (60-84)</div>
+    <div class="db">&#x1F534; BLOCK (&ge;85)</div>
+  </div>
+  <div class="dl"><span>0</span><span>60</span><span>85</span><span>100</span></div>
+
+  <h3 id="rules">13 Aturan Fraud Detection</h3>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>Nama Aturan</th><th>Skor</th><th>Trigger</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>External/Crypto Channel</td><td><span class="rm">+15-25</span></td><td>Tujuan ke rekening kripto / eksternal</td></tr>
+      <tr><td>2</td><td>High Amount</td><td><span class="rh">+35</span></td><td>&gt; Rp15M (sesama bank) / &gt; Rp5M (eksternal)</td></tr>
+      <tr><td>3</td><td>Balance Drained</td><td><span class="rh">+35</span></td><td>Saldo habis nol setelah transfer</td></tr>
+      <tr><td>4</td><td>Odd-Hour Activity</td><td><span class="rm">+25</span></td><td>Transaksi jam 00:00-04:00 WIB</td></tr>
+      <tr><td>5</td><td>Dormant Account</td><td><span class="rm">+30</span></td><td>Akun tidur &gt;30 hari, tiba-tiba transfer besar</td></tr>
+      <tr><td>6</td><td>Device Binding Violation</td><td><span class="rm">+25-35</span></td><td>Device tidak terdaftar / berbeda dari registered</td></tr>
+      <tr><td>7</td><td>VPN / Datacenter IP</td><td><span class="rm">+25</span></td><td>IP dari range VPN/Proxy/Datacenter</td></tr>
+      <tr><td>8</td><td>Impossible Travel (IP)</td><td><span class="rm">+30</span></td><td>IP subnet berubah drastis dari registered_ip</td></tr>
+      <tr><td>9</td><td>Purpose Mismatch</td><td><span class="rl">+20</span></td><td>Kode SALARY/DEBT ke bursa kripto</td></tr>
+      <tr><td>10</td><td>Threat Intel Match</td><td><span class="rh">+20-70</span></td><td>Tujuan ada di blacklist DTTOT / PPATK</td></tr>
+      <tr><td>11</td><td>Dynamic Baseline</td><td><span class="rm">+30</span></td><td>Nominal &gt; 5x rata-rata historis nasabah</td></tr>
+      <tr><td>12</td><td>Impossible Travel (GPS)</td><td><span class="rh">+45</span></td><td>Kecepatan &gt; 800 km/jam via Haversine</td></tr>
+      <tr><td>13</td><td>Smurfing Detection</td><td><span class="rh">+35-45</span></td><td>&ge; 3 tujuan berbeda dalam 1 jam</td></tr>
+      <tr><td>-</td><td>Whitelist Reduction</td><td><span class="rl">-30</span></td><td>PLN, BPJS, Pemerintah, Universitas, dll</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="purpose">Purpose Code ISO 20022</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Kode</th><th>Arti</th><th>Kategori</th></tr></thead>
+    <tbody>
+      <tr><td><code class="f">SALA</code></td><td>Gaji / Salary</td><td><span class="bge bg-g">Resmi</span></td></tr>
+      <tr><td><code class="f">GOVT</code></td><td>Pembayaran Pemerintah</td><td><span class="bge bg-g">Resmi</span></td></tr>
+      <tr><td><code class="f">EDUC</code></td><td>Biaya Pendidikan</td><td><span class="bge bg-g">Resmi</span></td></tr>
+      <tr><td><code class="f">TAXS</code></td><td>Pajak</td><td><span class="bge bg-g">Resmi</span></td></tr>
+      <tr><td><code class="f">HLTH</code></td><td>Biaya Kesehatan</td><td><span class="bge bg-g">Resmi</span></td></tr>
+      <tr><td><code class="f">LOAN</code></td><td>Cicilan Pinjaman</td><td><span class="bge bg-g">Resmi</span></td></tr>
+      <tr><td><code class="f">CRYP</code></td><td>Transfer ke Bursa Kripto</td><td><span class="bge bg-r">High Risk</span></td></tr>
+      <tr><td><code class="f">DEBT</code></td><td>Pembayaran Hutang</td><td><span class="bge bg-y">Perlu Verif.</span></td></tr>
+      <tr><td><code class="f">TRANSFER</code></td><td>Transfer Umum</td><td><span class="bge bg-b">Netral</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="stack">
+  <div class="stitle"><div class="sicon ir">&#x1F6E0;&#xFE0F;</div>Tech Stack Backend</div>
+  <div class="sg">
+    <div class="si_"><div class="ico">&#x26A1;</div><div class="nm_">FastAPI</div><div class="ds">REST API Framework</div></div>
+    <div class="si_"><div class="ico">&#x1F984;</div><div class="nm_">Uvicorn</div><div class="ds">ASGI Server</div></div>
+    <div class="si_"><div class="ico">&#x1F5C3;&#xFE0F;</div><div class="nm_">SQLAlchemy</div><div class="ds">ORM Database</div></div>
+    <div class="si_"><div class="ico">&#x1F535;</div><div class="nm_">SQLite</div><div class="ds">Local Dev DB</div></div>
+    <div class="si_"><div class="ico">&#x2601;&#xFE0F;</div><div class="nm_">Neon PostgreSQL</div><div class="ds">Cloud Production</div></div>
+    <div class="si_"><div class="ico">&#x1F332;</div><div class="nm_">scikit-learn</div><div class="ds">Random Forest ML</div></div>
+    <div class="si_"><div class="ico">&#x1F4A1;</div><div class="nm_">SHAP</div><div class="ds">Explainable AI</div></div>
+    <div class="si_"><div class="ico">&#x1F578;&#xFE0F;</div><div class="nm_">NetworkX</div><div class="ds">Graph Analysis</div></div>
+    <div class="si_"><div class="ico">&#x1F680;</div><div class="nm_">httpx</div><div class="ds">Async HTTP Client</div></div>
+    <div class="si_"><div class="ico">&#x1F510;</div><div class="nm_">HMAC-SHA256</div><div class="ds">SNAP BI Security</div></div>
+    <div class="si_"><div class="ico">&#x1F43C;</div><div class="nm_">pandas</div><div class="ds">Data Processing</div></div>
+    <div class="si_"><div class="ico">&#x1F511;</div><div class="nm_">python-dotenv</div><div class="ds">Env Management</div></div>
+  </div>
+</section>
+
+<section id="run">
+  <div class="stitle"><div class="sicon it">&#x1F680;</div>Cara Menjalankan</div>
+  <div class="trm">
+    <div class="tb"><div class="td_ tr"></div><div class="td_ ty"></div><div class="td_ tg"></div><div class="tt">Terminal 1 - Core Banking API :8080</div></div>
+    <div class="tb_"><span class="tp">$</span> <span class="tc">cd "d:\Crypto-Sentinel 2026\expresso-api"</span><br><span class="tp">$</span> <span class="tc">uvicorn main:app --reload --port 8080 --host 0.0.0.0</span><br><span class="tm"># Swagger: http://localhost:8080/docs</span></div>
+  </div>
+  <div class="trm">
+    <div class="tb"><div class="td_ tr"></div><div class="td_ ty"></div><div class="td_ tg"></div><div class="tt">Terminal 2 - AI Sentinel Engine :8000</div></div>
+    <div class="tb_"><span class="tp">$</span> <span class="tc">cd "d:\Crypto-Sentinel 2026\crypto-sentinel-api"</span><br><span class="tp">$</span> <span class="tc">uvicorn app.main:app --reload --port 8000 --host 0.0.0.0</span><br><span class="tm"># Swagger: http://localhost:8000/docs</span></div>
+  </div>
+  <div class="trm">
+    <div class="tb"><div class="td_ tr"></div><div class="td_ ty"></div><div class="td_ tg"></div><div class="tt">Terminal 3 - Dashboard React :5173</div></div>
+    <div class="tb_"><span class="tp">$</span> <span class="tc">cd "d:\Crypto-Sentinel 2026\dashboard-crypto-sentinel"</span><br><span class="tp">$</span> <span class="tc">npm run dev</span><br><span class="tm"># http://localhost:5173</span></div>
+  </div>
+  <div class="ic gn" style="margin-top:13px">
+    &#x1F4A1; <strong>Cara Paling Praktis:</strong> Double click <code class="f">START-ALL.bat</code> di folder root - semua 5 service langsung jalan!
+  </div>
+</section>
+
+<div style="text-align:center;padding:34px 0 16px;color:#94a3b8;font-size:0.75rem;border-top:1px solid #e2e8f0;margin-top:18px">
+  &#x1F6E1;&#xFE0F; <strong>Crypto-Sentinel 2026</strong> - EXPRESSO Team, Universitas Kuningan | Digdaya x Hackathon 2026
+</div>
+
+</main>
+</div>
+</body>
+</html>

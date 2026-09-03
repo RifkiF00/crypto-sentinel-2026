@@ -140,14 +140,16 @@ export default function Customer360Drawer({
       <div
         style={{
           position: 'fixed',
-          inset: 0,
+          top: 'var(--header-height)',
+          left: 0,
+          right: 0,
+          bottom: 0,
           zIndex: 999,
-          background: 'rgba(3, 8, 30, 0.65)',
-          backdropFilter: 'blur(6px)',
+          background: 'transparent',
           display: 'flex',
           justifyContent: 'flex-end',
+          pointerEvents: 'none',
         }}
-        onClick={onClose}
       >
         <motion.div
           initial={{ x: '100%' }}
@@ -157,13 +159,14 @@ export default function Customer360Drawer({
           style={{
             width: '100%',
             maxWidth: 540,
-            height: '100vh',
+            height: 'calc(100vh - var(--header-height))',
             background: 'var(--card-bg, #0f172a)',
             borderLeft: '1px solid var(--border-color, rgba(255,255,255,0.1))',
             boxShadow: '-10px 0 35px rgba(0,0,0,0.5)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
+            pointerEvents: 'auto',
           }}
           onClick={(e) => e.stopPropagation()}
         >

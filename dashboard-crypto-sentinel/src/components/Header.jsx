@@ -1,9 +1,7 @@
-import { Bell, Sun, Moon, Filter, Menu, Zap, Home, EyeOff, Eye, ShieldCheck } from 'lucide-react';
+import { Bell, Filter, Menu, Home, EyeOff, ShieldCheck, LogIn } from 'lucide-react';
 import { useState } from 'react';
 import { APP_MODE } from '../services/api';
-import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { triggerSmurfingSimulation } from '../services/api';
 
 export default function Header({
   onMenuToggle,
@@ -15,10 +13,8 @@ export default function Header({
   setPrivacyMasking,
   activePage = 'dashboard'
 }) {
-  const { theme, toggleTheme } = useTheme();
   const { currentUser } = useAuth();
   const role = currentUser?.role;
-  const [isSimulating, setIsSimulating] = useState(false);
 
   const getHeaderMeta = () => {
     switch (activePage) {
@@ -35,13 +31,13 @@ export default function Header({
         };
       case 'monitoring':
         return {
-          title: 'Live Stream Detection',
+          title: 'Live Detection',
           desc: 'Aliran transaksi real-time terhubung ke core banking'
         };
       case 'analysis':
         if (role === 'admin_regulator') {
           return {
-            title: 'Tata Kelola Model GNN & XAI',
+            title: 'GNN Network Investigation (Audit)',
             desc: 'Audit keterbukaan model graph neural network dan kepatuhan POJK'
           };
         }
@@ -51,29 +47,54 @@ export default function Header({
         };
       case 'alerts':
         return {
-          title: 'Case Management & Alerts',
-          desc: 'Antrean investigasi, forensik transaksi dan eskalasi tindakan'
+          title: 'Cases & Compliance',
+          desc: 'Antrean investigasi kasus, forensik transaksi dan eskalasi tindakan'
+        };
+      case 'gnn_metrics_catalog':
+        return {
+          title: 'Katalog 15 Indikator & Anthropic GNN',
+          desc: 'Eksplorasi metrik AML, canvas jaringan, dan dekomposisi XAI per indikator'
+        };
+      case 'risk_controls':
+        return {
+          title: 'Risk Controls & Policies',
+          desc: 'Kebijakan mitigasi risiko dan pengendalian fraud platform'
         };
       case 'rules':
         return {
-          title: 'Kalibrasi FDS & Threshold',
+          title: 'Kalibrasi Threshold (POJK 8)',
           desc: 'Pengaturan parameter deteksi dan ambang batas risiko POJK 8/2023'
+        };
+      case 'model_governance':
+        return {
+          title: 'Model Governance & XAI',
+          desc: 'Transparansi model AI, performa GraphSAGE GNN, dan model card'
+        };
+      case 'integration':
+        return {
+          title: 'Integrasi & Kualitas Data',
+          desc: 'Konektivitas core banking APEX bjb, sensor PDP, dan pipeline stream'
         };
       case 'compliance':
         if (role === 'admin_regulator') {
           return {
-            title: 'Audit Log & Traceability',
+            title: 'Audit Log PPATK & Traceability',
             desc: 'Jejak audit immutable untuk kepatuhan regulator'
           };
         }
         return {
-          title: 'Kepatuhan PPATK (LTKM)',
+          title: 'Kepatuhan PPATK (LTKM Draf)',
           desc: 'Manajemen draf pelaporan SAR/LTKM ke portal goAML PPATK'
         };
       case 'apolo_governance':
         return {
           title: 'Pelaporan APOLO OJK',
           desc: 'Pratinjau dan arsip data kepatuhan profil risiko nasabah OJK'
+        };
+      case 'administration':
+        return {
+          title: 'Administrasi & RBAC',
+          desc: 'Manajemen pengguna, hak akses peran, dan tata kelola sistem'
         };
       default:
         return {
@@ -84,21 +105,6 @@ export default function Header({
   };
 
   const headerMeta = getHeaderMeta();
-
-  const handleSimulateSmurfing = async () => {
-    setIsSimulating(true);
-    if (addToast) addToast('🔥 Menjalankan 10 transfer smurfing beruntun...', 'warning');
-    try {
-      const res = await triggerSmurfingSimulation();
-      if (addToast) {
-        addToast(`✅ Simulasi Selesai! ${res.message || ''}`, 'success');
-      }
-    } catch (e) {
-      if (addToast) addToast(`⚠️ Gagal menjalankan simulasi: ${e.message}`, 'error');
-    } finally {
-      setIsSimulating(false);
-    }
-  };
 
   const toggleMasking = () => {
     const next = !privacyMasking;
@@ -116,7 +122,7 @@ export default function Header({
   return (
     <header className="header" id="main-header">
       <div className="header-left">
-        <button className="mobile-menu-btn" onClick={onMenuToggle} id="btn-menu" aria-label="Toggle Menu">
+        <button className="mobile-menu-btn" onClick={onMenuToggle} id="btn-menu" aria-label="Toggle Menu" title="Buka / Tutup Sidebar">
           <Menu size={18} />
         </button>
         <div className="header-title-group">
@@ -139,37 +145,14 @@ export default function Header({
             fontWeight: 600,
             padding: '6px 12px',
             borderRadius: 'var(--radius-md)',
-            border: privacyMasking ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid var(--border-color)',
-            background: privacyMasking ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
-            color: privacyMasking ? '#10b981' : 'var(--text-secondary)'
+            border: privacyMasking ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
+            background: privacyMasking ? '#eff6ff' : '#f8fafc',
+            color: privacyMasking ? '#1d4ed8' : '#64748b',
+            cursor: 'pointer'
           }}
         >
-          {privacyMasking ? <ShieldCheck size={14} /> : <EyeOff size={14} />}
+          {privacyMasking ? <ShieldCheck size={14} color="#1d4ed8" /> : <EyeOff size={14} color="#64748b" />}
           <span>{privacyMasking ? 'Sensor PDP Aktif' : 'Sensor Nonaktif'}</span>
-        </button>
-
-        {/* Sandbox Simulation */}
-        <button
-          className="btn btn-ghost btn-sm tooltip"
-          data-tooltip="Simulasi injeksi 10 transaksi smurfing ke engine"
-          onClick={handleSimulateSmurfing}
-          disabled={isSimulating}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: '0.76rem',
-            fontWeight: 600,
-            padding: '6px 12px',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border-color)',
-            background: isSimulating ? 'rgba(245, 158, 11, 0.1)' : 'transparent',
-            color: isSimulating ? '#f59e0b' : 'var(--text-secondary)',
-            cursor: isSimulating ? 'wait' : 'pointer'
-          }}
-        >
-          <Zap size={14} style={{ color: '#f59e0b' }} className={isSimulating ? 'animate-spin' : ''} />
-          <span>{isSimulating ? 'Memproses...' : 'Simulasi Sandbox'}</span>
         </button>
 
         {/* Live Status Badge */}
@@ -180,12 +163,12 @@ export default function Header({
             alignItems: 'center',
             gap: 7,
             padding: '6px 12px',
-            borderRadius: 'var(--radius-full)',
-            background: apiOnline ? 'rgba(16, 185, 129, 0.08)' : 'rgba(100, 116, 139, 0.08)',
-            border: `1px solid ${apiOnline ? 'rgba(16, 185, 129, 0.25)' : 'rgba(100, 116, 139, 0.2)'}`,
+            borderRadius: 'var(--radius-md)',
+            background: apiOnline ? '#eff6ff' : '#f8fafc',
+            border: apiOnline ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
             fontSize: '0.74rem',
             fontWeight: 600,
-            color: apiOnline ? '#10b981' : 'var(--text-muted)'
+            color: apiOnline ? '#1d4ed8' : '#64748b'
           }}
         >
           <span
@@ -193,8 +176,8 @@ export default function Header({
               width: 7,
               height: 7,
               borderRadius: '50%',
-              background: apiOnline ? '#10b981' : '#64748b',
-              boxShadow: apiOnline ? '0 0 6px rgba(16, 185, 129, 0.6)' : 'none'
+              background: apiOnline ? '#2563eb' : '#94a3b8',
+              boxShadow: apiOnline ? '0 0 6px rgba(37, 99, 235, 0.45)' : 'none'
             }}
           />
           <span>{apiOnline ? (systemHealth.coreOnline ? 'Engine + Core Live' : 'Sentinel Engine Live') : 'Offline'}</span>
@@ -203,7 +186,7 @@ export default function Header({
         {onBackToLanding && (
           <button
             className="btn btn-ghost btn-sm tooltip"
-            data-tooltip="Kembali ke Beranda"
+            data-tooltip="Keluar / Halaman Login"
             onClick={onBackToLanding}
             style={{
               display: 'flex',
@@ -213,31 +196,17 @@ export default function Header({
               fontWeight: 600,
               padding: '6px 10px',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-color)',
-              color: 'var(--text-secondary)'
+              border: '1px solid #bfdbfe',
+              background: '#eff6ff',
+              color: '#1d4ed8',
+              cursor: 'pointer'
             }}
           >
-            <Home size={14} />
-            <span>Landing</span>
+            <LogIn size={14} color="#1d4ed8" />
+            <span>Login</span>
           </button>
         )}
 
-        <button
-          className="theme-toggle tooltip"
-          data-tooltip={theme === 'light' ? 'Mode Gelap' : 'Mode Terang'}
-          onClick={toggleTheme}
-          id="btn-theme-toggle"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 'var(--radius-md)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-        </button>
       </div>
     </header>
   );

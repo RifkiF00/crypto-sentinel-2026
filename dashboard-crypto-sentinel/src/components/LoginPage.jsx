@@ -7,7 +7,7 @@ import {
 import { DEMO_USERS, ROLES } from '../context/AuthContext';
 
 export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
-  const [email, setEmail] = useState('compliance@bankkuningan.co.id');
+  const [email, setEmail] = useState('compliance@sentinel.id');
   const [password, setPassword] = useState('SentinelPass2026!');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -23,12 +23,6 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
       return <Landmark size={18} color={isSelected ? '#ffffff' : '#0f172a'} />;
     }
     return <UserCheck size={18} color={isSelected ? '#ffffff' : '#0369a1'} />;
-  };
-
-  const getRoleTierBadge = (role) => {
-    if (role === 'compliance_officer') return 'LEVEL 3 · MLRO';
-    if (role === 'admin_regulator') return 'SUPERVISORY AUDIT';
-    return 'LEVEL 1 · FORENSIK';
   };
 
   const handleQuickSelect = (user) => {
@@ -201,376 +195,361 @@ export default function LoginPage({ onLoginSuccess, onBackToLanding }) {
               boxSizing: 'border-box'
             }}
           >
-        {/* Brand Logo */}
-        <div style={{ marginBottom: 20 }}>
-          <img
-            src="/img/Logo3_transparent.png"
-            alt="Crypto-Sentinel"
-            style={{
-              height: 48,
-              width: 'auto',
-              objectFit: 'contain',
-              display: 'block'
-            }}
-          />
-        </div>
-
-        {/* Header Title */}
-        <div style={{ marginBottom: 24 }}>
-          <h1
-            style={{
-              fontSize: '1.45rem',
-              fontWeight: 800,
-              color: '#0f172a',
-              margin: '0 0 6px 0',
-              letterSpacing: '-0.3px',
-              fontFamily: "'Plus Jakarta Sans', sans-serif"
-            }}
-          >
-            Selamat Datang Kembali
-          </h1>
-          <p
-            style={{
-              fontSize: '0.82rem',
-              color: '#64748b',
-              lineHeight: 1.5,
-              margin: 0
-            }}
-          >
-            Masuk untuk mengakses dashboard dan memantau transaksi secara real-time.
-          </p>
-        </div>
-
-        {/* Login Form */}
-        <form onSubmit={handleSubmit}>
-
-          {/* ── Quick Login Role Selector ───────────────────────────── */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#475569', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Pilih Akun Demo Perbankan
-              </label>
-              <span style={{
-                fontSize: '0.65rem',
-                fontWeight: 800,
-                padding: '2px 8px',
-                borderRadius: 999,
-                background: 'rgba(2, 132, 199, 0.1)',
-                color: '#0284c7',
-                border: '1px solid rgba(2, 132, 199, 0.25)'
-              }}>
-                Demo Mode · 2 Roles
-              </span>
-            </div>
-            <p style={{ fontSize: '0.72rem', color: '#64748b', margin: '0 0 10px 0', lineHeight: 1.4 }}>
-              Pilih peran operasional untuk menguji pemisahan wewenang (<em>Segregation of Duties</em>):
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {DEMO_USERS.map(u => {
-                const roleConfig = ROLES[u.role];
-                const isSelected = selectedQuickUser === u.id;
-                const isRegulator = u.role === 'admin_regulator';
-                return (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => handleQuickSelect(u)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '11px 14px',
-                      background: isSelected ? '#ffffff' : (isRegulator ? '#faf5ff' : '#ffffff'),
-                      border: isSelected ? '1.5px solid #1e3a8a' : (isRegulator ? '1px dashed #d8b4fe' : '1px solid #e2e8f0'),
-                      borderRadius: 12,
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'all 0.18s ease',
-                      width: '100%',
-                      boxShadow: isSelected ? '0 4px 14px rgba(30, 58, 138, 0.12)' : '0 1px 2px rgba(0, 0, 0, 0.02)',
-                      position: 'relative'
-                    }}
-                  >
-                    {/* Role Icon Box */}
-                    <div style={{
-                      width: 36, height: 36, borderRadius: 10,
-                      background: isSelected ? '#1e3a8a' : (isRegulator ? 'rgba(124, 58, 237, 0.1)' : '#f1f5f9'),
-                      border: isSelected ? '1px solid #1e3a8a' : '1px solid #e2e8f0',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0,
-                      transition: 'all 0.18s ease'
-                    }}>
-                      {getRoleIcon(u.role, isSelected)}
-                    </div>
-
-                    {/* Role Name & Unit */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.25 }}>
-                          {u.name}
-                        </span>
-                        {isRegulator && (
-                          <span style={{ fontSize: '0.6rem', padding: '1px 5px', borderRadius: 4, background: '#ede9fe', color: '#7c3aed', fontWeight: 700 }}>
-                            ROADMAP
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2, fontWeight: 500 }}>
-                        {roleConfig?.label} ({u.bank})
-                      </div>
-                    </div>
-
-                    {/* Tier Badge */}
-                    <span style={{
-                      fontSize: '0.62rem',
-                      fontWeight: 700,
-                      padding: '3px 8px',
-                      borderRadius: 6,
-                      background: isSelected ? 'rgba(30, 58, 138, 0.08)' : (isRegulator ? '#f5f3ff' : '#f8fafc'),
-                      color: isSelected ? '#1e3a8a' : (isRegulator ? '#7c3aed' : '#64748b'),
-                      border: isSelected ? '1px solid rgba(30, 58, 138, 0.25)' : '1px solid #e2e8f0',
-                      flexShrink: 0,
-                      letterSpacing: '0.02em'
-                    }}>
-                      {getRoleTierBadge(u.role)}
-                    </span>
-
-                    {/* Radio Indicator */}
-                    <div style={{
-                      width: 16, height: 16, borderRadius: '50%',
-                      border: isSelected ? '5px solid #1e3a8a' : '1.5px solid #cbd5e1',
-                      background: '#ffffff',
-                      flexShrink: 0,
-                      transition: 'all 0.15s ease'
-                    }} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Email Field */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>
-              Email
-            </label>
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: '#ffffff',
-                border: '1.5px solid #e2e8f0',
-                borderRadius: 12,
-                padding: '0 14px',
-                height: 44,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-                transition: 'border-color 0.2s ease'
-              }}
-            >
-              <Mail size={17} color="#94a3b8" style={{ marginRight: 10, flexShrink: 0 }} />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Masukkan email Anda"
+            {/* Brand Logo */}
+            <div style={{ marginBottom: 20 }}>
+              <img
+                src="/img/Logo3_transparent.png"
+                alt="Crypto-Sentinel"
                 style={{
-                  border: 'none',
-                  outline: 'none',
-                  width: '100%',
-                  fontSize: '0.86rem',
-                  color: '#0f172a',
-                  background: 'transparent',
-                  fontFamily: 'inherit'
+                  height: 48,
+                  width: 'auto',
+                  objectFit: 'contain',
+                  display: 'block'
                 }}
               />
             </div>
-          </div>
 
-          {/* Password Field */}
-          <div style={{ marginBottom: 16 }}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                color: '#334155',
-                marginBottom: 6
-              }}
-            >
-              Password
-            </label>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: '#ffffff',
-                border: '1.5px solid #e2e8f0',
-                borderRadius: 12,
-                padding: '0 14px',
-                height: 44,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-                transition: 'border-color 0.2s ease'
-              }}
-            >
-              <Lock size={17} color="#94a3b8" style={{ marginRight: 10, flexShrink: 0 }} />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Masukkan password"
+            {/* Header Title */}
+            <div style={{ marginBottom: 24 }}>
+              <h1
                 style={{
-                  border: 'none',
-                  outline: 'none',
-                  width: '100%',
-                  fontSize: '0.86rem',
+                  fontSize: '1.45rem',
+                  fontWeight: 800,
                   color: '#0f172a',
-                  background: 'transparent',
-                  fontFamily: 'inherit'
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#94a3b8',
-                  cursor: 'pointer',
-                  padding: 0,
-                  display: 'flex',
-                  alignItems: 'center'
+                  margin: '0 0 6px 0',
+                  letterSpacing: '-0.3px',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif"
                 }}
               >
-                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Remember Me & Forgot Password Row */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 20,
-              fontSize: '0.78rem'
-            }}
-          >
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                color: '#334155',
-                cursor: 'pointer',
-                fontWeight: 600
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
+                Selamat Datang Kembali
+              </h1>
+              <p
                 style={{
-                  width: 16,
-                  height: 16,
-                  accentColor: '#2563eb',
-                  cursor: 'pointer',
-                  borderRadius: 4
+                  fontSize: '0.82rem',
+                  color: '#64748b',
+                  lineHeight: 1.5,
+                  margin: 0
                 }}
-              />
-              <span>Ingat saya</span>
-            </label>
-
-            <a
-              href="#lupa"
-              onClick={(e) => {
-                e.preventDefault();
-                alert('Silakan hubungi Administrator Bank Kuningan untuk reset kredensial FDS.');
-              }}
-              style={{
-                color: '#2563eb',
-                textDecoration: 'none',
-                fontWeight: 600
-              }}
-            >
-              Lupa password?
-            </a>
-          </div>
-
-          {/* Error message */}
-          {loginError && (
-            <div style={{
-              marginBottom: 14,
-              padding: '10px 14px',
-              background: 'rgba(239,68,68,0.08)',
-              border: '1px solid rgba(239,68,68,0.25)',
-              borderRadius: 10,
-              color: '#dc2626',
-              fontSize: '0.8rem',
-              fontWeight: 600
-            }}>
-              ❌ {loginError}
+              >
+                Masuk untuk mengakses dashboard dan memantau transaksi secara real-time.
+              </p>
             </div>
-          )}
 
-          {/* Primary Submit Button */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            style={{
-              width: '100%',
-              height: 46,
-              background: 'linear-gradient(135deg, #09132e 0%, #1e3a8a 100%)',
-              border: 'none',
-              borderRadius: 12,
-              color: '#ffffff',
-              fontSize: '0.9rem',
-              fontWeight: 700,
-              cursor: isLoading ? 'wait' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              boxShadow: '0 4px 14px rgba(15, 23, 42, 0.25)',
-              transition: 'all 0.2s ease',
-              marginBottom: 16
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 6px 20px rgba(15, 23, 42, 0.35)')}
-            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(15, 23, 42, 0.25)')}
-          >
-            {isLoading ? (
-              <span>Mengotentikasi Sesi...</span>
-            ) : (
-              <>
-                <span>Masuk ke Dashboard</span>
-                <ArrowRight size={17} />
-              </>
-            )}
-          </button>
+            {/* Login Form */}
+            <form onSubmit={handleSubmit}>
 
-          {/* Security Compliance Footer Badge */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              padding: '8px 12px',
-              borderRadius: 8,
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              fontSize: '0.72rem',
-              color: '#64748b',
-              fontWeight: 600,
-              textAlign: 'center'
-            }}
-          >
-            <Shield size={14} color="#059669" />
-            <span>Sistem Kepatuhan Terenkripsi SNAP BI &amp; POJK 8/2023</span>
-          </div>
-        </form>
-      </motion.div>
+              {/* ── Quick Login Role Selector ───────────────────────────── */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#475569', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    Pilih Akun Demo Perbankan
+                  </label>
+                  <span style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: 999,
+                    background: 'rgba(2, 132, 199, 0.1)',
+                    color: '#0284c7',
+                    border: '1px solid rgba(2, 132, 199, 0.25)'
+                  }}>
+                    Demo Mode · 2 Roles
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.72rem', color: '#64748b', margin: '0 0 10px 0', lineHeight: 1.4 }}>
+                  Pilih peran operasional untuk menguji pemisahan wewenang (<em>Segregation of Duties</em>):
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {DEMO_USERS.map(u => {
+                    const roleConfig = ROLES[u.role];
+                    const isSelected = selectedQuickUser === u.id;
+                    const isRegulator = u.role === 'admin_regulator';
+                    return (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onClick={() => handleQuickSelect(u)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '11px 14px',
+                          background: isSelected ? '#ffffff' : (isRegulator ? '#faf5ff' : '#ffffff'),
+                          border: isSelected ? '1.5px solid #1e3a8a' : (isRegulator ? '1px dashed #d8b4fe' : '1px solid #e2e8f0'),
+                          borderRadius: 12,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.18s ease',
+                          width: '100%',
+                          boxShadow: isSelected ? '0 4px 14px rgba(30, 58, 138, 0.12)' : '0 1px 2px rgba(0, 0, 0, 0.02)',
+                          position: 'relative'
+                        }}
+                      >
+                        {/* Role Icon Box */}
+                        <div style={{
+                          width: 36, height: 36, borderRadius: 10,
+                          background: isSelected ? '#1e3a8a' : (isRegulator ? 'rgba(124, 58, 237, 0.1)' : '#f1f5f9'),
+                          border: isSelected ? '1px solid #1e3a8a' : '1px solid #e2e8f0',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
+                          transition: 'all 0.18s ease'
+                        }}>
+                          {getRoleIcon(u.role, isSelected)}
+                        </div>
+
+                        {/* Role Name & Description */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.25 }}>
+                              {u.name}
+                            </span>
+                            {isRegulator && (
+                              <span style={{ fontSize: '0.6rem', padding: '1px 5px', borderRadius: 4, background: '#ede9fe', color: '#7c3aed', fontWeight: 700 }}>
+                                ROADMAP
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: 2, fontWeight: 500 }}>
+                            {u.desc || roleConfig?.label}
+                          </div>
+                        </div>
+
+                        {/* Radio Indicator */}
+                        <div style={{
+                          width: 16, height: 16, borderRadius: '50%',
+                          border: isSelected ? '5px solid #1e3a8a' : '1.5px solid #cbd5e1',
+                          background: '#ffffff',
+                          flexShrink: 0,
+                          transition: 'all 0.15s ease'
+                        }} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Email Field */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                  Email
+                </label>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: 12,
+                  padding: '0 14px',
+                  height: 44,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                  transition: 'border-color 0.2s ease'
+                }}
+                >
+                  <Mail size={17} color="#94a3b8" style={{ marginRight: 10, flexShrink: 0 }} />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Masukkan email Anda"
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      width: '100%',
+                      fontSize: '0.86rem',
+                      color: '#0f172a',
+                      background: 'transparent',
+                      fontFamily: 'inherit'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Password Field */}
+              <div style={{ marginBottom: 16 }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    color: '#334155',
+                    marginBottom: 6
+                  }}
+                >
+                  Password
+                </label>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    background: '#ffffff',
+                    border: '1.5px solid #e2e8f0',
+                    borderRadius: 12,
+                    padding: '0 14px',
+                    height: 44,
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                    transition: 'border-color 0.2s ease'
+                  }}
+                >
+                  <Lock size={17} color="#94a3b8" style={{ marginRight: 10, flexShrink: 0 }} />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Masukkan password"
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      width: '100%',
+                      fontSize: '0.86rem',
+                      color: '#0f172a',
+                      background: 'transparent',
+                      fontFamily: 'inherit'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#94a3b8',
+                      cursor: 'pointer',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Remember Me & Forgot Password Row */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 20,
+                  fontSize: '0.78rem'
+                }}
+              >
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    color: '#334155',
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    style={{
+                      width: 16,
+                      height: 16,
+                      accentColor: '#2563eb',
+                      cursor: 'pointer',
+                      borderRadius: 4
+                    }}
+                  />
+                  <span>Ingat saya</span>
+                </label>
+
+                <a
+                  href="#lupa"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    alert('Silakan hubungi Administrator Bank Kuningan untuk reset kredensial FDS.');
+                  }}
+                  style={{
+                    color: '#2563eb',
+                    textDecoration: 'none',
+                    fontWeight: 600
+                  }}
+                >
+                  Lupa password?
+                </a>
+              </div>
+
+              {/* Error message */}
+              {loginError && (
+                <div style={{
+                  marginBottom: 14,
+                  padding: '10px 14px',
+                  background: 'rgba(239,68,68,0.08)',
+                  border: '1px solid rgba(239,68,68,0.25)',
+                  borderRadius: 10,
+                  color: '#dc2626',
+                  fontSize: '0.8rem',
+                  fontWeight: 600
+                }}>
+                  ❌ {loginError}
+                </div>
+              )}
+
+              {/* Primary Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                style={{
+                  width: '100%',
+                  height: 46,
+                  background: 'linear-gradient(135deg, #09132e 0%, #1e3a8a 100%)',
+                  border: 'none',
+                  borderRadius: 12,
+                  color: '#ffffff',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  cursor: isLoading ? 'wait' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  boxShadow: '0 4px 14px rgba(15, 23, 42, 0.25)',
+                  transition: 'all 0.2s ease',
+                  marginBottom: 16
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 6px 20px rgba(15, 23, 42, 0.35)')}
+                onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(15, 23, 42, 0.25)')}
+              >
+                {isLoading ? (
+                  <span>Mengotentikasi Sesi...</span>
+                ) : (
+                  <>
+                    <span>Masuk ke Dashboard</span>
+                    <ArrowRight size={17} />
+                  </>
+                )}
+              </button>
+
+              {/* Security Compliance Footer Badge */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  fontSize: '0.72rem',
+                  color: '#64748b',
+                  fontWeight: 600,
+                  textAlign: 'center'
+                }}
+              >
+                <Shield size={14} color="#059669" />
+                <span>Sistem Kepatuhan Terenkripsi SNAP BI &amp; POJK 8/2023</span>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-);
+  );
 }

@@ -39,6 +39,7 @@ import {
   ComplianceView,
   ApoloGovernanceView
 } from './components/PageViews';
+import GNNMetricsCatalogView from './components/GNNMetricsCatalogView';
 import {
   OperationsView,
   Investigation360View,
@@ -54,7 +55,7 @@ function DashboardLayout({ onBackToLanding }) {
   const { currentUser, can } = useAuth();
   const activatedRoleConfig = ROLES[currentUser?.role] || ROLES.compliance_officer;
   const [activePage, setActivePage] = useState(activatedRoleConfig.defaultPage || 'dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [apiOnline, setApiOnline] = useState(false);
   const [systemHealth, setSystemHealth] = useState({ sentinelOnline: false, coreOnline: false, online: false });
 
@@ -220,7 +221,7 @@ function DashboardLayout({ onBackToLanding }) {
   }, []);
 
   return (
-    <div className="app-layout" id="app-root">
+    <div className={`app-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`} id="app-root">
       {/* Mobile overlay */}
       <div
         className={`sidebar-overlay ${sidebarOpen ? 'visible' : ''}`}
@@ -231,9 +232,12 @@ function DashboardLayout({ onBackToLanding }) {
         activePage={activePage}
         onPageChange={(page) => {
           setActivePage(page);
-          closeSidebar();
+          if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+            closeSidebar();
+          }
         }}
         isOpen={sidebarOpen}
+        onClose={toggleSidebar}
         adminProfile={adminProfile}
         alertsCount={alerts.length}
       />
@@ -297,7 +301,7 @@ function DashboardLayout({ onBackToLanding }) {
                   onNavigateToGNN={(txn) => {
                     setSelectedGnnEntity(txn);
                     setActivePage('analysis');
-                    if (addToast) addToast(`🧠 Membuka Subgraf Penjelas GNN untuk ${txn.id || 'Transaksi'}`, 'info');
+                    if (addToast) addToast(`🧠 Membuka GNN Network Investigation untuk ${txn.id || 'Transaksi'}`, 'info');
                   }}
                   onOpenCustomer360={(acc) => {
                     setCustomer360Account(acc);
@@ -324,7 +328,21 @@ function DashboardLayout({ onBackToLanding }) {
               )}
 
               {/* ----------------------------------------------------
-                  4. ALERTS & CMS INVESTIGATION VIEW
+                  4. 15 AML INDICATORS, GNN CANVAS & XAI CATALOG
+              ---------------------------------------------------- */}
+              {activePage === 'gnn_metrics_catalog' && (
+                <GNNMetricsCatalogView
+                  addToast={addToast}
+                  onCreateCase={handleCreateInvestigationCase}
+                  onOpenCustomer360={(acc) => {
+                    setCustomer360Account(acc);
+                    setIsCustomer360Open(true);
+                  }}
+                />
+              )}
+
+              {/* ----------------------------------------------------
+                  5. ALERTS & CMS INVESTIGATION VIEW
               ---------------------------------------------------- */}
               {activePage === 'alerts' && (
                 <AlertsView
@@ -336,7 +354,11 @@ function DashboardLayout({ onBackToLanding }) {
                   onNavigateToGNN={(alert) => {
                     setSelectedGnnEntity(alert);
                     setActivePage('analysis');
-                    if (addToast) addToast(`🧠 Membuka Subgraf Penjelas GNN untuk ${alert?.title || 'Kasus'}`, 'info');
+                    if (addToast) addToast(`🧠 Membuka GNN Network Investigation untuk ${alert?.title || 'Kasus'}`, 'info');
+                  }}
+                  onNavigateToLive={() => {
+                    setActivePage('monitoring');
+                    if (addToast) addToast('⚡ Membuka Live Detection Real-Time Stream', 'info');
                   }}
                   onOpenCustomer360={(acc) => {
                     setCustomer360Account(acc);

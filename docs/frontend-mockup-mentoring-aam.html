@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Materi Mentoring Frontend & Mockup - Crypto-Sentinel 2026 (Aam)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-dark: #3730a3;
+      --accent: #06b6d4;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg: #f8fafc;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --code-bg: #0f172a;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    
+    .hdr {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #1e40af 70%, #0369a1 100%);
+      color: white;
+      padding: 44px 56px 36px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hdr::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: rgba(99,102,241,0.2);
+    }
+    .hdr h1 { font-size: 1.9rem; font-weight: 800; position: relative; z-index: 1; }
+    .hdr h1 span { color: #67e8f9; }
+    .hdr .sub { margin-top: 8px; font-size: 0.95rem; opacity: 0.9; position: relative; z-index: 1; }
+    .tags { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; position: relative; z-index: 1; }
+    .tag { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; padding: 4px 14px; font-size: 0.76rem; font-weight: 500; }
+    
+    .layout { display: flex; max-width: 1280px; margin: 0 auto; }
+    .nav { width: 220px; flex-shrink: 0; padding: 22px 0 22px 18px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .nav-lbl { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; padding-left: 4px; }
+    .nav ul { list-style: none; }
+    .nav ul li a { display: block; padding: 6px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: 0.8rem; font-weight: 500; transition: all 0.15s; }
+    .nav ul li a:hover { background: #e0e7ff; color: var(--primary); }
+    .nav ul li a.s { padding-left: 18px; font-size: 0.75rem; font-weight: 400; }
+    
+    .main { flex: 1; padding: 34px 44px 60px 34px; min-width: 0; }
+    section { margin-bottom: 50px; }
+    .stitle { font-size: 1.35rem; font-weight: 800; color: var(--primary-dark); border-bottom: 3px solid #c7d2fe; padding-bottom: 9px; margin-bottom: 20px; display: flex; align-items: center; gap: 9px; }
+    .sicon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .ib { background: #e0e7ff; } .it { background: #ccfbf1; } .ip { background: #f3e8ff; } .ia { background: #fef3c7; } .ir { background: #ffe4e6; }
+    
+    h3 { font-size: 1rem; font-weight: 700; margin: 24px 0 11px; display: flex; align-items: center; gap: 8px; }
+    h3 .n { background: var(--primary); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
+    p { color: #334155; margin-bottom: 12px; font-size: 0.92rem; }
+
+    .tw { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); margin: 14px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+    thead th { color: white; font-weight: 600; padding: 10px 13px; text-align: left; font-size: 0.78rem; }
+    tbody tr { border-bottom: 1px solid #f1f5f9; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody td { padding: 9px 13px; vertical-align: top; color: #334155; }
+    code.f { font-family: 'Fira Code', monospace; background: #f1f5f9; color: #4f46e5; padding: 2px 6px; border-radius: 4px; font-size: 0.77rem; }
+    code.t { font-family: 'Fira Code', monospace; background: #ecfdf5; color: #065f46; padding: 2px 6px; border-radius: 4px; font-size: 0.74rem; }
+
+    .cb { background: var(--code-bg); border-radius: 10px; padding: 16px 20px; font-family: 'Fira Code', monospace; font-size: 0.78rem; color: #e2e8f0; line-height: 1.7; overflow-x: auto; margin: 10px 0; position: relative; }
+    .cb .ll { position: absolute; top: 8px; right: 12px; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 600; }
+    .cb .kw { color: #c084fc; } .cb .st { color: #86efac; } .cb .cm { color: #475569; font-style: italic; } .cb .nm { color: #fbbf24; } .cb .ky { color: #f9a8d4; }
+    
+    .ic { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin: 12px 0; }
+    .ic.bl { border-left: 4px solid #4f46e5; } .ic.tl { border-left: 4px solid #06b6d4; } .ic.gn { border-left: 4px solid #10b981; }
+
+    .trm { background: #0f172a; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+    .tb { background: #1e293b; padding: 7px 14px; display: flex; align-items: center; gap: 5px; }
+    .td_ { width: 9px; height: 9px; border-radius: 50%; }
+    .tr { background: #ef4444; } .ty { background: #f59e0b; } .tg { background: #10b981; }
+    .tt { font-size: 0.7rem; color: #64748b; margin-left: 7px; font-family: 'Fira Code', monospace; }
+    .tb_ { padding: 13px 18px; font-family: 'Fira Code', monospace; font-size: 0.78rem; color: #94a3b8; line-height: 1.8; }
+    .tp { color: #4ade80; } .tc { color: #e2e8f0; } .tm { color: #475569; }
+
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 16px 0; }
+    .feature-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px; transition: transform 0.2s; }
+    .feature-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+    .feature-card h4 { font-size: 0.92rem; color: var(--primary); margin-bottom: 6px; }
+    .feature-card p { font-size: 0.8rem; color: var(--muted); margin: 0; }
+
+    @media print { .nav { display: none; } .main { padding: 18px; } .hdr { padding: 24px; } }
+    @media (max-width: 860px) { .nav { display: none; } .main { padding: 20px; } }
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>🎨 Materi Mentoring Frontend &amp; Mockup<br><span>Crypto-Sentinel 2026 (Khusus Aam)</span></h1>
+  <div class="sub">Panduan Komprehensif Arsitektur Dashboard React, Mockup Mobile Banking Flutter, dan UI/UX Flow</div>
+  <div class="tags">
+    <span class="tag">👤 Ditujukan untuk: Aam</span>
+    <span class="tag">🏫 Tim EXPRESSO — Universitas Kuningan</span>
+    <span class="tag">📅 3 September 2026</span>
+    <span class="tag">🚀 Port: 5173 (Web) | 8081 &amp; 8082 (Mobile)</span>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="nav">
+    <div class="nav-lbl">Daftar Isi</div>
+    <ul>
+      <li><a href="#peta">🗺️ Peta Frontend</a></li>
+      <li><a href="#dashboard">💻 Dashboard React</a></li>
+      <li><a href="#komponen" class="s">→ Komponen src/</a></li>
+      <li><a href="#halaman" class="s">→ Halaman &amp; Menu</a></li>
+      <li><a href="#fitur">✨ Fitur UI/UX Unggulan</a></li>
+      <li><a href="#mobile">📱 Mockup Mobile Flutter</a></li>
+      <li><a href="#bjb" class="s">→ Bank bjb DIGI</a></li>
+      <li><a href="#kuningan" class="s">→ Bank Kuningan</a></li>
+      <li><a href="#demo">🎬 Skenario Demo Live</a></li>
+      <li><a href="#run">🚀 Cara Menjalankan</a></li>
+    </ul>
+  </nav>
+
+  <main class="main">
+
+    <section id="peta">
+      <div class="stitle"><div class="sicon ib">🗺️</div>Peta Ekosistem Frontend</div>
+      <p>Halo Aam! Di sistem <strong>Crypto-Sentinel 2026</strong>, peran antarmuka pengguna (Frontend &amp; Mobile UI/UX) dibagi menjadi 2 pilar besar:</p>
+      
+      <div class="card-grid">
+        <div class="feature-card">
+          <h4>1. Web Forensic Dashboard (:5173)</h4>
+          <p><strong>Stack:</strong> React 19, Vite 5, Recharts, Framer Motion, Lucide Icons.<br>
+          <strong>User:</strong> Compliance Officer, Investigasi AML, Regulator Bank.<br>
+          <strong>Fungsi:</strong> Memonitor transaksi real-time, grafik keterhubungan mule GNN, audit trail, dan manajemen alert.</p>
+        </div>
+        <div class="feature-card">
+          <h4>2. Mockup Mobile Banking Apps (:8081 &amp; :8082)</h4>
+          <p><strong>Stack:</strong> Flutter 3 (Dart), berjalan di Chrome Web &amp; Android.<br>
+          <strong>Apps:</strong> Bank bjb DIGI Mobile &amp; Bank Kuningan Mobile.<br>
+          <strong>Fungsi:</strong> Simulasi nasabah mentransfer dana asli dengan proteksi SNAP BI HMAC signature dan pop-up pemblokiran fraud.</p>
+        </div>
+      </div>
+
+      <div class="ic bl">
+        <strong>⚡ Hubungan Frontend dengan Backend:</strong><br>
+        • Mobile App Flutter mengirim transfer ke <code>expresso-api :8080</code>.<br>
+        • <code>expresso-api</code> menganalisis risiko ke <code>crypto-sentinel-api :8000</code>.<br>
+        • Dashboard React (Port 5173) melakukan polling setiap 5 detik dan langsung menampilkan notifikasi fraud + highlight pada grafik GNN!
+      </div>
+    </section>
+
+    <section id="dashboard">
+      <div class="stitle"><div class="sicon it">💻</div>Web Forensic Dashboard (React + Vite)</div>
+      
+      <h3 id="komponen"><span class="n">1</span> Struktur Komponen Utama (src/)</h3>
+      <div class="tw">
+        <table>
+          <thead>
+            <tr><th>Komponen</th><th>Lokasi File</th><th>Deskripsi Fungsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code class="f">App.jsx</code></td><td><code>src/App.jsx</code></td><td>Root dashboard, state polling API (5 detik), orchestrator toast alert suara.</td></tr>
+            <tr><td><code class="f">Sidebar.jsx</code></td><td><code>src/components/</code></td><td>Sidebar navigasi responsif, indikator counter alert, dan info peran login.</td></tr>
+            <tr><td><code class="f">Header.jsx</code></td><td><code>src/components/</code></td><td>Status online backend, switch role (RBAC), toggle Privacy Masking (UU PDP).</td></tr>
+            <tr><td><code class="f">StatsGrid.jsx</code></td><td><code>src/components/</code></td><td>4 KPI Card: Total Transaksi, Transaksi Berisiko, Akun Mule Terdeteksi, FPR.</td></tr>
+            <tr><td><code class="f">TransactionTable.jsx</code></td><td><code>src/components/</code></td><td>Tabel transaksi streaming live dengan tag ALLOW / REVIEW / BLOCK.</td></tr>
+            <tr><td><code class="f">GNNVisualization.jsx</code></td><td><code>src/components/</code></td><td>Kanvas interaktif graf GNN (zoom, pan, drag node rekening mule).</td></tr>
+            <tr><td><code class="f">Customer360Drawer.jsx</code></td><td><code>src/components/</code></td><td>Drawer samping profil nasabah 360° (CRA score, NIK, Device Fingerprint).</td></tr>
+            <tr><td><code class="f">AlertFeed.jsx</code></td><td><code>src/components/</code></td><td>Feed peringatan real-time jika ada anomali atau serangan smurfing.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="halaman"><span class="n">2</span> Menu Navigasi Dashboard</h3>
+      <p>Aam dapat menjelaskan menu-menu berikut kepada audiens:</p>
+      <ul style="padding-left: 20px; font-size: 0.88rem; color: #334155; line-height: 1.8;">
+        <li><strong>Dashboard Overview:</strong> Tinjauan eksekutif ringkas metrik risiko dan grafik transaksi.</li>
+        <li><strong>Monitoring Live:</strong> Streaming transaksi langsung dari database Core Banking dengan simulator test.</li>
+        <li><strong>Analisis Forensik GNN:</strong> Visualisasi graf keterhubungan rekening mule, sindikat, dan bursa crypto.</li>
+        <li><strong>Alert &amp; Investigasi:</strong> Case Management, pembuatan draft STR PPATK, dan tombol freeze rekening.</li>
+        <li><strong>Rules Calibration:</strong> Pengaturan ambang batas scoring (Threshold 85 = Block, 60 = Review).</li>
+        <li><strong>Kepatuhan PPATK (LTKM):</strong> Generator pelaporan resmi PPATK format XML terenkripsi.</li>
+        <li><strong>APOLO OJK:</strong> Modul pelaporan kepatuhan regulasi perbankan POJK 8/2023.</li>
+      </ul>
+    </section>
+
+    <section id="fitur">
+      <div class="stitle"><div class="sicon ia">✨</div>Fitur UI/UX Unggulan (Selling Point Aam)</div>
+      
+      <div class="card-grid">
+        <div class="feature-card">
+          <h4>🔒 Privacy Masking (UU PDP)</h4>
+          <p>Tombol toggle di Header. Saat diaktifkan, NIK KTP dan No Rekening disensor secara otomatis (e.g. <code>3171********21</code>) sesuai mandat UU PDP No. 27/2022.</p>
+        </div>
+        <div class="feature-card">
+          <h4>🕸️ Interactive GNN Canvas</h4>
+          <p>Grafik relasi dinamis dengan canvas SVG: Analis dapat mengklik simpul rekening untuk menelusuri aliran uang pencucian tanpa membaca ribuan baris log teks.</p>
+        </div>
+        <div class="feature-card">
+          <h4>👤 Customer 360 Drawer</h4>
+          <p>Slide drawer dari kanan layar saat rekening diklik. Menampilkan skor CRA, riwayat device ID, IP subnet, dan status PEP secara instan tanpa reload halaman.</p>
+        </div>
+        <div class="feature-card">
+          <h4>🔊 Cyber Alert Sound FX</h4>
+          <p>Menggunakan Web Audio API sintetis (tanpa aset file mp3) yang berbunyi secara otomatis saat terdeteksi transaksi High Risk atau serangan Smurfing.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="mobile">
+      <div class="stitle"><div class="sicon ir">📱</div>Mockup Mobile Banking (Flutter Apps)</div>
+      <p>Mockup mobile banking dibangun menggunakan Flutter dan siap dijalankan di browser Chrome maupun device smartphone Android:</p>
+
+      <h3 id="bjb"><span class="n">1</span> Bank bjb DIGI Mobile (Port :8081)</h3>
+      <div class="tw">
+        <table>
+          <thead>
+            <tr><th>Screen</th><th>Path File</th><th>Fungsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Beranda</td><td><code>lib/screens/home_screen.dart</code></td><td>Saldo live nasabah bjb (Rifki Firmansyah - Rp 85.000.000) dan mutasi real-time.</td></tr>
+            <tr><td>Transfer Dana</td><td><code>lib/screens/menus/transfer_screen.dart</code></td><td>Formulir transfer dengan pembuatan tanda tangan keamanan SNAP BI HMAC-SHA256.</td></tr>
+            <tr><td>Modal Blokir Fraud</td><td>Pop-up di <code>transfer_screen.dart</code></td><td>Dialog merah elegan yang muncul jika transaksi ditolak oleh Sentinel AI FDS.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="kuningan"><span class="n">2</span> Bank Kuningan Mobile (Port :8082)</h3>
+      <p>Aplikasi nasabah Bank Kuningan dengan UI khas Hijau-Emas, digunakan untuk mendemokan skenario transfer antar bank dan simulasi smurfing berulang.</p>
+    </section>
+
+    <section id="demo">
+      <div class="stitle"><div class="sicon ip">🎬</div>Skenario Live Demo (Panduan Mentoring Aam)</div>
+      
+      <div class="ic tl">
+        <strong>Langkah-Langkah Demo Memukau untuk Aam:</strong><br><br>
+        <strong>1. Tunjukkan Dashboard (:5173):</strong> Buka Dashboard di browser. Jelaskan metrik ringkasan, grafik tren, dan toggle Privacy Masking.<br><br>
+        <strong>2. Demo Transfer Aman (:8081):</strong> Buka Mobile Banking bjb. Kirim Rp 100.000 ke rekening biasa. Tunjukkan transfer BERHASIL seketika.<br><br>
+        <strong>3. Demo Serangan Fraud &amp; Blokir Otomatis:</strong> Di Mobile bjb, coba kirim Rp 60.000.000 ke rekening crypto exchange. Tunjukkan aplikasi mobile langsung memunculkan POP-UP MERAH DIBLOKIR FDS!<br><br>
+        <strong>4. Tunjukkan Respon Dashboard:</strong> Kembali ke Dashboard Web. Perlihatkan alarm suara berbunyi, baris merah baru masuk di tabel transaksi, dan skor risiko 90 tercatat di sistem.<br><br>
+        <strong>5. Buka Visualisasi GNN:</strong> Klik tombol 'Investigasi GNN' pada transaksi merah tersebut untuk menampilkan peta keterhubungan sindikat mule.
+      </div>
+    </section>
+
+    <section id="run">
+      <div class="stitle"><div class="sicon ib">🚀</div>Cara Menjalankan Frontend</div>
+      
+      <div class="trm">
+        <div class="tb"><div class="td_ tr"></div><div class="td_ ty"></div><div class="td_ tg"></div><div class="tt">Terminal 1: Dashboard React Vite (:5173)</div></div>
+        <div class="tb_">
+          <span class="tp">$</span> <span class="tc">cd "d:\Crypto-Sentinel 2026\dashboard-crypto-sentinel"</span><br>
+          <span class="tp">$</span> <span class="tc">npm run dev</span><br>
+          <span class="tm"># Akses: http://localhost:5173</span>
+        </div>
+      </div>
+
+      <div class="trm">
+        <div class="tb"><div class="td_ tr"></div><div class="td_ ty"></div><div class="td_ tg"></div><div class="tt">Terminal 2: Mobile Bank bjb DIGI (:8081)</div></div>
+        <div class="tb_">
+          <span class="tp">$</span> <span class="tc">cd "d:\Crypto-Sentinel 2026\mobile-banking-bjb"</span><br>
+          <span class="tp">$</span> <span class="tc">flutter run -d chrome --web-port 8081</span><br>
+          <span class="tm"># Akses: http://localhost:8081</span>
+        </div>
+      </div>
+
+      <div class="trm">
+        <div class="tb"><div class="td_ tr"></div><div class="td_ ty"></div><div class="td_ tg"></div><div class="tt">Terminal 3: Mobile Bank Kuningan (:8082)</div></div>
+        <div class="tb_">
+          <span class="tp">$</span> <span class="tc">cd "d:\Crypto-Sentinel 2026\crypto-sentinel-bank-kng"</span><br>
+          <span class="tp">$</span> <span class="tc">flutter run -d chrome --web-port 8082</span><br>
+          <span class="tm"># Akses: http://localhost:8082</span>
+        </div>
+      </div>
+
+      <div class="ic gn">
+        💡 <strong>Tips Praktis:</strong> Cukup jalankan <code>START-ALL.bat</code> di root folder, semua terminal termasuk backend dan frontend akan langsung terbuka otomatis!
+      </div>
+    </section>
+
+    <div style="text-align:center;padding:36px 0 16px;color:#94a3b8;font-size:0.75rem;border-top:1px solid #e2e8f0;margin-top:20px;">
+      🛡️ <strong>Crypto-Sentinel 2026</strong> — Tim EXPRESSO, Universitas Kuningan | Digdaya x Hackathon 2026
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>

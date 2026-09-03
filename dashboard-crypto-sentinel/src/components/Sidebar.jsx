@@ -8,11 +8,12 @@ import {
   Sliders,
   Shield,
   FileCheck2,
-  Lock
+  Lock,
+  ChevronLeft
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile, alertsCount }) {
+export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile, alertsCount, onClose }) {
   const { currentUser } = useAuth();
   const role = currentUser?.role || 'analyst';
 
@@ -26,6 +27,7 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
           { icon: LayoutDashboard, label: 'Command Center', id: 'dashboard' },
           { icon: Activity, label: 'Live Detection', id: 'monitoring', badge: 'LIVE' },
           { icon: GitBranch, label: 'GNN Network Investigation', id: 'analysis', badge: 'HERO · XAI' },
+          { icon: Sliders, label: 'Katalog 15 Indikator & XAI', id: 'gnn_metrics_catalog', badge: '15 METRIK' },
           { icon: ShieldAlert, label: 'Cases & Compliance', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
         ],
       },
@@ -57,6 +59,7 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
           { icon: LayoutDashboard, label: 'Command Center', id: 'dashboard' },
           { icon: Activity, label: 'Live Detection', id: 'monitoring', badge: 'LIVE' },
           { icon: GitBranch, label: 'GNN Network Investigation', id: 'analysis', badge: 'HERO · XAI' },
+          { icon: Sliders, label: 'Katalog 15 Indikator & XAI', id: 'gnn_metrics_catalog', badge: '15 METRIK' },
           { icon: ShieldAlert, label: 'Cases & Compliance', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
         ],
       },
@@ -77,21 +80,47 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`} id="sidebar-nav">
-      <div className="sidebar-header" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', minHeight: '64px' }}>
+      <div className="sidebar-header" style={{ padding: '12px 14px 12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '64px' }}>
         <img
           src="/img/logo_dashboard.png"
           alt="Crypto-Sentinel 2026"
           style={{
             width: '100%',
-            maxWidth: '168px',
+            maxWidth: '148px',
             height: 'auto',
-            maxHeight: '42px',
-            marginLeft: '4px',
+            maxHeight: '38px',
+            marginLeft: '8px',
             objectFit: 'contain',
             objectPosition: 'left center',
-            display: 'block'
+            display: 'block',
+            filter: 'brightness(0) invert(1)'
           }}
         />
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="sidebar-fold-btn"
+            title="Tutup / Gulir Sidebar"
+            aria-label="Tutup Sidebar"
+            style={{
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '6px',
+              width: '28px',
+              height: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#cbd5e1',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              flexShrink: 0
+            }}
+          >
+            <ChevronLeft size={16} />
+          </button>
+        )}
       </div>
 
       <nav className="sidebar-nav">
@@ -108,31 +137,7 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
                 <item.icon />
                 <span>{item.label}</span>
                 {item.badge && (
-                  <span
-                    className={`nav-badge ${item.id === 'monitoring' ? 'badge-live' : ''}`}
-                    style={{
-                      background: item.badge === 'LOCKED'
-                        ? 'rgba(239, 68, 68, 0.15)'
-                        : item.badge === 'READ-ONLY' || item.badge === 'AUDIT' || item.badge === 'INSPECTOR'
-                          ? 'rgba(124, 58, 237, 0.15)'
-                          : item.id === 'monitoring'
-                            ? 'var(--status-success)'
-                            : 'var(--status-danger)',
-                      color: item.badge === 'LOCKED'
-                        ? '#ef4444'
-                        : item.badge === 'READ-ONLY' || item.badge === 'AUDIT' || item.badge === 'INSPECTOR'
-                          ? '#a78bfa'
-                          : 'white',
-                      border: item.badge === 'LOCKED'
-                        ? '1px solid rgba(239, 68, 68, 0.3)'
-                        : item.badge === 'READ-ONLY' || item.badge === 'AUDIT' || item.badge === 'INSPECTOR'
-                          ? '1px solid rgba(124, 58, 237, 0.3)'
-                          : 'none',
-                      fontSize: '0.62rem',
-                      fontWeight: 800,
-                      animation: item.id === 'monitoring' || item.badge === 'LOCKED' || item.badge === 'READ-ONLY' || item.badge === 'AUDIT' || item.badge === 'INSPECTOR' ? 'none' : 'pulse-badge 2s infinite'
-                    }}
-                  >
+                  <span className="nav-badge" aria-label={`Status ${item.badge}`}>
                     {item.badge}
                   </span>
                 )}
@@ -142,41 +147,54 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
         ))}
       </nav>
 
-      <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border-color)', padding: '14px 16px' }}>
+      <div className="sidebar-footer" style={{ borderTop: '1px solid rgba(148, 163, 184, 0.18)', padding: '12px 14px' }}>
         <div className="sidebar-user" id="sidebar-user-profile" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div className="user-avatar" style={{
-            background: adminProfile?.badgeColor ? `${adminProfile.badgeColor}22` : 'var(--accent-primary-subtle)',
-            color: adminProfile?.badgeColor || 'var(--accent-primary)',
-            border: `1.5px solid ${adminProfile?.badgeColor || 'var(--accent-primary)'}66`,
-            fontWeight: 800
+            width: 36,
+            height: 36,
+            background: '#1e293b',
+            color: '#f8fafc',
+            border: '1px solid #475569',
+            boxShadow: 'none',
+            fontWeight: 800,
+            fontSize: '0.8rem',
+            flexShrink: 0,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}>
             {adminProfile?.avatar || 'AR'}
           </div>
-          <div className="user-info" style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="name" style={{ fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div className="user-info" style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span className="name" style={{ fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#f8fafc' }}>
                 {adminProfile?.name || 'Admin Regulator'}
               </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-              <span className="role" style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>
+              <span className="role" style={{ fontSize: '0.68rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {adminProfile?.role || 'OJK - Compliance Div.'}
               </span>
             </div>
-            <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
               <span style={{
-                fontSize: '0.62rem',
-                fontWeight: 800,
-                padding: '1px 6px',
+                fontSize: '0.6rem',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                padding: '2px 6px',
                 borderRadius: 4,
-                background: `${adminProfile?.badgeColor || '#10b981'}22`,
-                color: adminProfile?.badgeColor || '#10b981',
-                border: `1px solid ${adminProfile?.badgeColor || '#10b981'}44`
+                background: '#1e293b',
+                color: adminProfile?.badgeColor || '#38bdf8',
+                border: `1px solid ${adminProfile?.badgeColor ? `${adminProfile.badgeColor}55` : '#3b4a5f'}`,
+                whiteSpace: 'nowrap',
+                lineHeight: 1.2,
+                flexShrink: 0
               }}>
                 {adminProfile?.badge || 'FULL ACCESS'}
               </span>
-              <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>
-                • {adminProfile?.level || 'LEVEL 2'}
+              <span style={{ fontSize: '0.62rem', fontWeight: 600, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                • {adminProfile?.level ? adminProfile.level.split('—')[0].trim() : 'LEVEL 3'}
               </span>
             </div>
           </div>

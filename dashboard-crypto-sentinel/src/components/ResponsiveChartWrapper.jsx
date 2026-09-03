@@ -30,12 +30,14 @@ export default function ResponsiveChartWrapper({ children, height = 260, minHeig
 
     observer.observe(el);
 
-    // Fallback timer for animations
-    const timer = setTimeout(measure, 300);
+    // Fast initial fallback timer for animations
+    const timer1 = setTimeout(measure, 50);
+    const timer2 = setTimeout(measure, 240);
 
     return () => {
       observer.disconnect();
-      clearTimeout(timer);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
     };
   }, []);
 
