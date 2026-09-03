@@ -695,7 +695,7 @@ export default function GNNMetricsCatalogView({ addToast, onOpenCustomer360, onC
             </div>
 
             {/* ── MAIN WORKBENCH: 2-COLUMN LAYOUT (LEFT: LIST, RIGHT: DYNAMIC CANVAS & XAI) ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 20, alignItems: 'start' }}>
+            <div className="catalog-grid-layout">
 
                 {/* ────────────────────────────────────────────────────────────
                     LEFT COLUMN: SEARCH, GROUP FILTERS & 15 INDICATORS LIST
@@ -737,7 +737,7 @@ export default function GNNMetricsCatalogView({ addToast, onOpenCustomer360, onC
                         <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>
                             KLASIFIKASI ENGINE AI / DETEKSI:
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                        <div className="catalog-methodology-grid">
                             <button
                                 type="button"
                                 onClick={() => setActiveMethodologyFilter('all')}
@@ -968,7 +968,7 @@ export default function GNNMetricsCatalogView({ addToast, onOpenCustomer360, onC
                         </div>
 
                         {/* Quick Comparison Bar: Konvensional vs GNN */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
+                        <div className="catalog-compare-grid">
                             <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: 8, border: '1px solid #fed7aa' }}>
                                 <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#c2410c', display: 'flex', alignItems: 'center', gap: 5 }}>
                                     <AlertTriangle size={12} /> Keterbatasan Deteksi Konvensional (Rule Kaku):
@@ -990,7 +990,7 @@ export default function GNNMetricsCatalogView({ addToast, onOpenCustomer360, onC
                     </div>
 
                     {/* ── TABS: DEDICATED CANVAS vs XAI DECOMPOSITION vs REGULATORY ── */}
-                    <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--border-color)', paddingBottom: 6 }}>
+                    <div className="catalog-tabs-bar">
                         <button
                             type="button"
                             onClick={() => setActiveTab('canvas')}
@@ -1239,21 +1239,7 @@ export default function GNNMetricsCatalogView({ addToast, onOpenCustomer360, onC
                                 </svg>
 
                                 {/* Legend Bar at Bottom */}
-                                <div style={{
-                                    position: 'absolute',
-                                    bottom: 8,
-                                    left: 12,
-                                    right: 12,
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    background: 'rgba(15, 23, 42, 0.85)',
-                                    backdropFilter: 'blur(4px)',
-                                    padding: '6px 12px',
-                                    borderRadius: 6,
-                                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                                    fontSize: '0.7rem'
-                                }}>
+                                <div className="catalog-legend-bar">
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                         <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#38bdf8' }}>
                                             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3b82f6' }} /> Rekening Asal
@@ -1324,7 +1310,7 @@ export default function GNNMetricsCatalogView({ addToast, onOpenCustomer360, onC
                                 Dekomposisi Model XAI &amp; Nilai Kontribusi SHAP
                             </h4>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div className="catalog-shap-grid">
                                 <div style={{ background: 'var(--bg-input)', padding: 14, borderRadius: 8, border: '1px solid var(--border-color)' }}>
                                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>FORMULA PERHITUNGAN:</span>
                                     <div style={{ fontSize: '0.82rem', fontWeight: 800, fontFamily: 'monospace', color: '#1d4ed8', marginTop: 4 }}>
