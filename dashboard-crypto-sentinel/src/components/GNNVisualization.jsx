@@ -863,7 +863,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
 
   // Reset live state when streaming stops
   useEffect(() => {
-    if (!isStreaming && streamingTransactions.length === 0) {
+    if (!isStreaming && (streamingTransactions?.length || 0) === 0) {
       setLiveNodes(new Map());
       setLiveEdges([]);
       setLastProcessedIndex(-1);
@@ -872,7 +872,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
       setLiveGnnPan({ x: 0, y: 0 });
       setHoveredNode(null);
     }
-  }, [isStreaming, streamingTransactions.length]);
+  }, [isStreaming, streamingTransactions?.length]);
 
   // Zoom handler for live GNN canvas
   const handleLiveGnnWheel = useCallback((e) => {

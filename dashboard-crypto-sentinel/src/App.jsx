@@ -175,7 +175,10 @@ function DashboardLayout({ onBackToLanding }) {
 
         const [txs, alts] = await Promise.all([fetchTransactions(), fetchAlerts()]);
         if (active) {
-          setTransactions(Array.isArray(txs) ? txs : []);
+          // Don't overwrite transactions during active streaming simulation
+          if (!isSimulating) {
+            setTransactions(Array.isArray(txs) ? txs : []);
+          }
           const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
           setAlerts((Array.isArray(alts) ? alts : []).filter(a => !storedResolved.includes(a.id) && !storedResolved.includes(a.transaction_id)));
         }
@@ -184,7 +187,9 @@ function DashboardLayout({ onBackToLanding }) {
         if (active) {
           setApiOnline(false);
           setSystemHealth({ sentinelOnline: false, coreOnline: false, online: false });
-          setTransactions([]);
+          if (!isSimulating) {
+            setTransactions([]);
+          }
           setAlerts([]);
         }
       }
@@ -197,7 +202,7 @@ function DashboardLayout({ onBackToLanding }) {
       active = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [isSimulating]);
 
   const [blockedEntities, setBlockedEntities] = useState({
     wallets: [
