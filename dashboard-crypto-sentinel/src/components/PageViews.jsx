@@ -106,8 +106,8 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
     const cleanup = subscribeToAttackStream(
       // onTransaction - called for each transaction
       (tx) => {
-        // Add transaction to the list (prepend, keep max 100)
-        setTransactions(prev => [tx, ...prev].slice(0, 100));
+        // Add transaction to the list (prepend, keep max 300 for full stream visibility)
+        setTransactions(prev => [tx, ...prev].slice(0, 300));
 
         // Update progress
         setStreamProgress(prev => ({ ...prev, current: (tx.index || prev.current) + 1 }));
