@@ -160,8 +160,8 @@ export default function Customer360Drawer({
             width: '100%',
             maxWidth: 540,
             height: 'calc(100vh - var(--header-height))',
-            background: 'var(--card-bg, #0f172a)',
-            borderLeft: '1px solid var(--border-color, rgba(255,255,255,0.1))',
+            background: '#0f172a',
+            borderLeft: '1px solid rgba(255,255,255,0.08)',
             boxShadow: '-10px 0 35px rgba(0,0,0,0.5)',
             display: 'flex',
             flexDirection: 'column',
@@ -174,11 +174,11 @@ export default function Customer360Drawer({
           <div
             style={{
               padding: '18px 24px',
-              borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.1))',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              background: 'rgba(2, 132, 199, 0.05)',
+              background: 'rgba(2, 132, 199, 0.06)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -198,10 +198,10 @@ export default function Customer360Drawer({
                 <User size={20} />
               </div>
               <div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f8fafc' }}>
                   Customer 360 · Forensic Profile
                 </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
                   {bankName} · Terhubung ke Live NeonDB
                 </div>
               </div>
@@ -212,7 +212,7 @@ export default function Customer360Drawer({
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: 'var(--text-muted)',
+                color: '#94a3b8',
                 cursor: 'pointer',
                 padding: 6,
                 borderRadius: 8,
@@ -227,8 +227,8 @@ export default function Customer360Drawer({
             {/* Top Identity Card */}
             <div
               style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid var(--border-color)',
+                background: '#1e293b',
+                border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: 16,
                 padding: 18,
                 position: 'relative',
@@ -236,13 +236,13 @@ export default function Customer360Drawer({
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f8fafc' }}>
                     {displayName}
                   </div>
-                  <div style={{ fontSize: '0.82rem', color: 'var(--accent-primary)', fontWeight: 700, marginTop: 2 }}>
+                  <div style={{ fontSize: '0.82rem', color: '#38bdf8', fontWeight: 700, marginTop: 2 }}>
                     Rekening: {displayAccount}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 4 }}>
                     NIK: {displayNik}
                   </div>
                 </div>
@@ -265,16 +265,16 @@ export default function Customer360Drawer({
                     {riskScore >= 80 ? <ShieldAlert size={13} /> : <ShieldCheck size={13} />}
                     MULE PROB: {(muleProb * 100).toFixed(1)}%
                   </span>
-                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                    Skor CRA: <strong>{riskScore} / 100</strong>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: 4 }}>
+                    Skor CRA: <strong style={{ color: '#e2e8f0' }}>{riskScore} / 100</strong>
                   </div>
                 </div>
               </div>
 
               {/* PII Masking Controls */}
-              <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <Lock size={12} color="#10b981" /> UU PDP No. 27/2022 (Sensor Otomatis)
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <Lock size={12} color="#38bdf8" /> UU PDP No. 27/2022 (Sensor Otomatis)
                 </span>
                 {localMasked ? (
                   can('unmaskPII') ? (
@@ -297,7 +297,7 @@ export default function Customer360Drawer({
                       <Unlock size={12} /> Buka Sensor (MLRO)
                     </button>
                   ) : (
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    <span style={{ fontSize: '0.68rem', color: '#64748b', fontStyle: 'italic' }}>
                       Buka Sensor Hanya MLRO
                     </span>
                   )
@@ -323,80 +323,80 @@ export default function Customer360Drawer({
 
             {/* Compliance & Due Diligence Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 12 }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>STATUS CDD / EDD</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: cddStatus === 'EDD_REQUIRED' ? '#f59e0b' : '#10b981', marginTop: 3 }}>
+              <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 12 }}>
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status CDD / EDD</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: cddStatus === 'EDD_REQUIRED' ? '#fbbf24' : '#38bdf8', marginTop: 3 }}>
                   {cddStatus}
                 </div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 2 }}>POJK No. 8/2023 Pilar 1</div>
+                <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: 2 }}>POJK No. 8/2023 Pilar 1</div>
               </div>
 
-              <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 12 }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>PEP STATUS</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 3 }}>
+              <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 12 }}>
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>PEP Status</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f8fafc', marginTop: 3 }}>
                   {pepStatus}
                 </div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 2 }}>Politically Exposed Person</div>
+                <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: 2 }}>Politically Exposed Person</div>
               </div>
 
-              <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 12 }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>PEKERJAAN & PENGHASILAN</div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: 3 }}>
+              <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 12 }}>
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pekerjaan & Pendapatan</div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f8fafc', marginTop: 3 }}>
                   {occupation}
                 </div>
-                <div style={{ fontSize: '0.68rem', color: '#10b981', fontWeight: 600, marginTop: 2 }}>
+                <div style={{ fontSize: '0.68rem', color: '#38bdf8', fontWeight: 600, marginTop: 2 }}>
                   {formatCurrency(monthlyIncome)} / bln
                 </div>
               </div>
 
-              <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 12 }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>INAKTIF (DORMANCY)</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: dormantDays > 90 ? '#ef4444' : '#10b981', marginTop: 3 }}>
+              <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 12 }}>
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inaktif (Dormancy)</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: dormantDays > 90 ? '#f87171' : '#38bdf8', marginTop: 3 }}>
                   {dormantDays} Hari Pasif
                 </div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 2 }}>Dormant Awakening Anomaly</div>
+                <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: 2 }}>Dormant Awakening Anomaly</div>
               </div>
             </div>
 
             {/* Device & Network Footprint */}
-            <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 14 }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 14 }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f8fafc', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Smartphone size={14} color="#38bdf8" /> Digital & Device Footprint
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.72rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Device Fingerprint:</span>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{liveDeviceTelemetry?.device_fingerprint || displayDevice}</span>
+                  <span style={{ color: '#94a3b8' }}>Device Fingerprint:</span>
+                  <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{liveDeviceTelemetry?.device_fingerprint || displayDevice}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Device Model & OS:</span>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{liveDeviceTelemetry?.device_model ? `${liveDeviceTelemetry.device_model} (${liveDeviceTelemetry.os_version || 'Android'})` : 'Mobile Banking Client'}</span>
+                  <span style={{ color: '#94a3b8' }}>Device Model & OS:</span>
+                  <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{liveDeviceTelemetry?.device_model ? `${liveDeviceTelemetry.device_model} (${liveDeviceTelemetry.os_version || 'Android'})` : 'Mobile Banking Client'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>IP Address & ISP:</span>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{liveDeviceTelemetry?.ip_address || displayIp} {liveDeviceTelemetry?.isp_provider ? `· ${liveDeviceTelemetry.isp_provider}` : ''}</span>
+                  <span style={{ color: '#94a3b8' }}>IP Address & ISP:</span>
+                  <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{liveDeviceTelemetry?.ip_address || displayIp} {liveDeviceTelemetry?.isp_provider ? `· ${liveDeviceTelemetry.isp_provider}` : ''}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Integritas Lingkungan:</span>
-                  <span style={{ fontWeight: 700, color: liveDeviceTelemetry?.is_rooted_jailbroken ? '#ef4444' : '#10b981' }}>
-                    {liveDeviceTelemetry?.is_rooted_jailbroken ? '⚠️ ROOT/JAILBREAK DETECTED' : '✅ SECURE (Non-Root, No-VPN)'}
+                  <span style={{ color: '#94a3b8' }}>Integritas Lingkungan:</span>
+                  <span style={{ fontWeight: 700, color: liveDeviceTelemetry?.is_rooted_jailbroken ? '#f87171' : '#38bdf8' }}>
+                    {liveDeviceTelemetry?.is_rooted_jailbroken ? 'ROOT/JAILBREAK DETECTED' : 'SECURE (Non-Root, No-VPN)'}
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Live Transactions Ledger from Neon DB */}
-            <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 14 }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 14 }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f8fafc', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <History size={14} color="#10b981" /> Mutasi Transaksi Terakhir (NeonDB)
+                  <History size={14} color="#38bdf8" /> Mutasi Transaksi Terakhir (NeonDB)
                 </span>
-                <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 700, background: 'rgba(16, 185, 129, 0.1)', padding: '2px 6px', borderRadius: 4 }}>
+                <span style={{ fontSize: '0.65rem', color: '#38bdf8', fontWeight: 700, background: 'rgba(56, 189, 248, 0.1)', padding: '2px 6px', borderRadius: 4 }}>
                   {liveTxHistory.length > 0 ? `${liveTxHistory.length} Transaksi` : 'Tersinkronisasi'}
                 </span>
               </div>
               {isLoadingLive ? (
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>
+                <div style={{ fontSize: '0.72rem', color: '#94a3b8', textAlign: 'center', padding: '10px 0' }}>
                   Memuat data transaksi dari database Neon...
                 </div>
               ) : liveTxHistory.length > 0 ? (
@@ -408,22 +408,22 @@ export default function Customer360Drawer({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        background: 'rgba(255, 255, 255, 0.03)',
+                        background: 'rgba(255, 255, 255, 0.04)',
                         padding: '6px 8px',
                         borderRadius: 6,
                         fontSize: '0.7rem'
                       }}
                     >
                       <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                        <div style={{ fontWeight: 600, color: '#e2e8f0' }}>
                           Ke: {tx.receiver_account} ({tx.destination_type || 'Transfer'})
                         </div>
-                        <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>
+                        <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>
                           {tx.timestamp ? tx.timestamp.replace('T', ' ').substring(0, 19) : 'Baru'}
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontWeight: 700, color: 'var(--status-danger)', fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ fontWeight: 700, color: '#f87171', fontFamily: 'var(--font-mono)' }}>
                           -{formatCurrency(tx.amount)}
                         </div>
                         <span style={{
@@ -440,19 +440,19 @@ export default function Customer360Drawer({
                   ))}
                 </div>
               ) : (
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontStyle: 'italic', padding: '6px 0' }}>
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontStyle: 'italic', padding: '6px 0' }}>
                   Belum ada riwayat mutasi eksternal untuk akun ini di database Neon.
                 </div>
               )}
             </div>
 
             {/* Cross-Bank GNN Relational Insights */}
-            <div style={{ background: 'rgba(124, 58, 237, 0.06)', border: '1px solid rgba(124, 58, 237, 0.25)', borderRadius: 12, padding: 14 }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#a78bfa', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ background: 'rgba(2, 132, 199, 0.06)', border: '1px solid rgba(2, 132, 199, 0.2)', borderRadius: 12, padding: 14 }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <GitBranch size={14} /> GNN Relational Graph Insights
               </div>
-              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
-                Simpul ini memiliki <strong>In-Degree = 6</strong> (menerima dari 6 rekening berbeda) dan <strong>Out-Degree = 2</strong> (mengalirkan dana ke Indodax & Tokocrypto). Posisi embedding kosinus berada 0.88 mendekati centroid rekening mule nasional.
+              <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+                Simpul ini memiliki <strong style={{ color: '#e2e8f0' }}>In-Degree = 6</strong> (menerima dari 6 rekening berbeda) dan <strong style={{ color: '#e2e8f0' }}>Out-Degree = 2</strong> (mengalirkan dana ke Indodax & Tokocrypto). Posisi embedding kosinus berada 0.88 mendekati centroid rekening mule nasional.
               </p>
             </div>
           </div>
@@ -461,10 +461,10 @@ export default function Customer360Drawer({
           <div
             style={{
               padding: '16px 24px',
-              borderTop: '1px solid var(--border-color)',
+              borderTop: '1px solid rgba(255,255,255,0.08)',
               display: 'flex',
               gap: 10,
-              background: 'var(--card-bg)',
+              background: '#0f172a',
             }}
           >
             <button
@@ -499,9 +499,9 @@ export default function Customer360Drawer({
               style={{
                 padding: '10px 14px',
                 borderRadius: 10,
-                background: 'rgba(255, 255, 255, 0.08)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-color)',
+                background: 'rgba(255, 255, 255, 0.06)',
+                color: '#e2e8f0',
+                border: '1px solid rgba(255,255,255,0.12)',
                 fontWeight: 700,
                 fontSize: '0.8rem',
                 cursor: 'pointer',
