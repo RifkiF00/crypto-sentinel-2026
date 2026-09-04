@@ -285,12 +285,14 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
           </div>
 
           {/* Transactions List */}
-          <div className="card" style={{ marginBottom: 24 }}>
-            <div className="card-header" style={{ flexWrap: 'wrap', gap: 12 }}>
-              <h3 className="card-title"><Activity /> Aliran Transaksi Terakhir</h3>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="card" style={{ marginBottom: 24, overflow: 'hidden' }}>
+            <div className="card-header" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Activity size={18} color="#0284c7" /> Aliran Transaksi Terakhir
+              </h3>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '100%' }}>
                 {/* Filter Tenant (Bank Kuningan, Bank bjb, Apex Gabungan) */}
-                <div style={{ display: 'flex', gap: 4, background: 'rgba(37, 99, 235, 0.08)', padding: 3, borderRadius: 'var(--radius-md)', border: '1px solid rgba(37, 99, 235, 0.25)' }}>
+                <div style={{ display: 'flex', gap: 4, background: 'rgba(37, 99, 235, 0.08)', padding: 3, borderRadius: 'var(--radius-md)', border: '1px solid rgba(37, 99, 235, 0.25)', flexShrink: 0 }}>
                   <button
                     className={`btn btn-sm ${tenantFilter === 'all' ? 'btn-primary' : 'btn-ghost'}`}
                     onClick={() => setTenantFilter('all')}
@@ -318,7 +320,7 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
                 </div>
 
                 {/* Time Range Filter */}
-                <div style={{ display: 'flex', gap: 4, background: 'var(--bg-card-subtle)', padding: 3, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', gap: 4, background: 'var(--bg-card-subtle)', padding: 3, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', flexShrink: 0 }}>
                   <button
                     className={`btn btn-sm ${timeFilter === '1day' ? 'btn-primary' : 'btn-ghost'}`}
                     onClick={() => setTimeFilter('1day')}
@@ -341,16 +343,16 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
                     🌐 Semua
                   </button>
                 </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <span className="badge badge-approved">{filteredTransactions.filter(t => t.status === 'approved').length} Disetujui</span>
-                  <span className="badge badge-flagged">{filteredTransactions.filter(t => t.status === 'flagged').length} Ditandai</span>
-                  <span className="badge badge-blocked">{filteredTransactions.filter(t => t.status === 'blocked').length} Dicegah</span>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0 }}>
+                  <span className="badge badge-approved" style={{ fontSize: '0.7rem', padding: '3px 8px' }}>{filteredTransactions.filter(t => t.status === 'approved').length} Disetujui</span>
+                  <span className="badge badge-flagged" style={{ fontSize: '0.7rem', padding: '3px 8px' }}>{filteredTransactions.filter(t => t.status === 'flagged').length} Ditandai</span>
+                  <span className="badge badge-blocked" style={{ fontSize: '0.7rem', padding: '3px 8px' }}>{filteredTransactions.filter(t => t.status === 'blocked').length} Dicegah</span>
                 </div>
               </div>
             </div>
-            <div className="card-body" style={{ padding: 0 }}>
-              <div className="table-container" style={{ maxHeight: 380, overflowY: 'auto' }}>
-                <table className="data-table">
+            <div className="card-body" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="table-container" style={{ maxHeight: 380, overflowX: 'auto', overflowY: 'auto', width: '100%', WebkitOverflowScrolling: 'touch' }}>
+                <table className="data-table" style={{ width: '100%', minWidth: 940 }}>
                   <thead>
                     <tr>
                       <th>TXID / Waktu</th>
