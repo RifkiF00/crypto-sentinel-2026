@@ -1502,15 +1502,56 @@ async def simulate_attack_stream():
     """
     SSE endpoint that streams 300 transactions one-by-one every 2.5 seconds.
     Uses real accounts from expresso.db when available.
+    Each transaction is saved to transaction_logs for audit and false-positive analysis.
     """
     import json
     import asyncio
     from fastapi.responses import StreamingResponse
     
+    # Clear previous streaming batch from logs
+    stream_ids = {f"TXN-STREAM-{i+1:04d}" for i in range(300)}
+    transaction_logs[:] = [
+        log for log in transaction_logs
+        if log.get("transaction_id") not in stream_ids
+    ]
+    
     async def event_generator():
         generator = generate_streaming_attack_sequence(total_tx=300, fraud_count=15)
         
         for tx in generator:
+            # Save to transaction_logs for audit trail and false-positive analysis
+            log_entry = {
+                "transaction_id": tx["transaction_id"],
+                "timestamp": tx["timestamp"],
+                "transaction": {
+                    "type": "TRANSFER",
+                    "amount": tx["amount"],
+                    "oldbalanceOrg": tx["amount"],
+                    "newbalanceOrig": 0,
+                    "destinationAccount": tx["destinationAccount"],
+                    "sender_account": tx["sender_account"],
+                    "purpose_code": tx.get("purpose_code"),
+                    "description": tx.get("description"),
+                },
+                "senderAccount": tx["sender_account"],
+                "senderName": tx["sender_name"],
+                "national_id": get_profile_for_account(tx["sender_account"])["national_id"],
+                "risk_score": tx["risk_score"],
+                "risk_level": tx["risk_level"],
+                "decision": tx["decision"],
+                "reasons": [tx["description"]],
+                "threat_match": tx.get("metric_name", "NORMAL"),
+                "indicator_id": tx.get("indicator_id", "NORMAL"),
+                "metric_code": tx.get("metric_code", "NORM-TXN"),
+                "metric_name": tx.get("metric_name", "Transaksi Normal Terverifikasi"),
+                "engine": tx.get("engine", "RULES (ALLOW)"),
+                "senderBank": tx.get("sender_bank", "Unknown"),
+                "destinationBank": tx.get("receiver_bank", "Unknown"),
+                "is_fraud": tx.get("is_fraud", False),
+                "stream_index": tx.get("index", 0),
+            }
+            transaction_logs.append(log_entry)
+            
             # Format as SSE event
             event_data = json.dumps(tx)
             yield f"data: {event_data}\n\n"

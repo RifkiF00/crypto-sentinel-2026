@@ -25,7 +25,7 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
         title: 'Jalur Utama Investigasi',
         items: [
           { icon: LayoutDashboard, label: 'Command Center', id: 'dashboard' },
-          { icon: Activity, label: 'Live Detection', id: 'monitoring', badge: 'LIVE' },
+          { icon: Activity, label: 'Live Monitoring', id: 'monitoring', badge: 'LIVE' },
           { icon: GitBranch, label: 'GNN Network Investigation', id: 'analysis', badge: 'HERO · XAI' },
           { icon: Sliders, label: 'Katalog 15 Indikator & XAI', id: 'gnn_metrics_catalog', badge: '15 METRIK' },
           { icon: ShieldAlert, label: 'Cases & Compliance', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },
@@ -57,7 +57,7 @@ export default function Sidebar({ activePage, onPageChange, isOpen, adminProfile
         title: 'Jalur Utama Investigasi',
         items: [
           { icon: LayoutDashboard, label: 'Command Center', id: 'dashboard' },
-          { icon: Activity, label: 'Live Detection', id: 'monitoring', badge: 'LIVE' },
+          { icon: Activity, label: 'Live Monitoring', id: 'monitoring', badge: 'LIVE' },
           { icon: GitBranch, label: 'GNN Network Investigation', id: 'analysis', badge: 'HERO · XAI' },
           { icon: Sliders, label: 'Katalog 15 Indikator & XAI', id: 'gnn_metrics_catalog', badge: '15 METRIK' },
           { icon: ShieldAlert, label: 'Cases & Compliance', id: 'alerts', badge: alertsCount > 0 ? alertsCount : null },

@@ -31,7 +31,7 @@ export default function Header({
         };
       case 'monitoring':
         return {
-          title: 'Live Detection',
+          title: 'Live Monitoring',
           desc: 'Aliran transaksi real-time terhubung ke core banking'
         };
       case 'analysis':

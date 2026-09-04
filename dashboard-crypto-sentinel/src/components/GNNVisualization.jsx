@@ -1155,7 +1155,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
     setZoom(0.95);
   }, [selectedScenarioKey, hasActiveInvestigation, activeScenario]);
 
-  // Select the node passed from Live Detection / Cases after the GNN view mounts.
+  // Select the node passed from Live Monitoring / Cases after the GNN view mounts.
   // The source object may use either a graph node id or a banking account id.
   useEffect(() => {
     if (!selectedEntity) return;
@@ -2592,7 +2592,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
                 Canvas investigasi siap digunakan
               </div>
               <div style={{ fontSize: '0.78rem', lineHeight: 1.6, marginTop: 6, color: '#94a3b8' }}>
-                Pilih skenario di atas, atau buka GNN dari transaksi Live Detection / alert agar subgraf relasional dimuat.
+                Pilih skenario di atas, atau buka GNN dari transaksi Live Monitoring / alert agar subgraf relasional dimuat.
               </div>
               <div style={{
                 display: 'inline-flex',

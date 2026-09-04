@@ -359,7 +359,7 @@ function DashboardLayout({ onBackToLanding }) {
                   }}
                   onNavigateToLive={() => {
                     setActivePage('monitoring');
-                    if (addToast) addToast('⚡ Membuka Live Detection Real-Time Stream', 'info');
+                    if (addToast) addToast('⚡ Membuka Live Monitoring Real-Time Stream', 'info');
                   }}
                   onOpenCustomer360={(acc) => {
                     setCustomer360Account(acc);
