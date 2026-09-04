@@ -3,24 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   User,
-  Shield,
   ShieldAlert,
   ShieldCheck,
-  CreditCard,
-  Building2,
-  Calendar,
-  Briefcase,
-  DollarSign,
   Smartphone,
-  Globe,
   Lock,
   Unlock,
   GitBranch,
   FileText,
   AlertTriangle,
-  CheckCircle2,
-  ArrowRight,
-  Database,
   History
 } from 'lucide-react';
 import { maskName, maskAccount, maskNik, maskIp, maskDevice } from '../utils/masking';
@@ -50,8 +40,7 @@ export default function Customer360Drawer({
     setLocalMasked(isMasked);
   }, [isMasked, account]);
 
-  // Reset live state before each account and ignore late responses from a
-  // drawer that has already been closed or switched to another account.
+  // Reset live state before each account and ignore late responses
   useEffect(() => {
     let active = true;
     setLiveDbAccount(null);
@@ -81,9 +70,6 @@ export default function Customer360Drawer({
 
     return () => { active = false; };
   }, [isOpen, account]);
-
-  /* Fetch live account profile and transaction ledger from Neon DB */
-  /* Previous live-fetch effect replaced above. */
 
   if (!isOpen || !account) return null;
 
@@ -152,9 +138,6 @@ export default function Customer360Drawer({
   const rawDevice = liveDbAccount?.registered_device || account.device || selectedDevice.dev;
   const rawDeviceModel = liveDbAccount?.device_model || selectedDevice.model;
   const rawIspProvider = liveDbAccount?.isp_provider || selectedDevice.isp;
-
-  const balance = liveDbAccount?.balance ?? account.balance ?? 45000000;
-  const isBlocked = liveDbAccount?.is_blocked ?? account.is_blocked ?? false;
 
   const bankName = account.bank || account.bank_name || account.senderBank || (accountId.startsWith('110') ? 'Bank bjb' : 'Bank Kuningan');
   const muleProb = liveDbAccount?.mule_probability ?? account.muleProbability ?? account.mule_probability ?? (account.riskScore ? account.riskScore / 100 : 0.87);
@@ -250,11 +233,11 @@ export default function Customer360Drawer({
           transition={{ type: 'spring', damping: 28, stiffness: 280 }}
           style={{
             width: '100%',
-            maxWidth: 540,
+            maxWidth: 580,
             height: 'calc(100vh - var(--header-height))',
             background: '#0f172a',
-            borderLeft: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '-10px 0 35px rgba(0,0,0,0.5)',
+            borderLeft: '1px solid rgba(255,255,255,0.12)',
+            boxShadow: '-12px 0 40px rgba(0,0,0,0.6)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -265,35 +248,36 @@ export default function Customer360Drawer({
           {/* Header */}
           <div
             style={{
-              padding: '18px 24px',
-              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              padding: '20px 26px',
+              borderBottom: '1px solid rgba(255,255,255,0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              background: 'rgba(2, 132, 199, 0.06)',
+              background: 'rgba(2, 132, 199, 0.08)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  background: 'rgba(2, 132, 199, 0.15)',
-                  border: '1px solid rgba(2, 132, 199, 0.3)',
+                  width: 42,
+                  height: 42,
+                  borderRadius: 12,
+                  background: 'rgba(2, 132, 199, 0.2)',
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#38bdf8',
+                  flexShrink: 0,
                 }}
               >
-                <User size={20} />
+                <User size={22} />
               </div>
               <div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f8fafc' }}>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.2px' }}>
                   Customer 360 · Forensic Profile
                 </div>
-                <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                <div style={{ fontSize: '0.82rem', color: '#cbd5e1', marginTop: 2 }}>
                   {bankName} · Terhubung ke Live NeonDB
                 </div>
               </div>
@@ -301,95 +285,101 @@ export default function Customer360Drawer({
 
             <button
               onClick={onClose}
+              aria-label="Tutup drawer"
               style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#94a3b8',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#cbd5e1',
                 cursor: 'pointer',
-                padding: 6,
-                borderRadius: 8,
+                padding: 8,
+                borderRadius: 10,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.15s ease',
               }}
             >
               <X size={20} />
             </button>
           </div>
 
-          {/* Body */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Body - Scrollable with comfortable, readable font sizes */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '24px 26px', display: 'flex', flexDirection: 'column', gap: 20 }}>
             {/* Top Identity Card */}
             <div
               style={{
                 background: '#1e293b',
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: 16,
-                padding: 18,
+                padding: '20px 22px',
                 position: 'relative',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 }}>
                 <div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f8fafc' }}>
+                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#f8fafc', lineHeight: 1.25 }}>
                     {displayName}
                   </div>
-                  <div style={{ fontSize: '0.82rem', color: '#38bdf8', fontWeight: 700, marginTop: 2 }}>
-                    Rekening: {displayAccount}
+                  <div style={{ fontSize: '0.92rem', color: '#38bdf8', fontWeight: 700, marginTop: 4 }}>
+                    Rekening: <span style={{ fontFamily: 'var(--font-mono, monospace)' }}>{displayAccount}</span>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 4 }}>
-                    NIK: {displayNik}
+                  <div style={{ fontSize: '0.85rem', color: '#cbd5e1', marginTop: 4 }}>
+                    NIK: <span style={{ fontFamily: 'var(--font-mono, monospace)', fontWeight: 600 }}>{displayNik}</span>
                   </div>
                 </div>
 
-                <div style={{ textAlign: 'right' }}>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <span
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 4,
-                      padding: '4px 10px',
+                      gap: 5,
+                      padding: '5px 12px',
                       borderRadius: 999,
-                      fontSize: '0.72rem',
+                      fontSize: '0.8rem',
                       fontWeight: 800,
-                      background: riskScore >= 80 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                      background: riskScore >= 80 ? 'rgba(239, 68, 68, 0.18)' : 'rgba(16, 185, 129, 0.18)',
                       color: riskScore >= 80 ? '#ef4444' : '#10b981',
-                      border: `1px solid ${riskScore >= 80 ? '#ef444444' : '#10b98144'}`,
+                      border: `1px solid ${riskScore >= 80 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)'}`,
                     }}
                   >
-                    {riskScore >= 80 ? <ShieldAlert size={13} /> : <ShieldCheck size={13} />}
-                    MULE PROB: {(muleProb * 100).toFixed(1)}%
+                    {riskScore >= 80 ? <ShieldAlert size={15} /> : <ShieldCheck size={15} />}
+                    MULE: {(muleProb * 100).toFixed(1)}%
                   </span>
-                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: 4 }}>
-                    Skor CRA: <strong style={{ color: '#e2e8f0' }}>{riskScore} / 100</strong>
+                  <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: 6 }}>
+                    Skor CRA: <strong style={{ color: '#f8fafc', fontSize: '0.88rem' }}>{riskScore} / 100</strong>
                   </div>
                 </div>
               </div>
 
               {/* PII Masking Controls */}
-              <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <Lock size={12} color="#38bdf8" /> UU PDP No. 27/2022 (Sensor Otomatis)
+              <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.8rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Lock size={14} color="#38bdf8" /> UU PDP No. 27/2022 (Sensor Otomatis)
                 </span>
                 {localMasked ? (
                   can('unmaskPII') ? (
                     <button
                       onClick={() => setShowUnmaskModal(true)}
                       style={{
-                        background: 'rgba(245, 158, 11, 0.12)',
-                        border: '1px solid rgba(245, 158, 11, 0.3)',
-                        color: '#f59e0b',
-                        padding: '4px 10px',
-                        borderRadius: 6,
-                        fontSize: '0.7rem',
+                        background: 'rgba(245, 158, 11, 0.15)',
+                        border: '1px solid rgba(245, 158, 11, 0.4)',
+                        color: '#fbbf24',
+                        padding: '6px 12px',
+                        borderRadius: 8,
+                        fontSize: '0.8rem',
                         fontWeight: 700,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 4,
+                        gap: 6,
+                        transition: 'all 0.15s ease',
                       }}
                     >
-                      <Unlock size={12} /> Buka Sensor (MLRO)
+                      <Unlock size={14} /> Buka Sensor (MLRO)
                     </button>
                   ) : (
-                    <span style={{ fontSize: '0.68rem', color: '#64748b', fontStyle: 'italic' }}>
+                    <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontStyle: 'italic' }}>
                       Buka Sensor Hanya MLRO
                     </span>
                   )
@@ -397,12 +387,12 @@ export default function Customer360Drawer({
                   <button
                     onClick={() => setLocalMasked(true)}
                     style={{
-                      background: 'rgba(16, 185, 129, 0.12)',
-                      border: '1px solid rgba(16, 185, 129, 0.3)',
-                      color: '#10b981',
-                      padding: '4px 10px',
-                      borderRadius: 6,
-                      fontSize: '0.7rem',
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                      color: '#34d399',
+                      padding: '6px 12px',
+                      borderRadius: 8,
+                      fontSize: '0.8rem',
                       fontWeight: 700,
                       cursor: 'pointer',
                     }}
@@ -414,63 +404,67 @@ export default function Customer360Drawer({
             </div>
 
             {/* Compliance & Due Diligence Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 12 }}>
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status CDD / EDD</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: cddStatus === 'EDD_REQUIRED' ? '#fbbf24' : '#38bdf8', marginTop: 3 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '16px 18px' }}>
+                <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status CDD / EDD</div>
+                <div style={{ fontSize: '0.98rem', fontWeight: 800, color: cddStatus === 'EDD_REQUIRED' ? '#fbbf24' : '#38bdf8', marginTop: 4 }}>
                   {cddStatus}
                 </div>
-                <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: 2 }}>POJK No. 8/2023 Pilar 1</div>
+                <div style={{ fontSize: '0.75rem', color: '#cbd5e1', marginTop: 3 }}>POJK No. 8/2023 Pilar 1</div>
               </div>
 
-              <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 12 }}>
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>PEP Status</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f8fafc', marginTop: 3 }}>
+              <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '16px 18px' }}>
+                <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>PEP Status</div>
+                <div style={{ fontSize: '0.98rem', fontWeight: 800, color: '#f8fafc', marginTop: 4 }}>
                   {pepStatus}
                 </div>
-                <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: 2 }}>Politically Exposed Person</div>
+                <div style={{ fontSize: '0.75rem', color: '#cbd5e1', marginTop: 3 }}>Politically Exposed Person</div>
               </div>
 
-              <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 12 }}>
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pekerjaan & Pendapatan</div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f8fafc', marginTop: 3 }}>
+              <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '16px 18px' }}>
+                <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pekerjaan & Pendapatan</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc', marginTop: 4 }}>
                   {occupation}
                 </div>
-                <div style={{ fontSize: '0.68rem', color: '#38bdf8', fontWeight: 600, marginTop: 2 }}>
+                <div style={{ fontSize: '0.82rem', color: '#38bdf8', fontWeight: 700, marginTop: 3 }}>
                   {formatCurrency(monthlyIncome)} / bln
                 </div>
               </div>
 
-              <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 12 }}>
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inaktif (Dormancy)</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: dormantDays > 90 ? '#f87171' : '#38bdf8', marginTop: 3 }}>
+              <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '16px 18px' }}>
+                <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inaktif (Dormancy)</div>
+                <div style={{ fontSize: '0.98rem', fontWeight: 800, color: dormantDays > 90 ? '#f87171' : '#38bdf8', marginTop: 4 }}>
                   {dormantDays} Hari Pasif
                 </div>
-                <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: 2 }}>Dormant Awakening Anomaly</div>
+                <div style={{ fontSize: '0.75rem', color: '#cbd5e1', marginTop: 3 }}>Dormant Awakening Anomaly</div>
               </div>
             </div>
 
             {/* Device & Network Footprint */}
-            <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 14 }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f8fafc', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Smartphone size={14} color="#38bdf8" /> Digital & Device Footprint
+            <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '18px 20px' }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#f8fafc', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Smartphone size={17} color="#38bdf8" /> Digital & Device Footprint
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.72rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#94a3b8' }}>Device Fingerprint:</span>
-                  <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{liveDeviceTelemetry?.device_fingerprint || displayDevice}</span>
+                  <span style={{ fontWeight: 700, color: '#f1f5f9', fontFamily: 'var(--font-mono, monospace)' }}>
+                    {liveDeviceTelemetry?.device_fingerprint || displayDevice}
+                  </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#94a3b8' }}>Device Model & OS:</span>
-                  <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{rawDeviceModel}</span>
+                  <span style={{ fontWeight: 600, color: '#f1f5f9' }}>{rawDeviceModel}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#94a3b8' }}>IP Address & ISP:</span>
-                  <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{displayIp} · {rawIspProvider}</span>
+                  <span style={{ fontWeight: 600, color: '#f1f5f9' }}>
+                    <span style={{ fontFamily: 'var(--font-mono, monospace)' }}>{displayIp}</span> · {rawIspProvider}
+                  </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#94a3b8' }}>Integritas Lingkungan:</span>
-                  <span style={{ fontWeight: 700, color: (liveDeviceTelemetry?.is_rooted_jailbroken || riskScore > 90) ? '#f87171' : '#38bdf8' }}>
+                  <span style={{ fontWeight: 800, color: (liveDeviceTelemetry?.is_rooted_jailbroken || riskScore > 90) ? '#f87171' : '#38bdf8' }}>
                     {(liveDeviceTelemetry?.is_rooted_jailbroken || riskScore > 90) ? 'ROOT/JAILBREAK DETECTED' : 'SECURE (Non-Root, No-VPN)'}
                   </span>
                 </div>
@@ -478,21 +472,21 @@ export default function Customer360Drawer({
             </div>
 
             {/* Live Transactions Ledger from Neon DB */}
-            <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 14 }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f8fafc', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <History size={14} color="#38bdf8" /> Mutasi Transaksi Terakhir (NeonDB)
+            <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '18px 20px' }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#f8fafc', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <History size={17} color="#38bdf8" /> Mutasi Transaksi Terakhir (NeonDB)
                 </span>
-                <span style={{ fontSize: '0.65rem', color: '#38bdf8', fontWeight: 700, background: 'rgba(56, 189, 248, 0.1)', padding: '2px 6px', borderRadius: 4 }}>
+                <span style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 700, background: 'rgba(56, 189, 248, 0.15)', padding: '3px 8px', borderRadius: 6 }}>
                   {mutationsToDisplay.length} Transaksi Terverifikasi
                 </span>
               </div>
               {isLoadingLive ? (
-                <div style={{ fontSize: '0.72rem', color: '#94a3b8', textAlign: 'center', padding: '10px 0' }}>
+                <div style={{ fontSize: '0.85rem', color: '#94a3b8', textAlign: 'center', padding: '16px 0' }}>
                   Memuat data transaksi dari database Neon...
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 150, overflowY: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {mutationsToDisplay.slice(0, 5).map((tx, idx) => (
                     <div
                       key={tx.transaction_id || idx}
@@ -500,29 +494,32 @@ export default function Customer360Drawer({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        background: 'rgba(255, 255, 255, 0.04)',
-                        padding: '6px 8px',
-                        borderRadius: 6,
-                        fontSize: '0.7rem'
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        fontSize: '0.85rem'
                       }}
                     >
                       <div>
-                        <div style={{ fontWeight: 600, color: '#e2e8f0' }}>
+                        <div style={{ fontWeight: 700, color: '#f1f5f9' }}>
                           Ke: {tx.receiver_account} ({tx.destination_type || 'Transfer'})
                         </div>
-                        <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>
                           {tx.timestamp ? tx.timestamp.replace('T', ' ').substring(0, 19) : 'Baru'}
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontWeight: 700, color: '#f87171', fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ fontWeight: 800, color: '#f87171', fontFamily: 'var(--font-mono, monospace)', fontSize: '0.92rem' }}>
                           -{formatCurrency(tx.amount)}
                         </div>
                         <span style={{
-                          fontSize: '0.6rem',
-                          padding: '1px 5px',
-                          borderRadius: 3,
-                          background: tx.status === 'SUCCESS' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          padding: '2px 7px',
+                          borderRadius: 4,
+                          display: 'inline-block',
+                          marginTop: 3,
+                          background: tx.status === 'SUCCESS' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(239, 68, 68, 0.18)',
                           color: tx.status === 'SUCCESS' ? '#38bdf8' : '#ef4444'
                         }}>
                           {tx.status}
@@ -535,12 +532,12 @@ export default function Customer360Drawer({
             </div>
 
             {/* Cross-Bank GNN Relational Insights */}
-            <div style={{ background: 'rgba(2, 132, 199, 0.06)', border: '1px solid rgba(2, 132, 199, 0.2)', borderRadius: 12, padding: 14 }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <GitBranch size={14} /> GNN Relational Graph Insights
+            <div style={{ background: 'rgba(2, 132, 199, 0.08)', border: '1px solid rgba(2, 132, 199, 0.3)', borderRadius: 14, padding: '18px 20px' }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#38bdf8', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <GitBranch size={17} /> GNN Relational Graph Insights
               </div>
-              <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
-                Simpul rekening ini memiliki <strong style={{ color: '#e2e8f0' }}>In-Degree = {inDegree}</strong> (menerima dari {inDegree} rekening berbeda) dan <strong style={{ color: '#e2e8f0' }}>Out-Degree = {outDegree}</strong> (mengalirkan dana ke {cryptoDest}). Posisi embedding kosinus model GNN GraphSAGE berada pada jarak <strong style={{ color: '#38bdf8' }}>{embeddingDist}</strong> mendekati centroid klaster sindikat rekening mule perbankan.
+              <p style={{ fontSize: '0.86rem', color: '#cbd5e1', margin: 0, lineHeight: 1.6 }}>
+                Simpul rekening ini memiliki <strong style={{ color: '#ffffff' }}>In-Degree = {inDegree}</strong> (menerima dari {inDegree} rekening berbeda) dan <strong style={{ color: '#ffffff' }}>Out-Degree = {outDegree}</strong> (mengalirkan dana ke {cryptoDest}). Posisi embedding kosinus model GNN GraphSAGE berada pada jarak <strong style={{ color: '#38bdf8' }}>{embeddingDist}</strong> mendekati centroid klaster sindikat rekening mule perbankan.
               </p>
             </div>
           </div>
@@ -548,11 +545,12 @@ export default function Customer360Drawer({
           {/* Footer Action Buttons */}
           <div
             style={{
-              padding: '16px 24px',
-              borderTop: '1px solid rgba(255,255,255,0.08)',
+              padding: '18px 26px',
+              borderTop: '1px solid rgba(255,255,255,0.1)',
               display: 'flex',
-              gap: 10,
+              gap: 12,
               background: '#0f172a',
+              flexShrink: 0,
             }}
           >
             <button
@@ -562,21 +560,22 @@ export default function Customer360Drawer({
               }}
               style={{
                 flex: 1,
-                padding: '10px 14px',
-                borderRadius: 10,
+                padding: '12px 18px',
+                borderRadius: 12,
                 background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
                 color: 'white',
                 border: 'none',
                 fontWeight: 700,
-                fontSize: '0.8rem',
+                fontSize: '0.9rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 6,
+                gap: 8,
+                boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)',
               }}
             >
-              <GitBranch size={15} /> Buka di Kanvas GNN
+              <GitBranch size={17} /> Buka di Kanvas GNN
             </button>
 
             <button
@@ -585,20 +584,20 @@ export default function Customer360Drawer({
                 if (onCreateCase) onCreateCase(account);
               }}
               style={{
-                padding: '10px 14px',
-                borderRadius: 10,
-                background: 'rgba(255, 255, 255, 0.06)',
-                color: '#e2e8f0',
-                border: '1px solid rgba(255,255,255,0.12)',
+                padding: '12px 18px',
+                borderRadius: 12,
+                background: 'rgba(255, 255, 255, 0.08)',
+                color: '#f1f5f9',
+                border: '1px solid rgba(255,255,255,0.16)',
                 fontWeight: 700,
-                fontSize: '0.8rem',
+                fontSize: '0.9rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
+                gap: 8,
               }}
             >
-              <FileText size={15} /> Buat Kasus
+              <FileText size={17} /> Buat Kasus
             </button>
           </div>
         </motion.div>
