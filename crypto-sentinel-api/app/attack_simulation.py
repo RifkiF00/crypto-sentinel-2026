@@ -490,9 +490,25 @@ def generate_streaming_attack_sequence(total_tx=300, fraud_count=15):
         tx_time = now - timedelta(seconds=(total_tx - i) * 2.5)  # Sequential timestamps
         
         if i in fraud_indices and fraud_idx_counter < len(FRAUD_METRICS_DEFINITIONS):
-            # Generate fraud transaction
+            # Generate fraud transaction — use DB accounts when available
             fraud_def = FRAUD_METRICS_DEFINITIONS[fraud_idx_counter]
             fraud_idx_counter += 1
+            
+            # Override sender/receiver with real DB accounts for realism
+            if accounts and len(accounts) > 1:
+                sender_acc = random.choice(accounts)
+                receiver_acc = random.choice(accounts)
+                while receiver_acc["account_id"] == sender_acc["account_id"]:
+                    receiver_acc = random.choice(accounts)
+                fraud_sender_account = sender_acc["account_id"]
+                fraud_sender_name = sender_acc["owner_name"]
+                fraud_receiver_account = receiver_acc["account_id"]
+                fraud_receiver_name = receiver_acc["owner_name"]
+            else:
+                fraud_sender_account = fraud_def["sender"]
+                fraud_sender_name = fraud_def["sender_name"]
+                fraud_receiver_account = fraud_def["receiver"]
+                fraud_receiver_name = fraud_def["receiver_name"]
             
             tx = {
                 "index": i,
@@ -508,13 +524,13 @@ def generate_streaming_attack_sequence(total_tx=300, fraud_count=15):
                 "metric_name": fraud_def["metric_name"],
                 "category": fraud_def["category"],
                 "engine": fraud_def["engine"],
-                "sender_account": fraud_def["sender"],
-                "senderAccount": fraud_def["sender"],
-                "sender_name": fraud_def["sender_name"],
+                "sender_account": fraud_sender_account,
+                "senderAccount": fraud_sender_account,
+                "sender_name": fraud_sender_name,
                 "sender_bank": fraud_def["sender_bank"],
-                "receiver_account": fraud_def["receiver"],
-                "destinationAccount": fraud_def["receiver"],
-                "receiver_name": fraud_def["receiver_name"],
+                "receiver_account": fraud_receiver_account,
+                "destinationAccount": fraud_receiver_account,
+                "receiver_name": fraud_receiver_name,
                 "receiver_bank": fraud_def["receiver_bank"],
                 "amount": fraud_def["amount"],
                 "channel": fraud_def["channel"],

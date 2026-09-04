@@ -14,7 +14,8 @@ import {
   fetchTransactions,
   fetchAlerts,
   fetchSystemHealth,
-  createCaseApi
+  createCaseApi,
+  subscribeToAttackStream
 } from './services/api';
 
 // Dashboard Overview Components
@@ -79,6 +80,87 @@ function DashboardLayout({ onBackToLanding }) {
   // ----------------------------------------------------
   const [transactions, setTransactions] = useState([]);
   const [alerts, setAlerts] = useState([]);
+
+  // ── Streaming Simulation State (lifted to survive page switches) ──
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [streamProgress, setStreamProgress] = useState({ current: 0, total: 300 });
+  const [streamCleanupRef, setStreamCleanupRef] = useState(null);
+  const [simulationSummary, setSimulationSummary] = useState(null);
+
+  const handleStartStream = useCallback(() => {
+    // If already streaming, stop it
+    if (isSimulating && streamCleanupRef) {
+      streamCleanupRef();
+      setIsSimulating(false);
+      setStreamCleanupRef(null);
+      return;
+    }
+
+    setIsSimulating(true);
+    setSimulationSummary(null);
+    setStreamProgress({ current: 0, total: 300 });
+
+    const cleanup = subscribeToAttackStream(
+      (tx) => {
+        setTransactions(prev => [tx, ...prev].slice(0, 300));
+        setStreamProgress(prev => ({ ...prev, current: (tx.index || prev.current) + 1 }));
+
+        if (tx.is_fraud) {
+          const alert = {
+            id: tx.id,
+            transaction_id: tx.id,
+            type: tx.decision === 'BLOCK' ? 'critical' : 'warning',
+            title: tx.decision === 'BLOCK' ? 'Pencegahan Otomatis' : 'Transaksi Ditandai',
+            description: `${tx.senderName} (${tx.senderBank}) mengirim ke ${tx.destination}. Alasan: ${tx.reason}`,
+            time: tx.timestamp,
+            rawTimestamp: tx.timestamp,
+            riskScore: tx.riskScore,
+            metricCode: tx.metric_code,
+            metricName: tx.metric_name,
+          };
+          setAlerts(prev => {
+            const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
+            if (storedResolved.includes(alert.id)) return prev;
+            return [alert, ...prev];
+          });
+        }
+      },
+      (total) => {
+        setIsSimulating(false);
+        setStreamCleanupRef(null);
+        setSimulationSummary({
+          total_transactions: total,
+          fraud_anomalies_count: 15,
+          normal_transactions_count: total - 15,
+          fraud_ratio_pct: 5.0,
+          covered_metrics_count: 15,
+        });
+      },
+      (error) => {
+        setIsSimulating(false);
+        setStreamCleanupRef(null);
+      }
+    );
+
+    setStreamCleanupRef(() => cleanup);
+  }, [isSimulating, streamCleanupRef, setTransactions, setAlerts]);
+
+  const handleStopStream = useCallback(() => {
+    if (streamCleanupRef) {
+      streamCleanupRef();
+    }
+    setIsSimulating(false);
+    setStreamCleanupRef(null);
+  }, [streamCleanupRef]);
+
+  // Cleanup stream on unmount
+  useEffect(() => {
+    return () => {
+      if (streamCleanupRef) {
+        streamCleanupRef();
+      }
+    };
+  }, [streamCleanupRef]);
 
   // Polling mechanism to check health and load transaction data from backend
   useEffect(() => {
@@ -299,6 +381,11 @@ function DashboardLayout({ onBackToLanding }) {
                   addToast={addToast}
                   rules={rules}
                   isMasked={privacyMasking}
+                  isSimulating={isSimulating}
+                  streamProgress={streamProgress}
+                  simulationSummary={simulationSummary}
+                  onStartStream={handleStartStream}
+                  onStopStream={handleStopStream}
                   onNavigateToGNN={(txn) => {
                     setSelectedGnnEntity(txn);
                     setActivePage('analysis');
@@ -320,6 +407,7 @@ function DashboardLayout({ onBackToLanding }) {
                   addToast={addToast}
                   isMasked={privacyMasking}
                   selectedEntity={selectedGnnEntity}
+                  isSimulating={isSimulating}
                   onCreateCase={handleCreateInvestigationCase}
                   onOpenCustomer360={(acc) => {
                     setCustomer360Account(acc);

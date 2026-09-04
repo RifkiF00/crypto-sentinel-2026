@@ -66,16 +66,14 @@ import GNNVisualization from './GNNVisualization';
 import ResponsiveChartWrapper from './ResponsiveChartWrapper';
 
 // Dynamic API Integration
-import { checkHealth, analyzeTransaction, mapApiLogToTx, fetchCryptoExchanges, fetchBlockedPatterns, fetchMuleAccounts, fetchStatistics, fetchTransactions, resolveAlertApi, blockAccountInNeon, generateInvestigationLtkm, exportMaskedEvidence, fetchRegulatoryWatchlists, fetchMuleCommunities, fetchApoloFilings, trigger150AttackSimulation, subscribeToAttackStream } from '../services/api';
+import { checkHealth, analyzeTransaction, mapApiLogToTx, fetchCryptoExchanges, fetchBlockedPatterns, fetchMuleAccounts, fetchStatistics, fetchTransactions, resolveAlertApi, blockAccountInNeon, generateInvestigationLtkm, exportMaskedEvidence, fetchRegulatoryWatchlists, fetchMuleCommunities, fetchApoloFilings, trigger150AttackSimulation } from '../services/api';
 import { maskName, maskAccount, maskNik, maskIp } from '../utils/masking';
 
 // ==========================================
 // 1. LIVE MONITORING VIEW
 // ==========================================
-export function MonitoringView({ transactions, setTransactions, setAlerts, addToast, rules, isMasked = true, onNavigateToGNN, onOpenCustomer360 }) {
+export function MonitoringView({ transactions, setTransactions, setAlerts, addToast, rules, isMasked = true, isSimulating = false, streamProgress = { current: 0, total: 300 }, simulationSummary = null, onStartStream, onStopStream, onNavigateToGNN, onOpenCustomer360 }) {
   const [isLive, setIsLive] = useState(true);
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [simulationSummary, setSimulationSummary] = useState(null);
   const [autoBlock] = useState(rules.autoBlockEnabled);
   const [timeFilter, setTimeFilter] = useState('1day'); // '1day' | '7days' | 'all'
   const [tenantFilter, setTenantFilter] = useState('all'); // 'all' (Apex) | 'kuningan' | 'bjb'
@@ -84,92 +82,14 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
     { time: new Date().toLocaleTimeString(), text: 'Active scanning enabled. Source freshness is shown per transaction.' }
   ]);
 
-  // Streaming simulation state
-  const [streamProgress, setStreamProgress] = useState({ current: 0, total: 300 });
-  const [streamCleanup, setStreamCleanup] = useState(null);
-
   const handleSimulateAttack = () => {
-    // If already streaming, stop it
-    if (isSimulating && streamCleanup) {
-      streamCleanup();
-      setIsSimulating(false);
-      setStreamCleanup(null);
+    if (isSimulating) {
+      if (onStopStream) onStopStream();
       if (addToast) addToast('Simulasi streaming dihentikan.', 'info');
-      return;
+    } else {
+      if (onStartStream) onStartStream();
+      if (addToast) addToast('Memulai simulasi streaming 300 transaksi (2.5 detik/tx)...', 'warning');
     }
-
-    setIsSimulating(true);
-    setSimulationSummary(null);
-    setStreamProgress({ current: 0, total: 300 });
-    if (addToast) addToast('Memulai simulasi streaming 300 transaksi (2.5 detik/tx)...', 'warning');
-
-    const cleanup = subscribeToAttackStream(
-      // onTransaction - called for each transaction
-      (tx) => {
-        // Add transaction to the list (prepend, keep max 300 for full stream visibility)
-        setTransactions(prev => [tx, ...prev].slice(0, 300));
-
-        // Update progress
-        setStreamProgress(prev => ({ ...prev, current: (tx.index || prev.current) + 1 }));
-
-        // If fraud, add alert progressively
-        if (tx.is_fraud && setAlerts) {
-          const alert = {
-            id: tx.id,
-            transaction_id: tx.id,
-            type: tx.decision === 'BLOCK' ? 'critical' : 'warning',
-            title: tx.decision === 'BLOCK' ? 'Pencegahan Otomatis' : 'Transaksi Ditandai',
-            description: `${tx.senderName} (${tx.senderBank}) mengirim ke ${tx.destination}. Alasan: ${tx.reason}`,
-            time: tx.timestamp,
-            rawTimestamp: tx.timestamp,
-            riskScore: tx.riskScore,
-            metricCode: tx.metric_code,
-            metricName: tx.metric_name,
-          };
-
-          setAlerts(prev => {
-            const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
-            if (storedResolved.includes(alert.id)) return prev;
-            return [alert, ...prev];
-          });
-
-          if (addToast) {
-            addToast(`⚠️ Fraud detected: ${tx.metric_name}`, 'warning');
-          }
-        }
-
-        // Add ticker log
-        setTickerLogs(prev => [{
-          time: new Date().toLocaleTimeString(),
-          text: `[STREAM] TX-${tx.index + 1}: ${tx.senderName} → ${tx.destination} (${tx.is_fraud ? 'FRAUD' : 'NORMAL'})`
-        }, ...prev.slice(0, 9)]);
-      },
-      // onComplete
-      (total) => {
-        setIsSimulating(false);
-        setStreamCleanup(null);
-        setSimulationSummary({
-          total_transactions: total,
-          fraud_anomalies_count: 15,
-          normal_transactions_count: total - 15,
-          fraud_ratio_pct: 5.0,
-          covered_metrics_count: 15,
-        });
-        if (addToast) addToast(`Simulasi streaming selesai: ${total} transaksi diproses.`, 'success');
-        setTickerLogs(prev => [{
-          time: new Date().toLocaleTimeString(),
-          text: `[SANDBOX] ${total} transaksi streaming selesai · 15 indikator anomaly ter-cover`
-        }, ...prev.slice(0, 9)]);
-      },
-      // onError
-      (error) => {
-        setIsSimulating(false);
-        setStreamCleanup(null);
-        if (addToast) addToast(`Error streaming: ${error?.message || 'Unknown error'}`, 'error');
-      }
-    );
-
-    setStreamCleanup(() => cleanup);
   };
 
   // Filter transactions by selected time range and tenant filter
@@ -263,14 +183,7 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
     return () => clearInterval(pollTimer);
   }, [isLive, setTransactions]);
 
-  // Cleanup stream on unmount
-  useEffect(() => {
-    return () => {
-      if (streamCleanup) {
-        streamCleanup();
-      }
-    };
-  }, [streamCleanup]);
+  // No local cleanup needed — stream lifecycle is managed by App.jsx
 
   return (
     <div className="monitoring-view">
@@ -1886,7 +1799,7 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, on
 // ==========================================
 // 3. TRANSACTION ANALYSIS VIEW
 // ==========================================
-export function AnalysisView({ transactions, addToast, isMasked = true, onOpenCustomer360, selectedEntity }) {
+export function AnalysisView({ transactions, addToast, isMasked = true, onOpenCustomer360, selectedEntity, isSimulating = false }) {
   const chartTheme = useChartTheme();
   const [analysisRange, setAnalysisRange] = useState('30days');
   const [isExporting, setIsExporting] = useState(false);
@@ -2209,6 +2122,7 @@ AUDITOR SYSTEM    : CRYPTO-SENTINEL FDS ENGINE v3.2
               onOpenCustomer360={onOpenCustomer360}
               selectedEntity={selectedEntity}
               streamingTransactions={transactions}
+              isStreaming={isSimulating}
             />
           </motion.div>
         )}

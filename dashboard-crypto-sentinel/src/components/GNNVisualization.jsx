@@ -674,68 +674,138 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
   const isLight = theme === 'light';
 
   // ── Live Streaming GNN State ──
-  // Accumulator untuk nodes dan edges dari streaming transactions
-  const [liveNodes, setLiveNodes] = useState(new Map()); // accountId -> node data
+  const [liveNodes, setLiveNodes] = useState(new Map());
   const [liveEdges, setLiveEdges] = useState([]);
   const [lastProcessedIndex, setLastProcessedIndex] = useState(-1);
-  const [detectedPatterns, setDetectedPatterns] = useState([]); // Fraud patterns detected
+  const [detectedPatterns, setDetectedPatterns] = useState([]);
+  const [hoveredNode, setHoveredNode] = useState(null);
+  const [liveGnnZoom, setLiveGnnZoom] = useState(1);
+  const [liveGnnPan, setLiveGnnPan] = useState({ x: 0, y: 0 });
+  const [livePanning, setLivePanning] = useState(false);
+  const livePanStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+  const CANVAS_W = 700;
+  const CANVAS_H = 450;
+
+  // Force-directed layout simulation
+  const runForceLayout = useCallback((nodesMap, edges) => {
+    const nodes = Array.from(nodesMap.values());
+    if (nodes.length === 0) return nodesMap;
+
+    const cx = CANVAS_W / 2;
+    const cy = CANVAS_H / 2;
+    const iterations = 30;
+    const repulsion = 8000;
+    const attraction = 0.005;
+    const damping = 0.85;
+    const centerGravity = 0.01;
+
+    // Initialize velocities
+    nodes.forEach(n => { n.vx = n.vx || 0; n.vy = n.vy || 0; });
+
+    for (let iter = 0; iter < iterations; iter++) {
+      // Repulsion between all node pairs
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[j].x - nodes[i].x;
+          const dy = nodes[j].y - nodes[i].y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          const force = repulsion / (dist * dist);
+          const fx = (dx / dist) * force;
+          const fy = (dy / dist) * force;
+          nodes[i].vx -= fx;
+          nodes[i].vy -= fy;
+          nodes[j].vx += fx;
+          nodes[j].vy += fy;
+        }
+      }
+
+      // Attraction along edges
+      edges.forEach(e => {
+        const src = nodesMap.get(e.source);
+        const tgt = nodesMap.get(e.target);
+        if (!src || !tgt) return;
+        const dx = tgt.x - src.x;
+        const dy = tgt.y - src.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const force = dist * attraction;
+        const fx = (dx / dist) * force;
+        const fy = (dy / dist) * force;
+        src.vx += fx;
+        src.vy += fy;
+        tgt.vx -= fx;
+        tgt.vy -= fy;
+      });
+
+      // Center gravity + apply velocity
+      nodes.forEach(n => {
+        n.vx += (cx - n.x) * centerGravity;
+        n.vy += (cy - n.y) * centerGravity;
+        n.vx *= damping;
+        n.vy *= damping;
+        n.x += n.vx;
+        n.y += n.vy;
+        // Clamp to canvas bounds
+        n.x = Math.max(40, Math.min(CANVAS_W - 40, n.x));
+        n.y = Math.max(40, Math.min(CANVAS_H - 40, n.y));
+      });
+    }
+
+    const result = new Map();
+    nodes.forEach(n => result.set(n.id, { ...n }));
+    return result;
+  }, []);
 
   // Process streaming transactions incrementally
   useEffect(() => {
     if (!streamingTransactions || streamingTransactions.length === 0) return;
 
-    // Only process new transactions (those with index > lastProcessedIndex)
     const newTxs = streamingTransactions.filter(tx =>
       tx.index !== undefined && tx.index > lastProcessedIndex
     );
-
     if (newTxs.length === 0) return;
 
-    // Update nodes and edges for each new transaction
     setLiveNodes(prev => {
       const next = new Map(prev);
+      const cx = CANVAS_W / 2;
+      const cy = CANVAS_H / 2;
 
       newTxs.forEach(tx => {
         const senderId = tx.senderAccount || tx.sender_account;
         const receiverId = tx.destinationAccount || tx.receiver_account;
 
-        // Add/update sender node
         if (!next.has(senderId)) {
+          // Place new nodes near center with slight random offset
+          const angle = Math.random() * Math.PI * 2;
+          const radius = 50 + Math.random() * 100;
           next.set(senderId, {
             id: senderId,
             label: tx.senderName || tx.sender_name || 'Unknown',
             bank: tx.senderBank || tx.sender_bank || 'Unknown',
             type: 'originator',
-            txCount: 0,
-            totalAmount: 0,
-            outDegree: 0,
-            inDegree: 0,
-            riskScore: 0,
-            isFraud: false,
-            x: 100 + Math.random() * 400,
-            y: 100 + Math.random() * 300,
+            txCount: 0, totalAmount: 0, outDegree: 0, inDegree: 0,
+            riskScore: 0, isFraud: false,
+            x: cx + Math.cos(angle) * radius,
+            y: cy + Math.sin(angle) * radius,
+            vx: 0, vy: 0,
           });
         }
 
-        // Add/update receiver node
         if (!next.has(receiverId)) {
+          const angle = Math.random() * Math.PI * 2;
+          const radius = 50 + Math.random() * 100;
           next.set(receiverId, {
             id: receiverId,
             label: tx.receiver_name || tx.destination || 'Unknown',
             bank: tx.receiver_bank || tx.destinationBank || 'Unknown',
             type: 'receiver',
-            txCount: 0,
-            totalAmount: 0,
-            outDegree: 0,
-            inDegree: 0,
-            riskScore: 0,
-            isFraud: false,
-            x: 100 + Math.random() * 400,
-            y: 100 + Math.random() * 300,
+            txCount: 0, totalAmount: 0, outDegree: 0, inDegree: 0,
+            riskScore: 0, isFraud: false,
+            x: cx + Math.cos(angle) * radius,
+            y: cy + Math.sin(angle) * radius,
+            vx: 0, vy: 0,
           });
         }
 
-        // Update metrics
         const senderNode = next.get(senderId);
         senderNode.txCount++;
         senderNode.totalAmount += tx.amount || 0;
@@ -755,12 +825,15 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
         }
       });
 
-      return next;
+      // Run force layout to position nodes nicely
+      return runForceLayout(next, [...liveEdges, ...newTxs.map(tx => ({
+        source: tx.senderAccount || tx.sender_account,
+        target: tx.destinationAccount || tx.receiver_account,
+      }))]);
     });
 
-    // Add new edges
     const newEdges = newTxs.map(tx => ({
-      id: `${tx.senderAccount}-${tx.destinationAccount}-${tx.index}`,
+      id: `${tx.senderAccount || tx.sender_account}-${tx.destinationAccount || tx.receiver_account}-${tx.index}`,
       source: tx.senderAccount || tx.sender_account,
       target: tx.destinationAccount || tx.receiver_account,
       amount: tx.amount || 0,
@@ -768,10 +841,8 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
       indicator: tx.indicator_id || tx.metric_code || null,
       timestamp: tx.timestamp,
     }));
-
     setLiveEdges(prev => [...prev, ...newEdges]);
 
-    // Detect fraud patterns
     const newPatterns = newTxs
       .filter(tx => tx.is_fraud)
       .map(tx => ({
@@ -782,16 +853,13 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
         timestamp: tx.timestamp,
         description: tx.description || tx.reason,
       }));
-
     if (newPatterns.length > 0) {
-      setDetectedPatterns(prev => [...newPatterns, ...prev].slice(0, 10)); // Keep last 10
+      setDetectedPatterns(prev => [...newPatterns, ...prev].slice(0, 10));
     }
 
-    // Update last processed index
     const maxIndex = Math.max(...newTxs.map(tx => tx.index || 0));
     setLastProcessedIndex(maxIndex);
-
-  }, [streamingTransactions, lastProcessedIndex]);
+  }, [streamingTransactions, lastProcessedIndex, liveEdges, runForceLayout]);
 
   // Reset live state when streaming stops
   useEffect(() => {
@@ -800,8 +868,39 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
       setLiveEdges([]);
       setLastProcessedIndex(-1);
       setDetectedPatterns([]);
+      setLiveGnnZoom(1);
+      setLiveGnnPan({ x: 0, y: 0 });
+      setHoveredNode(null);
     }
   }, [isStreaming, streamingTransactions.length]);
+
+  // Zoom handler for live GNN canvas
+  const handleLiveGnnWheel = useCallback((e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setLiveGnnZoom(prev => Math.max(0.3, Math.min(3, prev * delta)));
+  }, []);
+
+  // Pan handlers for live GNN canvas
+  const handleLiveGnnMouseDown = useCallback((e) => {
+    if (e.button === 0) {
+      setLivePanning(true);
+      livePanStartRef.current = { x: e.clientX, y: e.clientY, panX: liveGnnPan.x, panY: liveGnnPan.y };
+    }
+  }, [liveGnnPan]);
+
+  const handleLiveGnnMouseMove = useCallback((e) => {
+    if (livePanning) {
+      setLiveGnnPan({
+        x: livePanStartRef.current.panX + (e.clientX - livePanStartRef.current.x),
+        y: livePanStartRef.current.panY + (e.clientY - livePanStartRef.current.y),
+      });
+    }
+  }, [livePanning]);
+
+  const handleLiveGnnMouseUp = useCallback(() => {
+    setLivePanning(false);
+  }, []);
 
   // Scenario State
   const [selectedScenarioKey, setSelectedScenarioKey] = useState(null);
@@ -1426,6 +1525,18 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
     const nodesArray = Array.from(liveNodes.values());
     const fraudNodes = nodesArray.filter(n => n.isFraud);
     const totalAmount = nodesArray.reduce((sum, n) => sum + n.totalAmount, 0);
+    const maxAmount = Math.max(...liveEdges.map(e => e.amount), 1);
+
+    // Bank color palette for community coloring
+    const bankColors = {};
+    const palette = ['#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#6366f1', '#14b8a6'];
+    let colorIdx = 0;
+    nodesArray.forEach(n => {
+      if (!bankColors[n.bank]) {
+        bankColors[n.bank] = palette[colorIdx % palette.length];
+        colorIdx++;
+      }
+    });
 
     return (
       <div className="card" style={{
@@ -1440,21 +1551,20 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
           borderBottom: '1px solid rgba(239, 68, 68, 0.2)',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 8
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: '#ef4444',
-              animation: 'pulse 1s infinite'
+              width: 8, height: 8, borderRadius: '50%',
+              background: '#ef4444', animation: 'pulse 1s infinite'
             }} />
             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f87171' }}>
               🔴 LIVE STREAMING GNN
             </span>
           </div>
-          <div style={{ display: 'flex', gap: 12, fontSize: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: 12, fontSize: '0.75rem', flexWrap: 'wrap' }}>
             <span style={{ color: '#94a3b8' }}>
               Nodes: <strong style={{ color: '#e2e8f0' }}>{nodesArray.length}</strong>
             </span>
@@ -1464,122 +1574,207 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
             <span style={{ color: '#94a3b8' }}>
               Fraud: <strong style={{ color: '#ef4444' }}>{fraudNodes.length}</strong>
             </span>
+            <span style={{ color: '#64748b', fontSize: '0.65rem' }}>
+              🖱️ Scroll=Zoom · Drag=Pan
+            </span>
           </div>
         </div>
 
-        {/* Canvas Area */}
-        <div style={{
-          position: 'relative',
-          height: 280,
-          background: 'radial-gradient(circle at center, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 1))',
-          overflow: 'hidden'
-        }}>
-          {/* SVG Graph */}
-          <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0 }}>
+        {/* Canvas Area — larger, with zoom/pan */}
+        <div
+          style={{
+            position: 'relative',
+            height: CANVAS_H,
+            background: 'radial-gradient(circle at center, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 1))',
+            overflow: 'hidden',
+            cursor: livePanning ? 'grabbing' : 'grab',
+          }}
+          onWheel={handleLiveGnnWheel}
+          onMouseDown={handleLiveGnnMouseDown}
+          onMouseMove={handleLiveGnnMouseMove}
+          onMouseUp={handleLiveGnnMouseUp}
+          onMouseLeave={handleLiveGnnMouseUp}
+        >
+          <svg
+            width="100%"
+            height="100%"
+            viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
+            style={{ position: 'absolute', top: 0, left: 0 }}
+          >
             <defs>
-              <marker id="arrowhead-live" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8" />
+              <marker id="arrowhead-live" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#38bdf8" opacity="0.8" />
               </marker>
-              <marker id="arrowhead-fraud" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
+              <marker id="arrowhead-fraud" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#ef4444" opacity="0.9" />
               </marker>
+              <filter id="glow-fraud">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <filter id="glow-normal">
+                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
             </defs>
 
-            {/* Edges */}
-            {liveEdges.map((edge, i) => {
-              const sourceNode = liveNodes.get(edge.source);
-              const targetNode = liveNodes.get(edge.target);
-              if (!sourceNode || !targetNode) return null;
+            <g transform={`translate(${liveGnnPan.x}, ${liveGnnPan.y}) scale(${liveGnnZoom})`}>
+              {/* Edges — curved bezier with thickness proportional to amount */}
+              {liveEdges.map((edge, i) => {
+                const src = liveNodes.get(edge.source);
+                const tgt = liveNodes.get(edge.target);
+                if (!src || !tgt) return null;
 
-              // Calculate positions (simple force-directed layout)
-              const sx = 50 + (sourceNode.x % 500);
-              const sy = 30 + (sourceNode.y % 220);
-              const tx = 50 + (targetNode.x % 500);
-              const ty = 30 + (targetNode.y % 220);
+                const sx = src.x, sy = src.y;
+                const tx = tgt.x, ty = tgt.y;
+                // Quadratic bezier control point — offset perpendicular for curve
+                const mx = (sx + tx) / 2;
+                const my = (sy + ty) / 2;
+                const dx = tx - sx, dy = ty - sy;
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                const offset = Math.min(len * 0.15, 30);
+                const cpx = mx + (-dy / len) * offset;
+                const cpy = my + (dx / len) * offset;
 
-              return (
-                <g key={edge.id}>
-                  <line
-                    x1={sx} y1={sy} x2={tx} y2={ty}
-                    stroke={edge.isFraud ? '#ef4444' : '#38bdf8'}
-                    strokeWidth={edge.isFraud ? 2.5 : 1.5}
-                    strokeOpacity={0.7}
-                    markerEnd={edge.isFraud ? 'url(#arrowhead-fraud)' : 'url(#arrowhead-live)'}
-                    style={{
-                      animation: edge.isFraud ? 'pulse 0.8s infinite' : 'none'
-                    }}
-                  />
-                  {/* Animated particle on edge */}
-                  <circle r={edge.isFraud ? 3 : 2} fill={edge.isFraud ? '#fca5a5' : '#7dd3fc'}>
-                    <animateMotion dur={`${1.5 + Math.random()}s`} repeatCount="indefinite">
-                      <mpath href={`#path-${i}`} />
-                    </animateMotion>
-                  </circle>
-                  <path id={`path-${i}`} d={`M${sx},${sy} L${tx},${ty}`} fill="none" />
-                </g>
-              );
-            })}
+                // Edge thickness proportional to amount
+                const thickness = edge.isFraud
+                  ? 2.5
+                  : 0.8 + (edge.amount / maxAmount) * 2.5;
 
-            {/* Nodes */}
-            {nodesArray.map((node) => {
-              const cx = 50 + (node.x % 500);
-              const cy = 30 + (node.y % 220);
-              const isFraud = node.isFraud;
-              const radius = Math.min(12 + node.txCount * 2, 24);
+                const pathD = `M${sx},${sy} Q${cpx},${cpy} ${tx},${ty}`;
 
-              return (
-                <g key={node.id}>
-                  {/* Glow effect for fraud nodes */}
-                  {isFraud && (
-                    <circle cx={cx} cy={cy} r={radius + 8} fill="rgba(239, 68, 68, 0.3)">
-                      <animate attributeName="r" values={`${radius + 6};${radius + 12};${radius + 6}`} dur="1.5s" repeatCount="indefinite" />
-                      <animate attributeName="opacity" values="0.3;0.6;0.3" dur="1.5s" repeatCount="indefinite" />
+                return (
+                  <g key={edge.id}>
+                    {/* Path definition first (for animateMotion reference) */}
+                    <path id={`edge-path-${i}`} d={pathD} fill="none" stroke="none" />
+                    {/* Visible curved edge */}
+                    <path
+                      d={pathD}
+                      fill="none"
+                      stroke={edge.isFraud ? '#ef4444' : '#38bdf8'}
+                      strokeWidth={thickness}
+                      strokeOpacity={edge.isFraud ? 0.85 : 0.5}
+                      markerEnd={edge.isFraud ? 'url(#arrowhead-fraud)' : 'url(#arrowhead-live)'}
+                    />
+                    {/* Animated particle flowing along the curved path */}
+                    <circle r={edge.isFraud ? 3.5 : 2} fill={edge.isFraud ? '#fca5a5' : '#7dd3fc'} opacity={0.9}>
+                      <animateMotion dur={`${1.2 + (i % 5) * 0.3}s`} repeatCount="indefinite" rotate="auto">
+                        <mpath href={`#edge-path-${i}`} />
+                      </animateMotion>
                     </circle>
-                  )}
-                  {/* Node circle */}
-                  <circle
-                    cx={cx} cy={cy} r={radius}
-                    fill={isFraud ? '#dc2626' : '#1e40af'}
-                    stroke={isFraud ? '#fca5a5' : '#60a5fa'}
-                    strokeWidth={2}
-                  />
-                  {/* Label */}
-                  <text
-                    x={cx} y={cy + radius + 14}
-                    textAnchor="middle"
-                    fill={isFraud ? '#fca5a5' : '#94a3b8'}
-                    fontSize="9"
-                    fontWeight={isFraud ? 700 : 400}
+                  </g>
+                );
+              })}
+
+              {/* Nodes */}
+              {nodesArray.map((node) => {
+                const isFraud = node.isFraud;
+                const radius = Math.min(10 + node.txCount * 1.5, 22);
+                const baseColor = isFraud ? '#dc2626' : (bankColors[node.bank] || '#3b82f6');
+                const strokeColor = isFraud ? '#fca5a5' : '#94a3b8';
+                const isHovered = hoveredNode === node.id;
+
+                return (
+                  <g
+                    key={node.id}
+                    onMouseEnter={() => setHoveredNode(node.id)}
+                    onMouseLeave={() => setHoveredNode(null)}
+                    style={{ cursor: 'pointer' }}
                   >
-                    {(node.label || node.id).substring(0, 12)}
-                  </text>
-                  {/* Tx count badge */}
-                  {node.txCount > 1 && (
-                    <g>
-                      <circle cx={cx + radius - 2} cy={cy - radius + 2} r={7} fill="#0f172a" stroke="#334155" />
-                      <text x={cx + radius - 2} y={cy - radius + 5} textAnchor="middle" fill="#e2e8f0" fontSize="8" fontWeight={700}>
-                        {node.txCount}
-                      </text>
-                    </g>
-                  )}
-                </g>
-              );
-            })}
+                    {/* Fraud glow — stronger pulsing */}
+                    {isFraud && (
+                      <>
+                        <circle cx={node.x} cy={node.y} r={radius + 12} fill="rgba(239, 68, 68, 0.15)" filter="url(#glow-fraud)">
+                          <animate attributeName="r" values={`${radius + 8};${radius + 16};${radius + 8}`} dur="1.2s" repeatCount="indefinite" />
+                          <animate attributeName="opacity" values="0.2;0.5;0.2" dur="1.2s" repeatCount="indefinite" />
+                        </circle>
+                        <circle cx={node.x} cy={node.y} r={radius + 5} fill="rgba(239, 68, 68, 0.25)">
+                          <animate attributeName="r" values={`${radius + 3};${radius + 8};${radius + 3}`} dur="1.5s" repeatCount="indefinite" />
+                        </circle>
+                      </>
+                    )}
+                    {/* Hover highlight */}
+                    {isHovered && !isFraud && (
+                      <circle cx={node.x} cy={node.y} r={radius + 6} fill="rgba(56, 189, 248, 0.2)" filter="url(#glow-normal)" />
+                    )}
+                    {/* Node circle */}
+                    <circle
+                      cx={node.x} cy={node.y} r={isHovered ? radius + 2 : radius}
+                      fill={baseColor}
+                      stroke={isHovered ? '#fff' : strokeColor}
+                      strokeWidth={isHovered ? 2.5 : 1.5}
+                      style={{ transition: 'r 0.15s ease' }}
+                    />
+                    {/* Label */}
+                    <text
+                      x={node.x} y={node.y + radius + 13}
+                      textAnchor="middle"
+                      fill={isFraud ? '#fca5a5' : '#94a3b8'}
+                      fontSize="8"
+                      fontWeight={isFraud ? 700 : 400}
+                    >
+                      {(node.label || node.id).substring(0, 14)}
+                    </text>
+                    {/* Tx count badge */}
+                    {node.txCount > 1 && (
+                      <g>
+                        <circle cx={node.x + radius - 2} cy={node.y - radius + 2} r={7} fill="#0f172a" stroke="#475569" strokeWidth={1} />
+                        <text x={node.x + radius - 2} y={node.y - radius + 5} textAnchor="middle" fill="#e2e8f0" fontSize="7" fontWeight={700}>
+                          {node.txCount}
+                        </text>
+                      </g>
+                    )}
+                    {/* Tooltip on hover */}
+                    {isHovered && (
+                      <g>
+                        <rect
+                          x={node.x + radius + 8}
+                          y={node.y - 30}
+                          width={180}
+                          height={58}
+                          rx={6}
+                          fill="rgba(15, 23, 42, 0.95)"
+                          stroke={isFraud ? '#ef4444' : '#334155'}
+                          strokeWidth={1}
+                        />
+                        <text x={node.x + radius + 14} y={node.y - 16} fill="#e2e8f0" fontSize="9" fontWeight={700}>
+                          {(node.label || node.id).substring(0, 22)}
+                        </text>
+                        <text x={node.x + radius + 14} y={node.y - 4} fill="#94a3b8" fontSize="8">
+                          {node.bank} · {node.txCount} TX
+                        </text>
+                        <text x={node.x + radius + 14} y={node.y + 8} fill="#94a3b8" fontSize="8">
+                          Vol: Rp {(node.totalAmount / 1000000).toFixed(1)}M
+                        </text>
+                        <text x={node.x + radius + 14} y={node.y + 20} fill={isFraud ? '#ef4444' : '#22c55e'} fontSize="8" fontWeight={600}>
+                          {isFraud ? `⚠ FRAUD (Risk: ${node.riskScore}%)` : '✓ Normal'}
+                        </text>
+                      </g>
+                    )}
+                  </g>
+                );
+              })}
+            </g>
           </svg>
 
           {/* Overlay Stats */}
           <div style={{
             position: 'absolute',
-            bottom: 8,
-            left: 8,
-            right: 8,
+            bottom: 8, left: 8, right: 8,
             display: 'flex',
             justifyContent: 'space-between',
             fontSize: '0.7rem',
-            color: '#64748b'
+            color: '#64748b',
+            pointerEvents: 'none'
           }}>
             <span>Total Volume: Rp {(totalAmount / 1000000).toFixed(1)}M</span>
-            <span>{detectedPatterns.length} pattern terdeteksi</span>
+            <span>Zoom: {(liveGnnZoom * 100).toFixed(0)}% · {detectedPatterns.length} pattern</span>
           </div>
         </div>
 
