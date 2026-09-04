@@ -380,6 +380,66 @@ export async function trigger150AttackSimulation() {
   return { ...payload, transactions, alerts: fraudAlerts };
 }
 
+/**
+ * Subscribe to streaming attack simulation via SSE.
+ * Transactions arrive one-by-one every 2.5 seconds.
+ * @param {Function} onTransaction - Called for each transaction
+ * @param {Function} onComplete - Called when stream finishes
+ * @param {Function} onError - Called on error
+ * @returns {Function} Cleanup function to close the connection
+ */
+export function subscribeToAttackStream(onTransaction, onComplete, onError) {
+  const eventSource = new EventSource(
+    `${API_BASE_URL}/api/v1/sentinel/simulate-attack-stream`
+  );
+
+  eventSource.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+
+      if (data.type === 'stream-complete') {
+        onComplete(data.total);
+        eventSource.close();
+        return;
+      }
+
+      // Map transaction to frontend format
+      const tx = {
+        ...data,
+        id: data.id || data.transaction_id,
+        timestamp: data.timestamp,
+        senderName: data.sender_name,
+        senderAccount: data.sender_account,
+        senderBank: data.sender_bank,
+        destination: data.receiver_name || data.destinationAccount,
+        destinationAccount: data.destinationAccount,
+        destinationBank: data.receiver_bank,
+        destinationType: String(data.destinationAccount || '').startsWith('9012') ? 'Crypto Exchange' : 'Transfer Bank',
+        riskScore: data.risk_score,
+        status: data.status,
+        reason: data.description,
+        flaggedRules: data.is_fraud ? [data.metric_name, data.metric_code] : []
+      };
+
+      onTransaction(tx);
+    } catch (e) {
+      console.error('Failed to parse SSE event:', e);
+    }
+  };
+
+  eventSource.onerror = (error) => {
+    onError(error);
+    eventSource.close();
+  };
+
+  // Return cleanup function
+  return () => {
+    if (eventSource.readyState !== EventSource.CLOSED) {
+      eventSource.close();
+    }
+  };
+}
+
 export async function triggerSmurfingSimulation() {
   try {
     const res = await fetchWithTimeout(`${CORE_API_BASE_URL}/api/v1/bri/simulate-smurfing`, {
@@ -1044,4 +1104,102 @@ export async function fetchLiveGNNSubgraph(accountId) {
     console.warn('[GNN Live Subgraph] Error fetching live data:', err.message);
     return { isLive: false, scenario: null, graphStats: {}, error: err.message };
   }
+}
+
+// ===================================================================
+// ACCOUNT CRUD — UPDATE / CREATE / DELETE (Customer 360 CRUD)
+// ===================================================================
+
+/**
+ * Update an account's fields in the Core Banking DB.
+ * Only non-null fields in `fields` are sent (PATCH-like semantics via PUT).
+ */
+export async function updateAccountInDb(accountId, fields = {}, actor = 'Analyst', role = 'compliance_officer') {
+  const formData = new URLSearchParams();
+  const EDITABLE = [
+    'owner_name', 'national_id', 'balance', 'risk_profile', 'risk_score',
+    'occupation', 'monthly_income', 'registered_device', 'registered_ip',
+    'pep_status', 'cdd_edd_status', 'is_active', 'is_blocked'
+  ];
+  EDITABLE.forEach(key => {
+    if (fields[key] !== undefined && fields[key] !== null) {
+      formData.append(key, String(fields[key]));
+    }
+  });
+
+  const res = await fetchWithTimeout(`${CORE_API_BASE_URL}/api/v1/accounts/${encodeURIComponent(accountId)}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-User-ID': actor,
+      'X-User-Role': role,
+    },
+    body: formData.toString(),
+    timeout: 5000,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+    throw new Error(err.detail || `Update account failed (${res.status})`);
+  }
+  return res.json();
+}
+
+/**
+ * Create a new account in the Core Banking DB.
+ */
+export async function createAccountInDb(fields = {}, actor = 'Analyst', role = 'compliance_officer') {
+  const formData = new URLSearchParams();
+  const REQUIRED = ['account_id', 'national_id', 'owner_name'];
+  REQUIRED.forEach(key => {
+    if (!fields[key]) throw new Error(`Field wajib tidak boleh kosong: ${key}`);
+    formData.append(key, String(fields[key]));
+  });
+  const OPTIONAL = [
+    'balance', 'risk_profile', 'occupation', 'monthly_income',
+    'registered_device', 'registered_ip', 'pep_status', 'cdd_edd_status'
+  ];
+  OPTIONAL.forEach(key => {
+    if (fields[key] !== undefined && fields[key] !== null) {
+      formData.append(key, String(fields[key]));
+    }
+  });
+
+  const res = await fetchWithTimeout(`${CORE_API_BASE_URL}/api/v1/accounts`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-User-ID': actor,
+      'X-User-Role': role,
+    },
+    body: formData.toString(),
+    timeout: 5000,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+    throw new Error(err.detail || `Create account failed (${res.status})`);
+  }
+  return res.json();
+}
+
+/**
+ * Delete an account from the Core Banking DB.
+ * Protected accounts (seed accounts) cannot be deleted.
+ */
+export async function deleteAccountInDb(accountId, reason = 'Permintaan penghapusan akun', actor = 'Admin_User', role = 'admin_regulator') {
+  const res = await fetchWithTimeout(
+    `${CORE_API_BASE_URL}/api/v1/accounts/${encodeURIComponent(accountId)}?reason=${encodeURIComponent(reason)}`,
+    {
+      method: 'DELETE',
+      headers: {
+        'X-User-ID': actor,
+        'X-User-Role': role,
+      },
+      timeout: 5000,
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+    throw new Error(err.detail || `Delete account failed (${res.status})`);
+  }
+  return res.json();
 }

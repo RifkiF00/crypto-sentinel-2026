@@ -66,7 +66,7 @@ import GNNVisualization from './GNNVisualization';
 import ResponsiveChartWrapper from './ResponsiveChartWrapper';
 
 // Dynamic API Integration
-import { checkHealth, analyzeTransaction, mapApiLogToTx, fetchCryptoExchanges, fetchBlockedPatterns, fetchMuleAccounts, fetchStatistics, fetchTransactions, resolveAlertApi, blockAccountInNeon, generateInvestigationLtkm, exportMaskedEvidence, fetchRegulatoryWatchlists, fetchMuleCommunities, fetchApoloFilings, trigger150AttackSimulation } from '../services/api';
+import { checkHealth, analyzeTransaction, mapApiLogToTx, fetchCryptoExchanges, fetchBlockedPatterns, fetchMuleAccounts, fetchStatistics, fetchTransactions, resolveAlertApi, blockAccountInNeon, generateInvestigationLtkm, exportMaskedEvidence, fetchRegulatoryWatchlists, fetchMuleCommunities, fetchApoloFilings, trigger150AttackSimulation, subscribeToAttackStream } from '../services/api';
 import { maskName, maskAccount, maskNik, maskIp } from '../utils/masking';
 
 // ==========================================
@@ -84,28 +84,92 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
     { time: new Date().toLocaleTimeString(), text: 'Active scanning enabled. Source freshness is shown per transaction.' }
   ]);
 
-  const handleSimulateAttack = async () => {
+  // Streaming simulation state
+  const [streamProgress, setStreamProgress] = useState({ current: 0, total: 300 });
+  const [streamCleanup, setStreamCleanup] = useState(null);
+
+  const handleSimulateAttack = () => {
+    // If already streaming, stop it
+    if (isSimulating && streamCleanup) {
+      streamCleanup();
+      setIsSimulating(false);
+      setStreamCleanup(null);
+      if (addToast) addToast('Simulasi streaming dihentikan.', 'info');
+      return;
+    }
+
     setIsSimulating(true);
     setSimulationSummary(null);
-    if (addToast) addToast('Menjalankan sandbox attack: 150 transaksi sedang dianalisis...', 'warning');
-    try {
-      const result = await trigger150AttackSimulation();
-      setTransactions(result.transactions || []);
-      if (setAlerts && result.alerts) {
-        const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
-        setAlerts(result.alerts.filter(alert => !storedResolved.includes(alert.id)));
+    setStreamProgress({ current: 0, total: 300 });
+    if (addToast) addToast('Memulai simulasi streaming 300 transaksi (2.5 detik/tx)...', 'warning');
+
+    const cleanup = subscribeToAttackStream(
+      // onTransaction - called for each transaction
+      (tx) => {
+        // Add transaction to the list (prepend, keep max 100)
+        setTransactions(prev => [tx, ...prev].slice(0, 100));
+
+        // Update progress
+        setStreamProgress(prev => ({ ...prev, current: (tx.index || prev.current) + 1 }));
+
+        // If fraud, add alert progressively
+        if (tx.is_fraud && setAlerts) {
+          const alert = {
+            id: tx.id,
+            transaction_id: tx.id,
+            type: tx.decision === 'BLOCK' ? 'critical' : 'warning',
+            title: tx.decision === 'BLOCK' ? 'Pencegahan Otomatis' : 'Transaksi Ditandai',
+            description: `${tx.senderName} (${tx.senderBank}) mengirim ke ${tx.destination}. Alasan: ${tx.reason}`,
+            time: tx.timestamp,
+            rawTimestamp: tx.timestamp,
+            riskScore: tx.riskScore,
+            metricCode: tx.metric_code,
+            metricName: tx.metric_name,
+          };
+
+          setAlerts(prev => {
+            const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
+            if (storedResolved.includes(alert.id)) return prev;
+            return [alert, ...prev];
+          });
+
+          if (addToast) {
+            addToast(`⚠️ Fraud detected: ${tx.metric_name}`, 'warning');
+          }
+        }
+
+        // Add ticker log
+        setTickerLogs(prev => [{
+          time: new Date().toLocaleTimeString(),
+          text: `[STREAM] TX-${tx.index + 1}: ${tx.senderName} → ${tx.destination} (${tx.is_fraud ? 'FRAUD' : 'NORMAL'})`
+        }, ...prev.slice(0, 9)]);
+      },
+      // onComplete
+      (total) => {
+        setIsSimulating(false);
+        setStreamCleanup(null);
+        setSimulationSummary({
+          total_transactions: total,
+          fraud_anomalies_count: 15,
+          normal_transactions_count: total - 15,
+          fraud_ratio_pct: 5.0,
+          covered_metrics_count: 15,
+        });
+        if (addToast) addToast(`Simulasi streaming selesai: ${total} transaksi diproses.`, 'success');
+        setTickerLogs(prev => [{
+          time: new Date().toLocaleTimeString(),
+          text: `[SANDBOX] ${total} transaksi streaming selesai · 15 indikator anomaly ter-cover`
+        }, ...prev.slice(0, 9)]);
+      },
+      // onError
+      (error) => {
+        setIsSimulating(false);
+        setStreamCleanup(null);
+        if (addToast) addToast(`Error streaming: ${error?.message || 'Unknown error'}`, 'error');
       }
-      setSimulationSummary(result.summary || null);
-      if (addToast) addToast('Simulasi selesai: 135 normal, 15 fraud anomaly, seluruh IND-01—IND-15 teruji.', 'success');
-      setTickerLogs(prev => [{
-        time: new Date().toLocaleTimeString(),
-        text: '[SANDBOX] 150 transaksi diproses · 15 indikator anomaly ter-cover'
-      }, ...prev.slice(0, 9)]);
-    } catch (e) {
-      if (addToast) addToast(`Gagal menjalankan simulasi sandbox: ${e.message}`, 'error');
-    } finally {
-      setIsSimulating(false);
-    }
+    );
+
+    setStreamCleanup(() => cleanup);
   };
 
   // Filter transactions by selected time range and tenant filter
@@ -199,15 +263,23 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
     return () => clearInterval(pollTimer);
   }, [isLive, setTransactions]);
 
+  // Cleanup stream on unmount
+  useEffect(() => {
+    return () => {
+      if (streamCleanup) {
+        streamCleanup();
+      }
+    };
+  }, [streamCleanup]);
+
   return (
     <div className="monitoring-view">
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 24, gap: 10 }}>
-        {/* Simulasi Sandbox — dipindah dari global header ke sini agar kontekstual */}
+        {/* Simulasi Streaming — 300 transaksi muncul satu per satu */}
         <button
           className="btn btn-ghost btn-sm"
           onClick={handleSimulateAttack}
-          disabled={isSimulating}
-          title="Injeksi 150 transaksi sandbox: 135 normal + 15 fraud anomaly"
+          title={isSimulating ? "Hentikan simulasi streaming" : "Mulai simulasi streaming 300 transaksi"}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -216,15 +288,15 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
             fontWeight: 600,
             padding: '7px 14px',
             borderRadius: 'var(--radius-md)',
-            border: isSimulating ? '1px solid #f59e0b' : '1px solid var(--border-color)',
-            background: isSimulating ? 'rgba(245, 158, 11, 0.1)' : 'var(--bg-card)',
-            color: isSimulating ? '#b45309' : 'var(--text-secondary)',
-            cursor: isSimulating ? 'wait' : 'pointer',
+            border: isSimulating ? '1px solid #ef4444' : '1px solid var(--border-color)',
+            background: isSimulating ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-card)',
+            color: isSimulating ? '#dc2626' : 'var(--text-secondary)',
+            cursor: 'pointer',
             transition: 'all 0.15s ease'
           }}
         >
-          <Zap size={14} style={{ color: isSimulating ? '#b45309' : '#f59e0b' }} className={isSimulating ? 'animate-spin' : ''} />
-          <span>{isSimulating ? 'Memproses 150 TX...' : 'Simulasi Sandbox · 150 TX'}</span>
+          <Zap size={14} style={{ color: isSimulating ? '#dc2626' : '#f59e0b' }} className={isSimulating ? 'animate-pulse' : ''} />
+          <span>{isSimulating ? `Stop (${streamProgress.current}/${streamProgress.total})` : 'Simulasi Streaming · 300 TX'}</span>
         </button>
 
         <button
@@ -239,6 +311,38 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
           <span style={{ fontSize: '0.8rem', marginLeft: 8 }}>{isLive ? 'SCANNING ACTIVE' : 'STANDBY'}</span>
         </div>
       </div>
+
+      {/* Streaming Progress Bar */}
+      {isSimulating && (
+        <div className="card" style={{ marginBottom: 24, borderColor: 'rgba(245, 158, 11, 0.35)', background: 'rgba(245, 158, 11, 0.06)' }}>
+          <div className="card-body" style={{ padding: '12px 16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <strong style={{ color: '#b45309', fontSize: '0.85rem' }}>📡 STREAMING SIMULASI AKTIF</strong>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                Transaksi {streamProgress.current} / {streamProgress.total}
+              </span>
+            </div>
+            <div style={{
+              width: '100%',
+              height: 6,
+              background: 'var(--bg-subtle)',
+              borderRadius: 3,
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                width: `${(streamProgress.current / streamProgress.total) * 100}%`,
+                height: '100%',
+                background: 'linear-gradient(90deg, #f59e0b, #ef4444)',
+                borderRadius: 3,
+                transition: 'width 0.3s ease'
+              }} />
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6 }}>
+              Transaksi muncul satu per satu setiap 2.5 detik · Klik tombol Stop untuk menghentikan
+            </div>
+          </div>
+        </div>
+      )}
 
       {simulationSummary && (
         <div className="card" style={{ marginBottom: 24, borderColor: 'rgba(37, 99, 235, 0.35)', background: 'rgba(37, 99, 235, 0.06)' }}>
@@ -2104,6 +2208,8 @@ AUDITOR SYSTEM    : CRYPTO-SENTINEL FDS ENGINE v3.2
               addToast={addToast}
               onOpenCustomer360={onOpenCustomer360}
               selectedEntity={selectedEntity}
+              streamingTransactions={transactions}
+              isStreaming={isSimulating}
             />
           </motion.div>
         )}

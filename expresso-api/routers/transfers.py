@@ -810,6 +810,178 @@ def list_accounts(limit: int = 150):
         ]
 
 
+
+# ================================================================
+# ACCOUNT CRUD — CREATE / UPDATE / DELETE
+# ================================================================
+
+@router.post("/accounts")
+def create_account(
+    account_id: str = Form(..., description="Nomor Rekening (Primary Key)"),
+    national_id: str = Form(..., description="NIK KTP (16 digit)"),
+    owner_name: str = Form(..., description="Nama lengkap nasabah"),
+    balance: int = Form(0, description="Saldo awal (Rupiah)"),
+    risk_profile: str = Form("LOW", description="LOW | MEDIUM | HIGH"),
+    occupation: str = Form("Karyawan Swasta", description="Pekerjaan nasabah"),
+    monthly_income: int = Form(10000000, description="Penghasilan bulanan (Rupiah)"),
+    registered_device: str = Form(None, description="Device fingerprint"),
+    registered_ip: str = Form(None, description="IP address tepercaya"),
+    pep_status: bool = Form(False, description="Politically Exposed Person"),
+    cdd_edd_status: str = Form("CDD_STANDARD", description="Status CDD/EDD"),
+    x_user_id: str = Header("Analyst_User", alias="X-User-ID"),
+    x_user_role: str = Header("compliance_officer", alias="X-User-Role"),
+):
+    """Membuat akun nasabah baru di database Core Banking."""
+    with Session(engine) as db:
+        existing = db.get(Account, account_id)
+        if existing:
+            raise HTTPException(status_code=409, detail=f"Akun {account_id} sudah terdaftar")
+        # Check national_id uniqueness
+        from sqlalchemy import select
+        nik_conflict = db.execute(select(Account).where(Account.national_id == national_id)).scalars().first()
+        if nik_conflict:
+            raise HTTPException(status_code=409, detail=f"NIK {national_id} sudah terdaftar untuk akun lain")
+        
+        new_acc = Account(
+            account_id=account_id,
+            national_id=national_id,
+            owner_name=owner_name,
+            balance=balance,
+            risk_profile=risk_profile,
+            risk_score=15.0 if risk_profile == "LOW" else (55.0 if risk_profile == "MEDIUM" else 85.0),
+            mule_probability=0.05 if risk_profile == "LOW" else (0.35 if risk_profile == "MEDIUM" else 0.80),
+            occupation=occupation,
+            monthly_income=monthly_income,
+            registered_device=registered_device,
+            registered_ip=registered_ip,
+            pep_status=pep_status,
+            cdd_edd_status=cdd_edd_status,
+            is_active=True,
+            is_blocked=False,
+        )
+        db.add(new_acc)
+        log_audit(db, actor=x_user_id, role=x_user_role, action="CREATE_ACCOUNT", target_id=account_id, reason=f"Akun baru dibuat untuk {owner_name} (NIK: {national_id})")
+        db.commit()
+        return {"status": "CREATED", "account_id": account_id, "owner_name": owner_name}
+
+
+@router.put("/accounts/{account_id}")
+def update_account(
+    account_id: str,
+    owner_name: str = Form(None),
+    national_id: str = Form(None),
+    balance: int = Form(None),
+    risk_profile: str = Form(None),
+    risk_score: float = Form(None),
+    occupation: str = Form(None),
+    monthly_income: int = Form(None),
+    registered_device: str = Form(None),
+    registered_ip: str = Form(None),
+    pep_status: bool = Form(None),
+    cdd_edd_status: str = Form(None),
+    is_active: bool = Form(None),
+    is_blocked: bool = Form(None),
+    x_user_id: str = Header("Analyst_User", alias="X-User-ID"),
+    x_user_role: str = Header("compliance_officer", alias="X-User-Role"),
+):
+    """Update data akun nasabah di database Core Banking."""
+    with Session(engine) as db:
+        acc = db.get(Account, account_id)
+        if not acc:
+            raise HTTPException(status_code=404, detail="Akun tidak ditemukan")
+        
+        changed_fields = []
+        if owner_name is not None:
+            acc.owner_name = owner_name
+            changed_fields.append("owner_name")
+        if national_id is not None:
+            acc.national_id = national_id
+            changed_fields.append("national_id")
+        if balance is not None:
+            acc.balance = balance
+            changed_fields.append("balance")
+        if risk_profile is not None:
+            acc.risk_profile = risk_profile
+            changed_fields.append("risk_profile")
+        if risk_score is not None:
+            acc.risk_score = risk_score
+            changed_fields.append("risk_score")
+        if occupation is not None:
+            acc.occupation = occupation
+            changed_fields.append("occupation")
+        if monthly_income is not None:
+            acc.monthly_income = monthly_income
+            changed_fields.append("monthly_income")
+        if registered_device is not None:
+            acc.registered_device = registered_device
+            changed_fields.append("registered_device")
+        if registered_ip is not None:
+            acc.registered_ip = registered_ip
+            changed_fields.append("registered_ip")
+        if pep_status is not None:
+            acc.pep_status = pep_status
+            changed_fields.append("pep_status")
+        if cdd_edd_status is not None:
+            acc.cdd_edd_status = cdd_edd_status
+            changed_fields.append("cdd_edd_status")
+        if is_active is not None:
+            acc.is_active = is_active
+            changed_fields.append("is_active")
+        if is_blocked is not None:
+            acc.is_blocked = is_blocked
+            changed_fields.append("is_blocked")
+        
+        log_audit(db, actor=x_user_id, role=x_user_role, action="UPDATE_ACCOUNT", target_id=account_id, reason=f"Field diperbarui: {', '.join(changed_fields)}")
+        db.commit()
+        
+        # Return updated account
+        return {
+            "status": "UPDATED",
+            "account_id": acc.account_id,
+            "national_id": acc.national_id,
+            "owner_name": acc.owner_name,
+            "balance": acc.balance,
+            "risk_profile": acc.risk_profile,
+            "risk_score": acc.risk_score,
+            "occupation": acc.occupation,
+            "monthly_income": acc.monthly_income,
+            "registered_device": acc.registered_device,
+            "registered_ip": acc.registered_ip,
+            "pep_status": acc.pep_status,
+            "cdd_edd_status": acc.cdd_edd_status,
+            "is_active": acc.is_active,
+            "is_blocked": acc.is_blocked,
+            "updated_fields": changed_fields
+        }
+
+
+@router.delete("/accounts/{account_id}")
+def delete_account(
+    account_id: str,
+    reason: str = "Permintaan penghapusan akun",
+    x_user_id: str = Header("Admin_User", alias="X-User-ID"),
+    x_user_role: str = Header("admin_regulator", alias="X-User-Role"),
+):
+    """Hapus akun nasabah dari database. Hanya untuk admin regulator."""
+    if x_user_role not in {"admin_regulator", "compliance_officer"}:
+        raise HTTPException(status_code=403, detail="Hanya admin_regulator atau compliance_officer yang dapat menghapus akun")
+    
+    PROTECTED_ACCOUNTS = {"1234567890", "0123456789", "1122334455", "5544332211", "9876543210"}
+    if account_id in PROTECTED_ACCOUNTS:
+        raise HTTPException(status_code=403, detail=f"Akun {account_id} adalah akun seed dan tidak dapat dihapus")
+    
+    with Session(engine) as db:
+        acc = db.get(Account, account_id)
+        if not acc:
+            raise HTTPException(status_code=404, detail="Akun tidak ditemukan")
+        
+        owner_snapshot = acc.owner_name
+        log_audit(db, actor=x_user_id, role=x_user_role, action="DELETE_ACCOUNT", target_id=account_id, reason=f"Akun {owner_snapshot} dihapus. Alasan: {reason}")
+        db.delete(acc)
+        db.commit()
+        return {"status": "DELETED", "account_id": account_id, "owner_name": owner_snapshot}
+
+
 @router.get("/bri/transactions")
 @router.get("/kuningan/transactions")
 @router.get("/bjb/transactions")

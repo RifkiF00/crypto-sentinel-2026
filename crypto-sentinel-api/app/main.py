@@ -14,7 +14,7 @@ import numpy as np
 
 from app.rule_engine import evaluate_transaction
 from app.str_generator import generate_str_draft, generate_str_html
-from app.attack_simulation import generate_150_attack_dataset
+from app.attack_simulation import generate_150_attack_dataset, generate_streaming_attack_sequence
 
 
 app = FastAPI(
@@ -1495,6 +1495,41 @@ def simulate_attack_150():
         "message": "Simulasi serangan 150 transaksi selesai: 135 normal dan 15 anomaly fraud.",
         **dataset,
     }
+
+
+@app.get("/api/v1/sentinel/simulate-attack-stream")
+async def simulate_attack_stream():
+    """
+    SSE endpoint that streams 300 transactions one-by-one every 2.5 seconds.
+    Uses real accounts from expresso.db when available.
+    """
+    import json
+    import asyncio
+    from fastapi.responses import StreamingResponse
+    
+    async def event_generator():
+        generator = generate_streaming_attack_sequence(total_tx=300, fraud_count=15)
+        
+        for tx in generator:
+            # Format as SSE event
+            event_data = json.dumps(tx)
+            yield f"data: {event_data}\n\n"
+            
+            # Wait 2.5 seconds between transactions
+            await asyncio.sleep(2.5)
+        
+        # Signal completion
+        yield f"data: {json.dumps({'type': 'stream-complete', 'total': 300})}\n\n"
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
 
 
 @app.post("/gnn-inference")

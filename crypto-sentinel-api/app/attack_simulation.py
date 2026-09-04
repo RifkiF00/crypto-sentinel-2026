@@ -1,16 +1,19 @@
 """
-Attack Simulation Engine (150 Transaksi: 135 Normal + 15 Anomali Fraud)
+Attack Simulation Engine (Streaming 300 Transaksi dengan Embedded Fraud)
 Crypto-Sentinel FDS Engine | Bank Kuningan & Bank bjb 2026
 
-Memetakan tepat 1 Fraud Anomaly untuk masing-masing dari 15 Indikator Blueprint AML & GNN:
+Memetakan 15 Indikator Blueprint AML & GNN yang disisipkan secara natural dalam stream:
 - Group 1 (Behavioral): IND-01 Fan-out, IND-02 Dormant, IND-03 Drain, IND-04 Nocturnal
 - Group 2 (Relational GNN): IND-05 Layering, IND-06 Cyclic, IND-07 PageRank, IND-08 Betweenness, IND-09 Blacklist, IND-10 Cosine
 - Group 3 (Purpose & Nominal): IND-11 Structuring, IND-12 Purpose Mismatch, IND-13 Rapid Pass-through
 - Group 4 (Technical & Telemetry): IND-14 Impossible Travel, IND-15 Rooted / VPN
-Beserta 135 Transaksi Normal Perbankan (Payroll, QRIS, E-Commerce, Transfer Keluarga, UMKM).
+
+Streaming: Transaksi muncul satu per satu setiap 2.5 detik via SSE.
 """
 
 import random
+import os
+import sqlite3
 from datetime import datetime, timedelta
 
 FRAUD_METRICS_DEFINITIONS = [
@@ -432,3 +435,152 @@ def generate_150_attack_dataset():
         "metrics_mapping": FRAUD_METRICS_DEFINITIONS,
         "transactions": transactions
     }
+
+
+def load_account_pool():
+    """Load real accounts from expresso.db for realistic simulation."""
+    current_dir = os.path.dirname(__file__)
+    db_path = os.path.abspath(os.path.join(current_dir, "..", "..", "expresso-api", "expresso.db"))
+    
+    if not os.path.exists(db_path):
+        # Fallback: use hardcoded names if DB missing
+        return None
+    
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.execute("""
+            SELECT account_id, owner_name, national_id, balance, risk_profile,
+                   registered_device, registered_ip
+            FROM accounts
+            WHERE is_active = 1 AND is_blocked = 0
+            LIMIT 500
+        """)
+        
+        accounts = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        
+        if len(accounts) < 50:
+            return None
+        
+        return accounts
+    except Exception as e:
+        print(f"[Account Pool Warning]: {e}")
+        return None
+
+
+def generate_streaming_attack_sequence(total_tx=300, fraud_count=15):
+    """
+    Generator that yields 300 transactions one at a time.
+    - 15 fraud transactions with embedded indicators (IND-01 to IND-15)
+    - 285 normal transactions using real accounts from DB
+    
+    Fraud transactions are distributed throughout the stream.
+    """
+    now = datetime.now()
+    accounts = load_account_pool()
+    
+    # Pre-plan fraud injection points (distributed across stream)
+    # Place fraud at positions: 20, 45, 70, 95, 120, 145, 170, 195, 220, 245, 260, 270, 280, 285, 290
+    fraud_indices = set([20, 45, 70, 95, 120, 145, 170, 195, 220, 245, 260, 270, 280, 285, 290])
+    
+    fraud_idx_counter = 0
+    
+    for i in range(total_tx):
+        tx_time = now - timedelta(seconds=(total_tx - i) * 2.5)  # Sequential timestamps
+        
+        if i in fraud_indices and fraud_idx_counter < len(FRAUD_METRICS_DEFINITIONS):
+            # Generate fraud transaction
+            fraud_def = FRAUD_METRICS_DEFINITIONS[fraud_idx_counter]
+            fraud_idx_counter += 1
+            
+            tx = {
+                "index": i,
+                "id": f"TXN-STREAM-{i+1:04d}",
+                "transaction_id": f"TXN-STREAM-{i+1:04d}",
+                "is_fraud": True,
+                "anomaly": True,
+                "decision": fraud_def["decision"],
+                "risk_score": fraud_def["risk_score"],
+                "risk_level": "CRITICAL" if fraud_def["risk_score"] >= 92 else "HIGH",
+                "indicator_id": fraud_def["indicator_id"],
+                "metric_code": fraud_def["code"],
+                "metric_name": fraud_def["metric_name"],
+                "category": fraud_def["category"],
+                "engine": fraud_def["engine"],
+                "sender_account": fraud_def["sender"],
+                "senderAccount": fraud_def["sender"],
+                "sender_name": fraud_def["sender_name"],
+                "sender_bank": fraud_def["sender_bank"],
+                "receiver_account": fraud_def["receiver"],
+                "destinationAccount": fraud_def["receiver"],
+                "receiver_name": fraud_def["receiver_name"],
+                "receiver_bank": fraud_def["receiver_bank"],
+                "amount": fraud_def["amount"],
+                "channel": fraud_def["channel"],
+                "purpose_code": fraud_def["purpose"],
+                "description": fraud_def["reason"],
+                "timestamp": tx_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "status": "blocked" if fraud_def["decision"] == "BLOCK" else "flagged",
+                "xai_explanation": f"Sinyal {fraud_def['code']} teraktivasi dengan skor anomali {fraud_def['risk_score']}%."
+            }
+        else:
+            # Generate normal transaction
+            if accounts and len(accounts) > 1:
+                # Use real accounts from DB
+                sender_acc = random.choice(accounts)
+                receiver_acc = random.choice(accounts)
+                while receiver_acc["account_id"] == sender_acc["account_id"]:
+                    receiver_acc = random.choice(accounts)
+                
+                sender_name = sender_acc["owner_name"]
+                sender_account = sender_acc["account_id"]
+                receiver_name = receiver_acc["owner_name"]
+                receiver_account = receiver_acc["account_id"]
+            else:
+                # Fallback to hardcoded names
+                sender_name = random.choice(NORMAL_NAMES)
+                receiver_name = random.choice(NORMAL_NAMES)
+                while receiver_name == sender_name:
+                    receiver_name = random.choice(NORMAL_NAMES)
+                sender_account = f"320800{random.randint(100000, 999999)}"
+                receiver_account = f"110022{random.randint(100000, 999999)}"
+            
+            purpose, channel_type = random.choice(NORMAL_PURPOSES)
+            amount = random.choice([
+                150000, 250000, 500000, 750000, 1200000, 2500000, 3500000, 4800000, 5500000, 8500000, 12000000
+            ])
+            risk_score = random.randint(3, 24)
+            
+            tx = {
+                "index": i,
+                "id": f"TXN-STREAM-{i+1:04d}",
+                "transaction_id": f"TXN-STREAM-{i+1:04d}",
+                "is_fraud": False,
+                "anomaly": False,
+                "decision": "ALLOW",
+                "risk_score": risk_score,
+                "risk_level": "LOW",
+                "indicator_id": "NORMAL",
+                "metric_code": "NORM-TXN",
+                "metric_name": "Transaksi Normal Terverifikasi",
+                "category": "Operasional Normal",
+                "engine": "RULES (ALLOW)",
+                "sender_account": sender_account,
+                "senderAccount": sender_account,
+                "sender_name": sender_name,
+                "sender_bank": random.choice(NORMAL_BANKS),
+                "receiver_account": receiver_account,
+                "destinationAccount": receiver_account,
+                "receiver_name": receiver_name,
+                "receiver_bank": random.choice(NORMAL_BANKS),
+                "amount": amount,
+                "channel": random.choice(["BI-FAST", "QRIS", "MOBILE BANKING", "ATM"]),
+                "purpose_code": purpose,
+                "description": f"Transaksi {purpose} wajar sesuai profil historis.",
+                "timestamp": tx_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "status": "approved",
+                "xai_explanation": f"Tidak ada anomali terdeteksi (Skor Risiko: {risk_score}%). Transaksi diizinkan otomatis."
+            }
+        
+        yield tx
