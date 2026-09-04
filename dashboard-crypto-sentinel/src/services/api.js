@@ -956,4 +956,92 @@ export async function fetchApoloFilings() {
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// LIVE GNN SUBGRAPH — Real transaction-based graph from backend transaction_logs
+// ──────────────────────────────────────────────────────────────────────────────
+/**
+ * Fetch a real GNN subgraph for an account from the live backend.
+ * The backend builds the graph from in-memory `transaction_logs` (real FDS analyzed txs).
+ *
+ * @param {string} accountId - The account/entity to investigate
+ * @returns {{ isLive: boolean, scenario: object|null, graphStats: object }}
+ *   - isLive: true if real data found, false means backend has no data for this account
+ *   - scenario: GNNVisualization-compatible scenario object (nodes, edges, summary, etc.)
+ *   - graphStats: metadata (total nodes, edges, mule count, etc.)
+ */
+export async function fetchLiveGNNSubgraph(accountId) {
+  if (!accountId) return { isLive: false, scenario: null, graphStats: {} };
 
+  try {
+    const url = `${API_BASE_URL}/api/v1/sentinel/gnn/live-subgraph/${encodeURIComponent(accountId)}`;
+    const res = await fetchWithTimeout(url, { timeout: 8000 });
+    if (!res.ok) throw new Error(`GNN live subgraph failed (${res.status})`);
+
+    const data = await res.json();
+
+    // Backend returned no data for this account
+    if (!data.is_live || !data.nodes || data.nodes.length === 0) {
+      return {
+        isLive: false,
+        scenario: null,
+        message: data.message || 'Belum ada transaksi live untuk akun ini.',
+        graphStats: {},
+      };
+    }
+
+    // Normalize into GNNVisualization scenario shape
+    const scenario = {
+      id: `live_${accountId}`,
+      name: `Investigasi Live: ${data.account_id}`,
+      riskScore: data.riskScore || 0,
+      riskLevel: data.riskLevel || 'LOW',
+      classification: data.classification || 'LIVE INVESTIGATION',
+      summary: data.summary || '',
+      isLive: true,
+      metrics: {
+        criminalActivities: data.riskScore || 0,
+        familiarBehavior: Math.max(0, 100 - (data.riskScore || 0)),
+        suspiciousPatterns: Math.min(99, (data.riskScore || 0) + 5),
+        historicalData: 45,
+        pageRank: String(data.graph_stats?.pagerank_score || '0.000000'),
+        betweenness: `${data.graph_stats?.mule_accounts || 0} Mule Connections`,
+        communityId: `LIVE-${accountId.slice(-6).toUpperCase()}`,
+        hopDistance: `${data.graph_stats?.total_edges || 0} Edge Hops`,
+      },
+      stages: [
+        { id: 'stage1', title: '1. AKUN SUMBER', subtitle: 'Terlapor', color: '#38bdf8' },
+        { id: 'stage2', title: '2. PERANTARA', subtitle: 'Mule / Transit', color: '#f59e0b' },
+        { id: 'stage3', title: '3. TUJUAN', subtitle: 'Bursa Kripto', color: '#ef4444' },
+      ],
+      // Nodes & edges come directly from backend (already in compatible format)
+      nodes: (data.nodes || []).map(n => ({
+        ...n,
+        // Ensure required fields exist
+        riskLevel: n.riskLevel || (n.riskScore >= 75 ? 'high' : n.riskScore >= 50 ? 'medium' : 'low'),
+        role: n.role || 'Rekening Terkait',
+        ip: n.ip || '—',
+        deviceId: n.deviceId || '—',
+        nik: n.nik || '—',
+        description: n.description || `Akun ${n.account} (${n.bank})`,
+        _live: true,
+      })),
+      edges: (data.edges || []).map(e => ({
+        ...e,
+        _live: true,
+      })),
+      temporal_timeline: data.temporal_timeline || [],
+      top_reasons: data.top_reasons || [],
+    };
+
+    return {
+      isLive: true,
+      scenario,
+      graphStats: data.graph_stats || {},
+      totalAnalyzed: data.total_transactions_analyzed || 0,
+    };
+
+  } catch (err) {
+    console.warn('[GNN Live Subgraph] Error fetching live data:', err.message);
+    return { isLive: false, scenario: null, graphStats: {}, error: err.message };
+  }
+}

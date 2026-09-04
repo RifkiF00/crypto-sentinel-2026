@@ -39,6 +39,7 @@ import {
   User
 } from 'lucide-react';
 import { formatCurrency } from '../data/mockData';
+import { fetchLiveGNNSubgraph } from '../services/api';
 
 // ============================================================================
 // 1. DATA SKENARIO FRAUD & TOPOLOGI PERBANKAN (GNN AML GRAPH)
@@ -711,16 +712,30 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
       muleCount = 3;
     }
 
-    const poolMules = [
-      { name: 'Budi Santoso', bank: 'BCA', acc: '8012000005', ip: '192.168.1.10 (Proxy)' },
-      { name: 'Ahmad Faisal', bank: 'Bank Mandiri', acc: '1370000000001', ip: '192.168.1.10 (Proxy)' },
-      { name: 'Desta Erlangga', bank: 'BNI', acc: '0912000002', ip: '192.168.1.11 (Shared)' },
-      { name: 'Siti Rahma', bank: 'BRI', acc: '888801000000003', ip: '192.168.1.11 (Shared)' },
-      { name: 'Hendri Gunawan', bank: 'CIMB Niaga', acc: '705400000004', ip: '192.168.1.12 (Shared)' }
-    ];
+    // ── Deterministic mule pool dari hash senderAccount ──
+    // Tidak lagi hardcoded — setiap akun menghasilkan node mule unik
+    const FIRST_NAMES = ['Wahyu','Dedi','Eka','Agus','Rudi','Slamet','Tono','Bambang','Iwan','Yanto','Heri','Ardi','Dani','Feri','Galih'];
+    const LAST_NAMES  = ['Pratama','Kusnandar','Supriatna','Gunawan','Santoso','Wijaya','Purnomo','Hidayat','Setiawan','Nugroho','Kurniawan','Wibowo','Saputra','Hakim','Fauzi'];
+    const BANKS_POOL  = ['Bank BCA','Bank Mandiri','Bank BNI','Bank BRI','CIMB Niaga','Bank Permata','Bank Danamon','Bank BTPN'];
 
-    const selectedMules = poolMules.slice(0, muleCount);
+    // Seed deterministik dari senderAccount — sama akun = sama node, berbeda akun = berbeda node
+    const seed = senderAccount.split('').reduce((acc, ch, i) => acc + ch.charCodeAt(0) * (i + 7), 0);
+    const hashAt = (offset) => (seed * 1013904223 + offset * 1664525) >>> 0;
+
+    const buildMulePool = (count) =>
+      Array.from({ length: count }, (_, i) => {
+        const h = hashAt(i + 1);
+        return {
+          name: `${FIRST_NAMES[h % FIRST_NAMES.length]} ${LAST_NAMES[(h >> 4) % LAST_NAMES.length]}`,
+          bank: BANKS_POOL[(h >> 8) % BANKS_POOL.length],
+          acc:  String(6000000000 + (h % 900000000)),        // akun 10-digit deterministik
+          ip:   `${10 + (h % 220)}.${(h >> 10) % 256}.${(h >> 18) % 256}.${(h >> 24) % 254 + 1} (Proxy)`,
+        };
+      });
+
+    const selectedMules = buildMulePool(muleCount);
     const muleAmount = Math.floor(amount / muleCount);
+
 
     // Dynamic Nodes Generation
     const dynamicNodes = [];
@@ -771,29 +786,34 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
     });
 
     // Stage 3: Transit Nodes
+    const TRANSIT_LABELS = ['VA Transit Escrow','Payment Gateway Hub','P2P Merchant Pool','Virtual Account Gate','Switching Aggregator'];
     const transitCount = Math.min(2, muleCount);
     for (let idx = 0; idx < transitCount; idx++) {
       const transitAmount = Math.floor(amount / transitCount);
+      const th = hashAt(50 + idx);
+      const tLabel = TRANSIT_LABELS[(th >> 3) % TRANSIT_LABELS.length];
+      const tBank  = BANKS_POOL[(th >> 12) % BANKS_POOL.length] + ' Virtual';
       dynamicNodes.push({
         id: `M${idx + 1}`,
         stage: 3,
         code: `M${idx + 1}`,
         type: 'transit',
-        label: idx === 0 ? 'Payment Gateway Transit' : 'P2P Merchant Escrow',
-        account: `VA-908821900${idx + 1}`,
-        bank: idx === 0 ? 'BCA Virtual Account' : 'Mandiri Merchant',
+        label: tLabel,
+        account: `VA-${String(9000000000 + (th % 99999999))}`,
+        bank: tBank,
         balance: transitAmount,
         riskScore: Math.max(80, riskScore - 2),
         riskLevel: 'high',
         role: 'Merchant Transit Layer 2',
-        ip: `103.152.88.${idx + 1} (Gateway)`,
+        ip: `${103 + (th % 20)}.${(th >> 6) % 256}.${(th >> 14) % 256}.${(th >> 22) % 254 + 1} (Gateway)`,
         deviceId: `SERVER-GATEWAY-0${idx + 1}`,
-        nik: `COMPANY-REG-99${idx + 1}`,
+        nik: `COMPANY-REG-${String(th).slice(-5)}`,
         x: 650,
         y: 200 + idx * 160,
         description: `Mengumpulkan dana pecahan Rp ${transitAmount.toLocaleString('id-ID')}, memfasilitasi transfer ke bursa.`
       });
     }
+
 
     // Stage 4: Destination Node
     dynamicNodes.push({
@@ -889,6 +909,70 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
     };
   }, [baseScenario, selectedEntity]);
 
+  // ── LIVE GNN DATA STATE ──
+  // liveScenario: set when backend returns real tx-graph for selectedEntity
+  // Falls back to mock scenario (dynamically built from selectedEntity fields)
+  const [liveScenario, setLiveScenario] = useState(null);
+  const [isLoadingLive, setIsLoadingLive] = useState(false);
+  const [isLiveData, setIsLiveData] = useState(false);
+  const [liveGraphStats, setLiveGraphStats] = useState(null);
+
+  // Fetch live GNN subgraph whenever selectedEntity changes
+  useEffect(() => {
+    if (!selectedEntity) {
+      setLiveScenario(null);
+      setIsLiveData(false);
+      setLiveGraphStats(null);
+      return;
+    }
+    const accountId =
+      selectedEntity.senderAccount ||
+      selectedEntity.sender_account ||
+      selectedEntity.account ||
+      selectedEntity.account_id ||
+      '';
+    if (!accountId) return;
+
+    let cancelled = false;
+    setIsLoadingLive(true);
+    fetchLiveGNNSubgraph(accountId)
+      .then(result => {
+        if (cancelled) return;
+        if (result.isLive && result.scenario) {
+          setLiveScenario(result.scenario);
+          setIsLiveData(true);
+          setLiveGraphStats(result.graphStats || null);
+          if (addToast) addToast(
+            `Graf Live dimuat: ${result.totalAnalyzed} transaksi real dari akun ${accountId}`,
+            'success'
+          );
+        } else {
+          // No live data — keep mock scenario, show info
+          setLiveScenario(null);
+          setIsLiveData(false);
+          setLiveGraphStats(null);
+          if (addToast) addToast(
+            result.message || 'Belum ada transaksi live. Menampilkan skenario demo.',
+            'info'
+          );
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLiveScenario(null);
+          setIsLiveData(false);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingLive(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [selectedEntity]);
+
+  // activeScenario: live data takes priority over the dynamically-built mock scenario
+  const activeScenario = liveScenario || scenario;
+
   // Map Navigation State (Pan & Zoom)
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -931,7 +1015,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
     }
 
     const initialPos = {};
-    scenario.nodes.forEach(node => {
+    activeScenario.nodes.forEach(node => {
       initialPos[node.id] = { x: node.x, y: node.y };
     });
     setNodePositions(initialPos);
@@ -939,7 +1023,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
     setSelectedEdge(null);
     setPan({ x: 0, y: 0 });
     setZoom(0.95);
-  }, [selectedScenarioKey, hasActiveInvestigation]);
+  }, [selectedScenarioKey, hasActiveInvestigation, activeScenario]);
 
   // Select the node passed from Live Detection / Cases after the GNN view mounts.
   // The source object may use either a graph node id or a banking account id.
@@ -948,7 +1032,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
     if (!selectedScenarioKey) {
       setSelectedScenarioKey('smurfing_crypto');
     }
-    if (!scenario?.nodes?.length) return;
+    if (!activeScenario?.nodes?.length) return;
 
     const candidateIds = [
       selectedEntity.id,
@@ -962,9 +1046,9 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
       selectedEntity.receiver_account
     ].filter(Boolean).map(String);
 
-    const matchedNode = scenario.nodes.find(node =>
+    const matchedNode = activeScenario.nodes.find(node =>
       candidateIds.includes(String(node.id)) || candidateIds.includes(String(node.account))
-    ) || scenario.nodes[0];
+    ) || activeScenario.nodes[0];
 
     if (matchedNode) {
       setSelectedNode(matchedNode);
@@ -972,12 +1056,12 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
       const pos = nodePositions[matchedNode.id] || matchedNode;
       setPan({ x: 320 - pos.x * zoom, y: 260 - pos.y * zoom });
     }
-  }, [selectedEntity, scenario, nodePositions, zoom, selectedScenarioKey]);
+  }, [selectedEntity, activeScenario, nodePositions, zoom, selectedScenarioKey]);
 
   // Reset positions to default layout
   const handleResetLayout = () => {
     const initialPos = {};
-    scenario.nodes.forEach(node => {
+    activeScenario.nodes.forEach(node => {
       initialPos[node.id] = { x: node.x, y: node.y };
     });
     setNodePositions(initialPos);
@@ -1120,7 +1204,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
       y: rawY - nodePos.y
     });
 
-    const nodeObj = scenario.nodes.find(n => n.id === nodeId);
+    const nodeObj = activeScenario.nodes.find(n => n.id === nodeId);
     if (nodeObj) {
       setSelectedNode(nodeObj);
       setSelectedEdge(null);
@@ -1133,8 +1217,8 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
     const selectedId = selectedNode?.id;
     if (!selectedId || hopDepth >= 3) return null;
 
-    const adjacency = new Map(scenario.nodes.map(node => [node.id, new Set()]));
-    scenario.edges.forEach(edge => {
+    const adjacency = new Map(activeScenario.nodes.map(node => [node.id, new Set()]));
+    activeScenario.edges.forEach(edge => {
       if (!adjacency.has(edge.from)) adjacency.set(edge.from, new Set());
       if (!adjacency.has(edge.to)) adjacency.set(edge.to, new Set());
       adjacency.get(edge.from).add(edge.to);
@@ -1158,7 +1242,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
   }, [scenario, selectedNode, hopDepth]);
 
   const filteredNodes = useMemo(() => {
-    let nodes = scenario.nodes;
+    let nodes = activeScenario.nodes;
     if (activeFilter === 'crypto') nodes = nodes.filter(n => n.type === 'crypto' || n.type === 'transit' || n.type === 'source');
     if (activeFilter === 'mule') nodes = nodes.filter(n => n.type === 'mule' || n.type === 'source');
     if (activeFilter === 'device') nodes = nodes.filter(n => n.type === 'device' || n.type === 'mule' || n.type === 'source');
@@ -1168,7 +1252,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
 
   const filteredEdges = useMemo(() => {
     const visibleNodeIds = new Set(filteredNodes.map(n => n.id));
-    return scenario.edges.filter(edge => {
+    return activeScenario.edges.filter(edge => {
       if (!visibleNodeIds.has(edge.from) || !visibleNodeIds.has(edge.to)) return false;
       if (activeFilter === 'crypto') return edge.type === 'crypto' || edge.type === 'transfer';
       if (activeFilter === 'device') return edge.type === 'device';
@@ -1230,9 +1314,40 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
                   GNN Network Workbench
                 </h2>
+                {/* ── LIVE / DEMO badge ── */}
+                {isLoadingLive ? (
+                  <span style={{
+                    fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px',
+                    borderRadius: 20, background: 'rgba(99,102,241,0.12)',
+                    color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)',
+                    display: 'flex', alignItems: 'center', gap: 4, animation: 'pulse 1s infinite'
+                  }}>
+                    <Zap size={10} /> Memuat Graf Live...
+                  </span>
+                ) : isLiveData ? (
+                  <span style={{
+                    fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px',
+                    borderRadius: 20, background: 'rgba(16,185,129,0.12)',
+                    color: '#10b981', border: '1px solid rgba(16,185,129,0.35)',
+                    display: 'flex', alignItems: 'center', gap: 4
+                  }}>
+                    <Activity size={10} /> LIVE DATA
+                    {liveGraphStats && ` · ${liveGraphStats.total_nodes || 0} node`}
+                  </span>
+                ) : hasActiveInvestigation ? (
+                  <span style={{
+                    fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px',
+                    borderRadius: 20, background: 'rgba(245,158,11,0.10)',
+                    color: '#d97706', border: '1px solid rgba(245,158,11,0.3)',
+                    display: 'flex', alignItems: 'center', gap: 4
+                  }}>
+                    <Brain size={10} /> DEMO SCENARIO
+                  </span>
+                ) : null}
               </div>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
                 Investigasi relasional multi-hop untuk analisis AML dan forensik transaksi lintas bank.
+
               </p>
             </div>
           </div>
@@ -1301,7 +1416,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
               onClick={() => setActiveFilter('all')}
               style={{ fontSize: '0.74rem', height: 28, padding: '0 10px', borderRadius: 6 }}
             >
-              Semua Stage ({scenario.nodes.length} Node)
+              Semua Stage ({activeScenario.nodes.length} Node)
             </button>
             <button
               className={`btn btn-sm ${activeFilter === 'crypto' ? 'btn-danger' : 'btn-ghost'}`}
@@ -1461,7 +1576,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
         gap: 8,
         padding: '0 2px'
       }}>
-        {scenario.stages.map((stg, idx) => (
+        {activeScenario.stages.map((stg, idx) => (
           <div
             key={stg.id}
             style={{
@@ -1580,7 +1695,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
                   padding: '1px 6px',
                   borderRadius: 4
                 }}>
-                  {scenario.metrics.criminalActivities}%
+                  {activeScenario.metrics.criminalActivities}%
                 </span>
               </div>
 
@@ -1589,30 +1704,30 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: isLight ? '#475569' : '#cbd5e1' }}>
                     <span>Familiar Behavior</span>
-                    <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.familiarBehavior}%</span>
+                    <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{activeScenario.metrics.familiarBehavior}%</span>
                   </div>
                   <div style={{ width: '100%', height: 4, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
-                    <div style={{ width: `${scenario.metrics.familiarBehavior}%`, height: '100%', background: '#0284c7', borderRadius: 2 }} />
+                    <div style={{ width: `${activeScenario.metrics.familiarBehavior}%`, height: '100%', background: '#0284c7', borderRadius: 2 }} />
                   </div>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: isLight ? '#475569' : '#cbd5e1' }}>
                     <span>Suspicious patterns</span>
-                    <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.suspiciousPatterns}%</span>
+                    <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{activeScenario.metrics.suspiciousPatterns}%</span>
                   </div>
                   <div style={{ width: '100%', height: 4, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
-                    <div style={{ width: `${scenario.metrics.suspiciousPatterns}%`, height: '100%', background: '#d97706', borderRadius: 2 }} />
+                    <div style={{ width: `${activeScenario.metrics.suspiciousPatterns}%`, height: '100%', background: '#d97706', borderRadius: 2 }} />
                   </div>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', marginBottom: 3, color: isLight ? '#475569' : '#cbd5e1' }}>
                     <span>Historical data</span>
-                    <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{scenario.metrics.historicalData}%</span>
+                    <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{activeScenario.metrics.historicalData}%</span>
                   </div>
                   <div style={{ width: '100%', height: 4, background: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
-                    <div style={{ width: `${scenario.metrics.historicalData}%`, height: '100%', background: '#059669', borderRadius: 2 }} />
+                    <div style={{ width: `${activeScenario.metrics.historicalData}%`, height: '100%', background: '#059669', borderRadius: 2 }} />
                   </div>
                 </div>
               </div>
@@ -1635,8 +1750,8 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
                 background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(8, 14, 30, 0.94)',
                 backdropFilter: 'blur(16px)',
                 border: isLight
-                  ? (scenario.riskLevel === 'HIGH' ? '1.5px solid #ef4444' : '1.5px solid #10b981')
-                  : `1.5px solid ${scenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.45)' : 'rgba(16, 185, 129, 0.45)'}`,
+                  ? (activeScenario.riskLevel === 'HIGH' ? '1.5px solid #ef4444' : '1.5px solid #10b981')
+                  : `1.5px solid ${activeScenario.riskLevel === 'HIGH' ? 'rgba(239, 68, 68, 0.45)' : 'rgba(16, 185, 129, 0.45)'}`,
                 borderRadius: 14,
                 padding: '12px 14px',
                 boxShadow: isLight ? '0 10px 25px rgba(0,0,0,0.1)' : '0 16px 32px rgba(0,0,0,0.6)',
@@ -1653,11 +1768,11 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
                   fontWeight: 800,
                   padding: '1px 5px',
                   borderRadius: 4,
-                  background: scenario.riskLevel === 'HIGH' ? '#fef2f2' : '#f0fdf4',
-                  color: scenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
-                  border: `1px solid ${scenario.riskLevel === 'HIGH' ? '#fca5a5' : '#86efac'}`
+                  background: activeScenario.riskLevel === 'HIGH' ? '#fef2f2' : '#f0fdf4',
+                  color: activeScenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
+                  border: `1px solid ${activeScenario.riskLevel === 'HIGH' ? '#fca5a5' : '#86efac'}`
                 }}>
-                  {scenario.riskLevel === 'HIGH' ? 'RISIKO TINGGI' : 'RISIKO RENDAH'}
+                  {activeScenario.riskLevel === 'HIGH' ? 'RISIKO TINGGI' : 'RISIKO RENDAH'}
                 </span>
               </div>
 
@@ -1666,10 +1781,10 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
                   fontSize: '1.8rem',
                   fontWeight: 900,
                   fontFamily: 'var(--font-mono)',
-                  color: scenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
+                  color: activeScenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
                   lineHeight: 1
                 }}>
-                  {scenario.riskScore}
+                  {activeScenario.riskScore}
                 </span>
                 <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b' }}>/ 100</span>
               </div>
@@ -1678,12 +1793,12 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
                 fontSize: '0.65rem',
                 padding: '5px 8px',
                 borderRadius: 6,
-                background: scenario.riskLevel === 'HIGH' ? (isLight ? '#fef2f2' : 'rgba(239, 68, 68, 0.15)') : (isLight ? '#f0fdf4' : 'rgba(16, 185, 129, 0.15)'),
-                color: scenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
+                background: activeScenario.riskLevel === 'HIGH' ? (isLight ? '#fef2f2' : 'rgba(239, 68, 68, 0.15)') : (isLight ? '#f0fdf4' : 'rgba(16, 185, 129, 0.15)'),
+                color: activeScenario.riskLevel === 'HIGH' ? '#dc2626' : '#16a34a',
                 fontWeight: 800,
                 marginBottom: 6
               }}>
-                {scenario.classification}
+                {activeScenario.classification}
               </div>
 
               <ul style={{ margin: 0, paddingLeft: 14, fontSize: '0.65rem', color: isLight ? '#334155' : '#cbd5e1', lineHeight: 1.5 }}>
@@ -2350,7 +2465,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
       {/* ----------------------------------------------------------------------
           PANEL: 4 INDIKATOR UTAMA + 15 SUB-INDIKATOR REAL (RF + GNN + Rule Engine)
       ---------------------------------------------------------------------- */}
-      {hasActiveInvestigation && scenario.metrics.subIndicators && (
+      {hasActiveInvestigation && activeScenario.metrics.subIndicators && (
         <div style={{
           padding: 20,
           background: isLight ? '#ffffff' : '#0f172a',
@@ -2392,10 +2507,10 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
               flexWrap: 'wrap'
             }}>
               {[
-                { label: 'GNN Score', value: scenario.metrics.gnnScore, color: '#8b5cf6', sub: 'GraphSAGE' },
-                { label: 'RF Score', value: scenario.metrics.rfScore, color: '#0284c7', sub: 'Random Forest' },
-                { label: 'Rule Score', value: scenario.metrics.ruleScore, color: '#059669', sub: '13 Aturan' },
-                { label: 'HYBRID FINAL', value: scenario.metrics.hybridScore, color: '#dc2626', sub: '0.6×GNN + 0.4×Rule' },
+                { label: 'GNN Score', value: activeScenario.metrics.gnnScore, color: '#8b5cf6', sub: 'GraphSAGE' },
+                { label: 'RF Score', value: activeScenario.metrics.rfScore, color: '#0284c7', sub: 'Random Forest' },
+                { label: 'Rule Score', value: activeScenario.metrics.ruleScore, color: '#059669', sub: '13 Aturan' },
+                { label: 'HYBRID FINAL', value: activeScenario.metrics.hybridScore, color: '#dc2626', sub: '0.6×GNN + 0.4×Rule' },
               ].map((item, i) => (
                 <div key={i} style={{ textAlign: 'center', paddingRight: i < 3 ? 10 : 0, borderRight: i < 3 ? (isLight ? '1px solid #e2e8f0' : '1px solid #1e293b') : 'none' }}>
                   <div style={{ fontSize: i === 3 ? '1.35rem' : '1.1rem', fontWeight: 900, color: item.color, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
@@ -2415,7 +2530,7 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
             gap: 14,
             alignItems: 'stretch'
           }}>
-            {Object.entries(scenario.metrics.subIndicators).map(([key, indicator], groupIdx) => {
+            {Object.entries(activeScenario.metrics.subIndicators).map(([key, indicator], groupIdx) => {
               const groupThemes = [
                 {
                   bgLight: '#f8fafc',
@@ -2605,10 +2720,10 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
             {[
               { label: 'Model Klasifikasi', value: 'Random Forest Classifier' },
               { label: 'Jumlah Fitur RF', value: '29 fitur tabular' },
-              { label: 'Dataset Training', value: scenario.metrics.datasetSize },
-              { label: 'GNN Embedding Dim', value: `${scenario.metrics.embeddingDim} dimensi (GraphSAGE)` },
+              { label: 'Dataset Training', value: activeScenario.metrics.datasetSize },
+              { label: 'GNN Embedding Dim', value: `${activeScenario.metrics.embeddingDim} dimensi (GraphSAGE)` },
               { label: 'Formula Hybrid', value: '0.6×GNN + 0.4×Rule Engine' },
-              { label: 'Validasi AUC-ROC', value: `${scenario.metrics.modelAUC} (Near-Perfect)` },
+              { label: 'Validasi AUC-ROC', value: `${activeScenario.metrics.modelAUC} (Near-Perfect)` },
             ].map((item, i) => (
               <div key={i} style={{
                 background: isLight ? '#f8fafc' : '#020617',

@@ -1006,16 +1006,25 @@ a:hover {
 
 .content-grid-wide {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: var(--space-lg);
   margin-bottom: var(--space-xl);
+  width: 100%;
+}
+
+.content-grid-wide>*,
+.content-grid>*,
+.content-grid-3>* {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .content-grid-3 {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-lg);
   margin-bottom: var(--space-xl);
+  width: 100%;
 }
 
 /* ==========================================
@@ -1033,24 +1042,22 @@ a:hover {
 
 .data-table th {
   text-align: left;
-  padding: 12px var(--space-md);
+  padding: 10px 14px;
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--text-muted);
   border-bottom: 1px solid var(--border-color);
-  white-space: nowrap;
   background: var(--bg-elevated);
   transition: background var(--transition-theme), border-color var(--transition-theme);
 }
 
 .data-table td {
-  padding: 14px var(--space-md);
-  font-size: 0.85rem;
+  padding: 10px 14px;
+  font-size: 0.82rem;
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border-color);
-  white-space: nowrap;
   transition: color var(--transition-theme), border-color var(--transition-theme);
 }
 

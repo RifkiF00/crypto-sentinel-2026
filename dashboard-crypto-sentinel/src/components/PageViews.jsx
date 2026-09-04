@@ -285,18 +285,27 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
           </div>
 
           {/* Transactions List */}
-          <div className="card" style={{ marginBottom: 24, overflow: 'hidden' }}>
-            <div className="card-header" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Activity size={18} color="#0284c7" /> Aliran Transaksi Terakhir
-              </h3>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '100%' }}>
+          <div className="card" style={{ marginBottom: 24, overflow: 'hidden', width: '100%' }}>
+            {/* Header: Row 1 (Title + Live Badges) & Row 2 (Filters) */}
+            <div className="card-header" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '12px 16px', background: 'var(--bg-glass)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: 8 }}>
+                <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.95rem', fontWeight: 800 }}>
+                  <Activity size={18} color="#0284c7" /> Aliran Transaksi Terakhir
+                </h3>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span className="badge badge-approved" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>{filteredTransactions.filter(t => t.status === 'approved').length} Disetujui</span>
+                  <span className="badge badge-flagged" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>{filteredTransactions.filter(t => t.status === 'flagged').length} Ditandai</span>
+                  <span className="badge badge-blocked" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>{filteredTransactions.filter(t => t.status === 'blocked').length} Dicegah</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: 8 }}>
                 {/* Filter Tenant (Bank Kuningan, Bank bjb, Apex Gabungan) */}
-                <div style={{ display: 'flex', gap: 4, background: 'rgba(37, 99, 235, 0.08)', padding: 3, borderRadius: 'var(--radius-md)', border: '1px solid rgba(37, 99, 235, 0.25)', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: 3, background: 'rgba(37, 99, 235, 0.08)', padding: 3, borderRadius: 'var(--radius-md)', border: '1px solid rgba(37, 99, 235, 0.25)', flexShrink: 0 }}>
                   <button
                     className={`btn btn-sm ${tenantFilter === 'all' ? 'btn-primary' : 'btn-ghost'}`}
                     onClick={() => setTenantFilter('all')}
-                    style={{ fontSize: '0.72rem', padding: '3px 9px', height: 26, borderRadius: 'var(--radius-sm)' }}
+                    style={{ fontSize: '0.7rem', padding: '2px 8px', height: 24, borderRadius: 'var(--radius-sm)' }}
                     title="Pantau antrean gabungan seluruh ekosistem Apex Bank"
                   >
                     🏛️ Apex View
@@ -304,7 +313,7 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
                   <button
                     className={`btn btn-sm ${tenantFilter === 'kuningan' ? 'btn-primary' : 'btn-ghost'}`}
                     onClick={() => setTenantFilter('kuningan')}
-                    style={{ fontSize: '0.72rem', padding: '3px 9px', height: 26, borderRadius: 'var(--radius-sm)' }}
+                    style={{ fontSize: '0.7rem', padding: '2px 8px', height: 24, borderRadius: 'var(--radius-sm)' }}
                     title="Fokus pantau Bank Kuningan saja"
                   >
                     🏦 Bank Kuningan
@@ -312,7 +321,7 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
                   <button
                     className={`btn btn-sm ${tenantFilter === 'bjb' ? 'btn-primary' : 'btn-ghost'}`}
                     onClick={() => setTenantFilter('bjb')}
-                    style={{ fontSize: '0.72rem', padding: '3px 9px', height: 26, borderRadius: 'var(--radius-sm)' }}
+                    style={{ fontSize: '0.7rem', padding: '2px 8px', height: 24, borderRadius: 'var(--radius-sm)' }}
                     title="Fokus pantau Bank BJB saja"
                   >
                     🏦 Bank BJB
@@ -320,86 +329,87 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
                 </div>
 
                 {/* Time Range Filter */}
-                <div style={{ display: 'flex', gap: 4, background: 'var(--bg-card-subtle)', padding: 3, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: 3, background: 'var(--bg-card-subtle)', padding: 3, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', flexShrink: 0 }}>
                   <button
                     className={`btn btn-sm ${timeFilter === '1day' ? 'btn-primary' : 'btn-ghost'}`}
                     onClick={() => setTimeFilter('1day')}
-                    style={{ fontSize: '0.72rem', padding: '3px 10px', height: 26, borderRadius: 'var(--radius-sm)' }}
+                    style={{ fontSize: '0.7rem', padding: '2px 8px', height: 24, borderRadius: 'var(--radius-sm)' }}
                   >
                     🕒 1 Hari
                   </button>
                   <button
                     className={`btn btn-sm ${timeFilter === '7days' ? 'btn-primary' : 'btn-ghost'}`}
                     onClick={() => setTimeFilter('7days')}
-                    style={{ fontSize: '0.72rem', padding: '3px 10px', height: 26, borderRadius: 'var(--radius-sm)' }}
+                    style={{ fontSize: '0.7rem', padding: '2px 8px', height: 24, borderRadius: 'var(--radius-sm)' }}
                   >
                     📅 7 Hari
                   </button>
                   <button
                     className={`btn btn-sm ${timeFilter === 'all' ? 'btn-primary' : 'btn-ghost'}`}
                     onClick={() => setTimeFilter('all')}
-                    style={{ fontSize: '0.72rem', padding: '3px 10px', height: 26, borderRadius: 'var(--radius-sm)' }}
+                    style={{ fontSize: '0.7rem', padding: '2px 8px', height: 24, borderRadius: 'var(--radius-sm)' }}
                   >
                     🌐 Semua
                   </button>
                 </div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0 }}>
-                  <span className="badge badge-approved" style={{ fontSize: '0.7rem', padding: '3px 8px' }}>{filteredTransactions.filter(t => t.status === 'approved').length} Disetujui</span>
-                  <span className="badge badge-flagged" style={{ fontSize: '0.7rem', padding: '3px 8px' }}>{filteredTransactions.filter(t => t.status === 'flagged').length} Ditandai</span>
-                  <span className="badge badge-blocked" style={{ fontSize: '0.7rem', padding: '3px 8px' }}>{filteredTransactions.filter(t => t.status === 'blocked').length} Dicegah</span>
-                </div>
               </div>
             </div>
+
             <div className="card-body" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="table-container" style={{ maxHeight: 380, overflowX: 'auto', overflowY: 'auto', width: '100%', WebkitOverflowScrolling: 'touch' }}>
-                <table className="data-table" style={{ width: '100%', minWidth: 940 }}>
+              <div className="table-container" style={{ maxHeight: 420, overflowX: 'auto', overflowY: 'auto', width: '100%', WebkitOverflowScrolling: 'touch' }}>
+                <table className="data-table" style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
-                      <th>TXID / Waktu</th>
-                      <th>Nasabah</th>
-                      <th>Asal Rekening</th>
-                      <th>Rekening / Exchange Tujuan</th>
-                      <th>Nominal</th>
-                      <th>Skor Risiko</th>
-                      <th>Status</th>
-                      <th>Aksi Forensik</th>
+                      <th style={{ width: '18%' }}>TXID / Waktu</th>
+                      <th style={{ width: '28%' }}>Nasabah Pengirim</th>
+                      <th style={{ width: '20%' }}>Tujuan</th>
+                      <th style={{ width: '14%' }}>Nominal</th>
+                      <th style={{ width: '10%' }}>Risiko</th>
+                      <th style={{ width: '10%' }}>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredTransactions.map((txn) => (
                       <tr key={txn.id}>
                         <td>
-                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{txn.id}</div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{txn.timestamp.split(' ')[1]}</div>
+                          <div style={{ fontWeight: 700, fontSize: '0.78rem', color: 'var(--text-primary)' }}>{txn.id}</div>
+                          <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{txn.timestamp.split(' ')[1]}</div>
                         </td>
-                        <td style={{ fontWeight: 500 }}>{maskName(txn.senderName, isMasked)}</td>
-                        <td>{txn.senderBank} ({maskAccount(txn.senderAccount, isMasked)})</td>
                         <td>
-                          <div style={{ fontWeight: 600 }}>{maskName(txn.destination, isMasked)}</div>
-                          {txn.walletAddress && <div className="wallet-address">{maskAccount(txn.walletAddress, isMasked)}</div>}
+                          <div style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-primary)' }}>{maskName(txn.senderName, isMasked)}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 1 }}>{txn.senderBank} · {maskAccount(txn.senderAccount, isMasked)}</div>
                         </td>
-                        <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{formatCurrency(txn.amount)}</td>
                         <td>
-                          <div className="risk-meter">
-                            <div className="risk-bar" style={{ width: 60 }}>
-                              <div
-                                className={`risk-bar-fill ${txn.riskScore >= 80 ? 'high' : txn.riskScore >= 40 ? 'medium' : 'low'}`}
-                                style={{ width: `${txn.riskScore}%` }}
-                              />
+                          <div style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-primary)' }}>{maskName(txn.destination, isMasked)}</div>
+                          {txn.walletAddress && <div className="wallet-address" style={{ fontSize: '0.68rem', marginTop: 1 }}>{maskAccount(txn.walletAddress, isMasked)}</div>}
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+                            {formatCurrency(txn.amount)}
+                          </div>
+                          <span className={`badge badge-${txn.status}`} style={{ fontSize: '0.62rem', padding: '1px 5px', marginTop: 2 }}>
+                            {txn.status === 'blocked' ? 'Dicegah' : txn.status === 'flagged' ? 'Ditandai' : 'Lolos'}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <div className="risk-meter">
+                              <div className="risk-bar" style={{ width: 36 }}>
+                                <div
+                                  className={`risk-bar-fill ${txn.riskScore >= 80 ? 'high' : txn.riskScore >= 40 ? 'medium' : 'low'}`}
+                                  style={{ width: `${txn.riskScore}%` }}
+                                />
+                              </div>
                             </div>
-                            <span className="risk-value" style={{
+                            <span style={{
+                              fontWeight: 800,
+                              fontSize: '0.75rem',
                               color: txn.riskScore >= 80 ? 'var(--status-danger)' : txn.riskScore >= 40 ? 'var(--status-warning)' : 'var(--status-success)'
                             }}>{txn.riskScore}</span>
                           </div>
                         </td>
                         <td>
-                          <span className={`badge badge-${txn.status}`}>
-                            <span className="badge-dot" />
-                            {txn.status === 'blocked' ? 'Dicegah' : txn.status === 'flagged' ? 'Ditandai' : 'Lolos'}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                             <button
                               type="button"
                               className="btn btn-sm"
@@ -407,21 +417,22 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
                                 if (onNavigateToGNN) onNavigateToGNN(txn);
                               }}
                               style={{
-                                fontSize: '0.7rem',
-                                padding: '3px 8px',
+                                fontSize: '0.68rem',
+                                padding: '3px 6px',
                                 background: 'rgba(2, 132, 199, 0.12)',
                                 color: '#38bdf8',
                                 border: '1px solid rgba(2, 132, 199, 0.3)',
-                                borderRadius: 6,
+                                borderRadius: 5,
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 4,
+                                gap: 3,
                                 fontWeight: 700,
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap'
                               }}
-                              title="Buka GNN Network Investigation atas transaksi ini"
+                              title="Buka GNN Network Investigation"
                             >
-                              <GitBranch size={12} /> GNN Network
+                              <GitBranch size={11} /> GNN
                             </button>
                             <button
                               type="button"
@@ -439,21 +450,22 @@ export function MonitoringView({ transactions, setTransactions, setAlerts, addTo
                                 }
                               }}
                               style={{
-                                fontSize: '0.7rem',
-                                padding: '3px 8px',
+                                fontSize: '0.68rem',
+                                padding: '3px 6px',
                                 background: 'rgba(255, 255, 255, 0.06)',
                                 color: 'var(--text-primary)',
                                 border: '1px solid var(--border-color)',
-                                borderRadius: 6,
+                                borderRadius: 5,
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 4,
+                                gap: 3,
                                 fontWeight: 600,
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap'
                               }}
                               title="Buka Profil Customer 360"
                             >
-                              <User size={12} /> 360
+                              <User size={11} /> 360
                             </button>
                           </div>
                         </td>

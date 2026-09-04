@@ -561,6 +561,307 @@ def get_gnn_neighborhood(account_id: str = "1234567890", hops: int = 3, scenario
     }
 
 
+@app.get("/api/v1/sentinel/gnn/live-subgraph/{account_id}")
+def get_live_gnn_subgraph(account_id: str):
+    """
+    Build a REAL GNN subgraph from live transaction_logs.
+    Traces: sender account -> related transactions -> destination nodes.
+    Returns nodes/edges compatible with GNNVisualization.jsx renderer.
+    """
+    # ── 1. Find all transactions involving this account (as sender OR receiver)
+    related_logs = [
+        log for log in transaction_logs
+        if log.get("senderAccount") == account_id
+        or (log.get("transaction") or {}).get("destinationAccount") == account_id
+    ]
+
+    # ── 2. If no logs for this account, search by partial name match (fallback)
+    if not related_logs:
+        related_logs = [
+            log for log in transaction_logs
+            if account_id.lower() in (log.get("senderName") or "").lower()
+        ]
+
+    # ── 3. If still nothing: return empty signal so frontend falls back to demo
+    if not related_logs:
+        return {
+            "account_id": account_id,
+            "is_live": False,
+            "total_transactions_analyzed": 0,
+            "message": "Belum ada transaksi live untuk akun ini. Gunakan Simulasi Sandbox 150 TX atau kirim transaksi dari Mobile Banking.",
+            "nodes": [],
+            "edges": [],
+        }
+
+    # ── 4. Build networkx graph from ALL transaction_logs (for PageRank computation)
+    G = nx.DiGraph()
+    for log in transaction_logs:
+        s = log.get("senderAccount", "?")
+        txn = log.get("transaction") or {}
+        d = txn.get("destinationAccount", "?")
+        amt = float(txn.get("amount", 0))
+        if s and d:
+            if G.has_edge(s, d):
+                G[s][d]["weight"] += amt
+                G[s][d]["count"] += 1
+            else:
+                G.add_edge(s, d, weight=amt, count=1)
+
+    pageranks = {}
+    try:
+        pageranks = nx.pagerank(G, alpha=0.85, weight="weight")
+    except Exception:
+        pageranks = {n: 0.0 for n in G.nodes()}
+
+    # ── 5. Extract unique accounts touched by related_logs
+    sender_accounts = {}   # account_id -> {name, bank, risk_score, ...}
+    dest_accounts   = {}
+
+    max_risk = 0
+    for log in related_logs:
+        s_acc  = log.get("senderAccount", "?")
+        s_name = log.get("senderName") or get_name_for_account(s_acc)
+        s_bank = log.get("senderBank") or get_bank_for_account(s_acc)
+        risk   = int(log.get("risk_score", 0))
+        decision = log.get("decision", "ALLOW")
+        txn    = log.get("transaction") or {}
+        d_acc  = txn.get("destinationAccount", "?")
+        d_name = log.get("destinationName") or log.get("receiver_name") or get_name_for_account(d_acc)
+        d_bank = log.get("destinationBank") or log.get("receiver_bank") or get_bank_for_account(d_acc)
+        amount = float(txn.get("amount", 0))
+
+        if risk > max_risk:
+            max_risk = risk
+
+        if s_acc not in sender_accounts:
+            sender_accounts[s_acc] = {
+                "name": s_name, "bank": s_bank,
+                "risk": risk, "decision": decision,
+                "total_amount": amount, "tx_count": 1,
+            }
+        else:
+            sender_accounts[s_acc]["total_amount"] += amount
+            sender_accounts[s_acc]["tx_count"] += 1
+            if risk > sender_accounts[s_acc]["risk"]:
+                sender_accounts[s_acc]["risk"] = risk
+
+        if d_acc not in dest_accounts:
+            dest_accounts[d_acc] = {
+                "name": d_name, "bank": d_bank,
+                "risk": risk, "amount": amount,
+                "is_crypto": str(d_acc).startswith("9012") or str(d_acc).startswith("0x"),
+            }
+        else:
+            dest_accounts[d_acc]["amount"] += amount
+
+    # ── 6. Assign GNN node types based on role
+    is_primary_sender = account_id in sender_accounts
+
+    # ── 7. Build nodes list
+    gnn_nodes = []
+    node_id_map = {}
+    node_counter = [0]
+
+    def make_node_id(prefix):
+        node_counter[0] += 1
+        return f"{prefix}{node_counter[0]}"
+
+    # Primary node (the investigated account)
+    primary_info = sender_accounts.get(account_id) or {
+        "name": get_name_for_account(account_id),
+        "bank": get_bank_for_account(account_id),
+        "risk": max_risk, "total_amount": 0, "tx_count": 0
+    }
+    profile = get_profile_for_account(account_id)
+    primary_risk = primary_info["risk"]
+    primary_node = {
+        "id": "A1",
+        "stage": 1,
+        "code": "A",
+        "type": "source",
+        "label": primary_info["name"][:22],
+        "account": account_id,
+        "bank": primary_info["bank"],
+        "balance": int(primary_info.get("total_amount", 0)),
+        "riskScore": primary_risk,
+        "riskLevel": "high" if primary_risk >= 75 else "medium" if primary_risk >= 50 else "low",
+        "role": "Akun Terlapor (Investigasi Aktif)",
+        "ip": profile.get("registered_ip", "182.16.2.90"),
+        "deviceId": profile.get("registered_device", "DEV-MOBILE"),
+        "nik": profile.get("national_id", "3208**********"),
+        "x": 120,
+        "y": 300,
+        "description": (
+            f"Rekening {primary_info['name']} ({primary_info['bank']} - {account_id}). "
+            f"Total {primary_info.get('tx_count',0)} transaksi dianalisis. "
+            f"Skor risiko tertinggi: {primary_risk}."
+        ),
+        "_live": True,
+    }
+    gnn_nodes.append(primary_node)
+    node_id_map[account_id] = "A1"
+
+    # Destination nodes (mule / transit / crypto)
+    stage2_x = 380
+    stage3_x = 660
+    stage4_x = 920
+    y_positions = list(range(80, 600, 100))
+
+    mule_like   = []   # dest accounts that are NOT crypto → likely transit/mule
+    crypto_like = []   # dest accounts that are crypto exchanges
+
+    for acc, info in dest_accounts.items():
+        if acc == account_id:
+            continue
+        if info["is_crypto"]:
+            crypto_like.append((acc, info))
+        else:
+            mule_like.append((acc, info))
+
+    # Stage 2: Mule / transit accounts
+    for idx, (acc, info) in enumerate(mule_like[:6]):
+        nid = f"B{idx+1}"
+        node_id_map[acc] = nid
+        p2 = get_profile_for_account(acc)
+        r2 = int(info["risk"])
+        gnn_nodes.append({
+            "id": nid, "stage": 2, "code": nid, "type": "mule",
+            "label": (info["name"] or get_name_for_account(acc))[:22],
+            "account": acc, "bank": info["bank"] or get_bank_for_account(acc),
+            "balance": int(info["amount"]),
+            "riskScore": r2,
+            "riskLevel": "high" if r2 >= 75 else "medium" if r2 >= 50 else "low",
+            "role": "Akun Perantara / Transit",
+            "ip": p2.get("registered_ip", "192.168.x.x"),
+            "deviceId": p2.get("registered_device", "DEV-MULE"),
+            "nik": p2.get("national_id", "3208**********"),
+            "x": stage2_x,
+            "y": y_positions[idx % len(y_positions)],
+            "description": f"Rekening transit {info['name']} ({acc}) menerima Rp {int(info['amount']):,} dari akun sumber.",
+            "_live": True,
+        })
+
+    # Stage 3: Crypto / exchange destinations
+    for idx, (acc, info) in enumerate(crypto_like[:4]):
+        nid = f"C{idx+1}"
+        node_id_map[acc] = nid
+        r3 = int(info["risk"])
+        exchange = get_exchange_for_account(acc)
+        gnn_nodes.append({
+            "id": nid, "stage": 4, "code": nid, "type": "crypto",
+            "label": (info["name"] or f"Bursa {exchange}")[:22],
+            "account": acc, "bank": info["bank"] or "Escrow Kripto",
+            "balance": int(info["amount"]),
+            "riskScore": min(99, r3 + 5),
+            "riskLevel": "high",
+            "role": "Tujuan Akhir Bursa Kripto",
+            "ip": "API Gateway / Settle",
+            "deviceId": f"VASP-{exchange.upper()}",
+            "nik": "VASP-OFFICIAL",
+            "x": stage4_x,
+            "y": y_positions[idx % len(y_positions)],
+            "description": f"Dana dilarikan ke {info['name'] or exchange} ({acc}). Nilai: Rp {int(info['amount']):,}.",
+            "_live": True,
+        })
+
+    # ── 8. Build edges from related_logs
+    gnn_edges = []
+    seen_edges = set()
+    for log in related_logs:
+        s_acc = log.get("senderAccount", "?")
+        txn   = log.get("transaction") or {}
+        d_acc = txn.get("destinationAccount", "?")
+        amount= float(txn.get("amount", 0))
+        ts    = log.get("timestamp", "")[:16].replace("T", " ") + " WIB"
+        decision = log.get("decision", "ALLOW")
+        risk  = int(log.get("risk_score", 0))
+
+        src_nid = node_id_map.get(s_acc)
+        dst_nid = node_id_map.get(d_acc)
+        if not src_nid or not dst_nid:
+            continue
+
+        edge_key = f"{src_nid}-{dst_nid}"
+        if edge_key in seen_edges:
+            continue
+        seen_edges.add(edge_key)
+
+        is_crypto_dest = str(d_acc).startswith("9012") or str(d_acc).startswith("0x")
+        flow_type = "crypto_outflow" if is_crypto_dest else ("smurfing" if amount < 10_000_000 else "transit")
+        risk_label = "critical" if decision == "BLOCK" else "high" if risk >= 70 else "medium"
+
+        gnn_edges.append({
+            "from": src_nid, "to": dst_nid,
+            "amount": int(amount), "time": ts,
+            "type": "crypto" if is_crypto_dest else "transfer",
+            "flow": flow_type, "risk": risk_label,
+            "_live": True,
+        })
+
+    # ── 9. Build summary
+    total_blocked = sum(1 for l in related_logs if l.get("decision") == "BLOCK")
+    total_amount  = sum(float((l.get("transaction") or {}).get("amount", 0)) for l in related_logs)
+    top_reasons   = []
+    for log in related_logs:
+        top_reasons.extend(log.get("reasons", []))
+    top_reasons = list(dict.fromkeys(top_reasons))[:4]
+
+    risk_label_str = "HIGH" if max_risk >= 85 else "MEDIUM" if max_risk >= 60 else "LOW"
+    classification = "SMURFING FAN-OUT" if len(mule_like) >= 3 else "LAYERING TRANSIT" if mule_like else "DIRECT CRYPTO OUTFLOW"
+
+    # ── 10. Temporal timeline
+    timeline = []
+    if mule_like:
+        timeline.append({
+            "step": 1,
+            "time_window": "Pemecahan Dana",
+            "title": f"Tahap 1: Fan-Out ke {len(mule_like)} Rekening Perantara",
+            "active_edges": len(mule_like)
+        })
+    if crypto_like:
+        timeline.append({
+            "step": 2,
+            "time_window": "Pelarian Kripto",
+            "title": f"Tahap 2: Pelarian ke {len(crypto_like)} Bursa Kripto",
+            "active_edges": len(crypto_like)
+        })
+    if not timeline:
+        timeline.append({
+            "step": 1,
+            "time_window": "Analisis Aktif",
+            "title": f"Transaksi dianalisis: {len(related_logs)} log",
+            "active_edges": len(gnn_edges)
+        })
+
+    return {
+        "account_id": account_id,
+        "is_live": True,
+        "total_transactions_analyzed": len(related_logs),
+        "riskScore": max_risk,
+        "riskLevel": risk_label_str,
+        "classification": classification,
+        "summary": (
+            f"Investigasi Live: Akun {primary_info['name']} ({primary_info['bank']} - {account_id}) "
+            f"terlibat dalam {len(related_logs)} transaksi teranalisis. "
+            f"Total nilai: Rp {int(total_amount):,}. "
+            f"Diblokir: {total_blocked} transaksi. "
+            f"Pola: {classification}."
+        ),
+        "top_reasons": top_reasons,
+        "nodes": gnn_nodes,
+        "edges": gnn_edges,
+        "temporal_timeline": timeline,
+        "xai_shap": {},
+        "graph_stats": {
+            "total_nodes": len(gnn_nodes),
+            "total_edges": len(gnn_edges),
+            "mule_accounts": len(mule_like),
+            "crypto_destinations": len(crypto_like),
+            "pagerank_score": round(pageranks.get(account_id, 0.0), 6),
+        }
+    }
+
+
 @app.get("/velocity-check")
 def velocity_check(limit: int = 1000, threshold: int = 5):
     sample = df.head(limit)
