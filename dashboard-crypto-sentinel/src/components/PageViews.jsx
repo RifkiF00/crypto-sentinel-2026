@@ -2209,7 +2209,6 @@ AUDITOR SYSTEM    : CRYPTO-SENTINEL FDS ENGINE v3.2
               onOpenCustomer360={onOpenCustomer360}
               selectedEntity={selectedEntity}
               streamingTransactions={transactions}
-              isStreaming={isSimulating}
             />
           </motion.div>
         )}
