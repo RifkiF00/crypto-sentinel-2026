@@ -1050,6 +1050,8 @@ export async function fetchLiveGNNSubgraph(accountId) {
     }
 
     // Normalize into GNNVisualization scenario shape
+    const xaiShap = data.xai_shap || {};
+    const gnnExplainer = data.gnn_explainer || {};
     const scenario = {
       id: `live_${accountId}`,
       name: `Investigasi Live: ${data.account_id}`,
@@ -1058,15 +1060,31 @@ export async function fetchLiveGNNSubgraph(accountId) {
       classification: data.classification || 'LIVE INVESTIGATION',
       summary: data.summary || '',
       isLive: true,
+      data_source: data.data_source || 'unknown',
       metrics: {
         criminalActivities: data.riskScore || 0,
         familiarBehavior: Math.max(0, 100 - (data.riskScore || 0)),
         suspiciousPatterns: Math.min(99, (data.riskScore || 0) + 5),
         historicalData: 45,
         pageRank: String(data.graph_stats?.pagerank_score || '0.000000'),
-        betweenness: `${data.graph_stats?.mule_accounts || 0} Mule Connections`,
+        betweenness: String(data.graph_stats?.betweenness_centrality || '0.000000'),
         communityId: `LIVE-${accountId.slice(-6).toUpperCase()}`,
         hopDistance: `${data.graph_stats?.total_edges || 0} Edge Hops`,
+        // XAI from real SHAP model
+        gnnScore: xaiShap.prediction_probability ? Math.round(xaiShap.prediction_probability * 100) : undefined,
+        rfScore: xaiShap.prediction_probability ? Math.round(xaiShap.prediction_probability * 100) : undefined,
+        ruleScore: data.riskScore || 0,
+        hybridScore: data.riskScore || 0,
+        subIndicators: xaiShap.top_contributing_features ? Object.fromEntries(
+          Object.entries(xaiShap.top_contributing_features).map(([k, v]) => [k, {
+            label: k,
+            score: Math.min(99, Math.round(Math.abs(v) * 100)),
+            value: String(v),
+            status: Math.abs(v) > 0.1 ? 'critical' : Math.abs(v) > 0.05 ? 'high' : 'medium',
+            source: 'SHAP TreeExplainer',
+            detail: `SHAP value: ${v} (${v > 0 ? 'increases' : 'decreases'} fraud probability)`
+          }])
+        ) : undefined,
       },
       stages: [
         { id: 'stage1', title: '1. AKUN SUMBER', subtitle: 'Terlapor', color: '#38bdf8' },
@@ -1091,6 +1109,9 @@ export async function fetchLiveGNNSubgraph(accountId) {
       })),
       temporal_timeline: data.temporal_timeline || [],
       top_reasons: data.top_reasons || [],
+      xai_shap: xaiShap,
+      gnn_explainer: gnnExplainer,
+      xai_feature_importance: data.xai_feature_importance || [],
     };
 
     return {
