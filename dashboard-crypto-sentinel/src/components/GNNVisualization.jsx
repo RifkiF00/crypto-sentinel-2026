@@ -686,6 +686,10 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
   const CANVAS_W = 700;
   const CANVAS_H = 450;
 
+  // Edge fade-out timer: normal edges disappear after 4 seconds, fraud edges persist
+  const EDGE_LIFETIME_MS = 4000;
+  const edgeTimersRef = useRef(new Map()); // edgeId -> timeoutId
+
   // Force-directed layout simulation
   const runForceLayout = useCallback((nodesMap, edges) => {
     const nodes = Array.from(nodesMap.values());
@@ -840,8 +844,25 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
       isFraud: tx.is_fraud || false,
       indicator: tx.indicator_id || tx.metric_code || null,
       timestamp: tx.timestamp,
+      createdAt: Date.now(), // Track creation time for fade-out
+      fanoutGroup: tx.fanout_group || null, // For 1→7 mule network patterns
+      fanoutIndex: tx.fanout_index,
+      fanoutTotal: tx.fanout_total,
     }));
+
+    // Add new edges
     setLiveEdges(prev => [...prev, ...newEdges]);
+
+    // Schedule fade-out for normal (non-fraud) edges
+    newEdges.forEach(edge => {
+      if (!edge.isFraud) {
+        const timerId = setTimeout(() => {
+          setLiveEdges(prev => prev.filter(e => e.id !== edge.id));
+          edgeTimersRef.current.delete(edge.id);
+        }, EDGE_LIFETIME_MS);
+        edgeTimersRef.current.set(edge.id, timerId);
+      }
+    });
 
     const newPatterns = newTxs
       .filter(tx => tx.is_fraud)
@@ -864,6 +885,10 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
   // Reset live state when streaming stops
   useEffect(() => {
     if (!isStreaming && (streamingTransactions?.length || 0) === 0) {
+      // Clear all edge timers
+      edgeTimersRef.current.forEach(timerId => clearTimeout(timerId));
+      edgeTimersRef.current.clear();
+
       setLiveNodes(new Map());
       setLiveEdges([]);
       setLastProcessedIndex(-1);
@@ -873,6 +898,14 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
       setHoveredNode(null);
     }
   }, [isStreaming, streamingTransactions?.length]);
+
+  // Cleanup edge timers on unmount
+  useEffect(() => {
+    return () => {
+      edgeTimersRef.current.forEach(timerId => clearTimeout(timerId));
+      edgeTimersRef.current.clear();
+    };
+  }, []);
 
   // Zoom handler for live GNN canvas
   const handleLiveGnnWheel = useCallback((e) => {
@@ -1642,32 +1675,67 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
                 const cpx = mx + (-dy / len) * offset;
                 const cpy = my + (dx / len) * offset;
 
-                // Edge thickness proportional to amount
-                const thickness = edge.isFraud
-                  ? 2.5
-                  : 0.8 + (edge.amount / maxAmount) * 2.5;
+                // Special styling for fanout fraud (1→7 mule network)
+                const isFanout = edge.fanoutGroup != null;
+
+                // Edge thickness: fanout gets extra thick, regular fraud medium, normal proportional
+                const thickness = isFanout
+                  ? 3.5  // Fanout edges are thickest
+                  : edge.isFraud
+                    ? 2.5
+                    : 0.8 + (edge.amount / maxAmount) * 2.5;
 
                 const pathD = `M${sx},${sy} Q${cpx},${cpy} ${tx},${ty}`;
+
+                // Color: fanout uses bright orange-red, regular fraud red, normal blue
+                const edgeColor = isFanout ? '#ff6b35' : edge.isFraud ? '#ef4444' : '#38bdf8';
+                const particleColor = isFanout ? '#ffd700' : edge.isFraud ? '#fca5a5' : '#7dd3fc';
 
                 return (
                   <g key={edge.id}>
                     {/* Path definition first (for animateMotion reference) */}
                     <path id={`edge-path-${i}`} d={pathD} fill="none" stroke="none" />
+                    {/* Fanout glow effect for 1→7 mule network */}
+                    {isFanout && (
+                      <path
+                        d={pathD}
+                        fill="none"
+                        stroke="#ff6b35"
+                        strokeWidth={thickness + 4}
+                        strokeOpacity={0.3}
+                        filter="url(#glow-fraud)"
+                      >
+                        <animate attributeName="strokeOpacity" values="0.2;0.5;0.2" dur="0.8s" repeatCount="indefinite" />
+                      </path>
+                    )}
                     {/* Visible curved edge */}
                     <path
                       d={pathD}
                       fill="none"
-                      stroke={edge.isFraud ? '#ef4444' : '#38bdf8'}
+                      stroke={edgeColor}
                       strokeWidth={thickness}
-                      strokeOpacity={edge.isFraud ? 0.85 : 0.5}
+                      strokeOpacity={edge.isFraud ? 0.9 : 0.5}
                       markerEnd={edge.isFraud ? 'url(#arrowhead-fraud)' : 'url(#arrowhead-live)'}
                     />
                     {/* Animated particle flowing along the curved path */}
-                    <circle r={edge.isFraud ? 3.5 : 2} fill={edge.isFraud ? '#fca5a5' : '#7dd3fc'} opacity={0.9}>
-                      <animateMotion dur={`${1.2 + (i % 5) * 0.3}s`} repeatCount="indefinite" rotate="auto">
+                    <circle r={isFanout ? 4.5 : edge.isFraud ? 3.5 : 2} fill={particleColor} opacity={0.95}>
+                      <animateMotion dur={`${isFanout ? 0.8 : 1.2 + (i % 5) * 0.3}s`} repeatCount="indefinite" rotate="auto">
                         <mpath href={`#edge-path-${i}`} />
                       </animateMotion>
                     </circle>
+                    {/* Fanout index label (M1, M2, etc.) */}
+                    {isFanout && edge.fanoutIndex !== undefined && (
+                      <text
+                        x={(sx + tx) / 2 + (cpy - my) * 0.3}
+                        y={(sy + ty) / 2 - (cpx - mx) * 0.3}
+                        textAnchor="middle"
+                        fill="#ffd700"
+                        fontSize="9"
+                        fontWeight="bold"
+                      >
+                        M{edge.fanoutIndex + 1}
+                      </text>
+                    )}
                   </g>
                 );
               })}

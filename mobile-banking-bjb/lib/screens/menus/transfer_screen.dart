@@ -45,6 +45,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     {'name': 'Bank Permata',                       'digits': [10]},
     {'name': 'Bank Danamon',                       'digits': [10]},
     {'name': 'Bank Tabungan Negara (BTN)',         'digits': [15]},
+    {'name': 'Bank Kuningan',                      'digits': [10]},
     {'name': 'GoPay',                              'digits': [10, 12]},
     {'name': 'OVO',                                'digits': [10, 12]},
     {'name': 'DANA',                               'digits': [10, 12]},
@@ -531,7 +532,7 @@ class _TransferScreenState extends State<TransferScreen> with SingleTickerProvid
     ),
     child: DropdownButtonHideUnderline(
       child: DropdownButton<String>(
-        value: _selectedBank,
+        value: _banks.contains(_selectedBank) ? _selectedBank : _banks.first,
         isExpanded: true,
         icon: const Icon(CupertinoIcons.chevron_down, size: 16, color: AppColors.primary),
         onChanged: (v) {

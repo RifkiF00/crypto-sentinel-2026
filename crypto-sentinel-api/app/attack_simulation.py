@@ -486,6 +486,22 @@ def generate_streaming_attack_sequence(total_tx=300, fraud_count=15):
     
     fraud_idx_counter = 0
     
+    # Mule name pool for generating realistic mule networks
+    MULE_FIRST_NAMES = ['Wahyu', 'Dedi', 'Eka', 'Agus', 'Rudi', 'Slamet', 'Tono', 'Bambang']
+    MULE_LAST_NAMES = ['Pratama', 'Kusnandar', 'Supriatna', 'Gunawan', 'Santoso', 'Wijaya', 'Purnomo', 'Hidayat']
+    MULE_BANKS = ['Bank BCA', 'Bank Mandiri', 'Bank BNI', 'Bank BRI', 'CIMB Niaga', 'Bank Permata', 'Bank Danamon']
+    
+    def generate_mule_accounts(count, seed_val):
+        """Generate deterministic mule accounts based on seed."""
+        mules = []
+        for j in range(count):
+            h = (seed_val * 1013904223 + j * 1664525) & 0xFFFFFFFF
+            name = f"{MULE_FIRST_NAMES[h % len(MULE_FIRST_NAMES)]} {MULE_LAST_NAMES[(h >> 4) % len(MULE_LAST_NAMES)]}"
+            bank = MULE_BANKS[(h >> 8) % len(MULE_BANKS)]
+            acc = f"6{str(h % 900000000).zfill(9)}"
+            mules.append({"name": name, "bank": bank, "account": acc})
+        return mules
+    
     for i in range(total_tx):
         tx_time = now - timedelta(seconds=(total_tx - i) * 2.5)  # Sequential timestamps
         
@@ -494,19 +510,72 @@ def generate_streaming_attack_sequence(total_tx=300, fraud_count=15):
             fraud_def = FRAUD_METRICS_DEFINITIONS[fraud_idx_counter]
             fraud_idx_counter += 1
             
+            # Check if this is a FAN-OUT type fraud (IND-01) - generate 1→7 mule network
+            is_fanout_fraud = fraud_def["indicator_id"] == "IND-01"
+            
             # Override sender/receiver with real DB accounts for realism
             if accounts and len(accounts) > 1:
                 sender_acc = random.choice(accounts)
-                receiver_acc = random.choice(accounts)
-                while receiver_acc["account_id"] == sender_acc["account_id"]:
-                    receiver_acc = random.choice(accounts)
                 fraud_sender_account = sender_acc["account_id"]
                 fraud_sender_name = sender_acc["owner_name"]
-                fraud_receiver_account = receiver_acc["account_id"]
-                fraud_receiver_name = receiver_acc["owner_name"]
             else:
                 fraud_sender_account = fraud_def["sender"]
                 fraud_sender_name = fraud_def["sender_name"]
+            
+            if is_fanout_fraud:
+                # Generate 7 mule accounts for fan-out pattern (1 sender → 7 receivers)
+                seed_val = hash(fraud_sender_account) & 0xFFFFFFFF
+                mule_accounts = generate_mule_accounts(7, seed_val)
+                total_amount = fraud_def["amount"]
+                per_mule_amount = total_amount // 7
+                
+                # Yield 7 transactions in rapid succession (same timestamp cluster)
+                for mule_idx, mule in enumerate(mule_accounts):
+                    mule_tx_time = tx_time + timedelta(milliseconds=mule_idx * 150)  # 150ms apart
+                    tx = {
+                        "index": i * 10 + mule_idx,  # Unique index for each mule tx
+                        "id": f"TXN-STREAM-{i+1:04d}-M{mule_idx+1}",
+                        "transaction_id": f"TXN-STREAM-{i+1:04d}-M{mule_idx+1}",
+                        "is_fraud": True,
+                        "anomaly": True,
+                        "decision": fraud_def["decision"],
+                        "risk_score": fraud_def["risk_score"],
+                        "risk_level": "CRITICAL" if fraud_def["risk_score"] >= 92 else "HIGH",
+                        "indicator_id": fraud_def["indicator_id"],
+                        "metric_code": fraud_def["code"],
+                        "metric_name": fraud_def["metric_name"],
+                        "category": fraud_def["category"],
+                        "engine": fraud_def["engine"],
+                        "sender_account": fraud_sender_account,
+                        "senderAccount": fraud_sender_account,
+                        "sender_name": fraud_sender_name,
+                        "sender_bank": fraud_def["sender_bank"],
+                        "receiver_account": mule["account"],
+                        "destinationAccount": mule["account"],
+                        "receiver_name": mule["name"],
+                        "receiver_bank": mule["bank"],
+                        "amount": per_mule_amount,
+                        "channel": fraud_def["channel"],
+                        "purpose_code": fraud_def["purpose"],
+                        "description": f"{fraud_def['reason']} [Mule {mule_idx+1}/7]",
+                        "timestamp": mule_tx_time.strftime("%Y-%m-%d %H:%M:%S"),
+                        "status": "blocked" if fraud_def["decision"] == "BLOCK" else "flagged",
+                        "xai_explanation": f"Sinyal {fraud_def['code']} teraktivasi: Fan-out 1→7 rekening mule dalam < 2 detik. Skor anomali {fraud_def['risk_score']}%.",
+                        "fanout_group": f"FANOUT-{i}",  # Group identifier for related transactions
+                        "fanout_index": mule_idx,
+                        "fanout_total": 7
+                    }
+                    yield tx
+                continue  # Skip the single tx generation below
+            
+            # Single fraud transaction (non-fanout types)
+            if accounts and len(accounts) > 1:
+                receiver_acc = random.choice(accounts)
+                while receiver_acc["account_id"] == fraud_sender_account:
+                    receiver_acc = random.choice(accounts)
+                fraud_receiver_account = receiver_acc["account_id"]
+                fraud_receiver_name = receiver_acc["owner_name"]
+            else:
                 fraud_receiver_account = fraud_def["receiver"]
                 fraud_receiver_name = fraud_def["receiver_name"]
             
