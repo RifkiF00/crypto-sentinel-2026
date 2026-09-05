@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { ThemeProvider } from './context/ThemeContext';
@@ -87,6 +87,13 @@ function DashboardLayout({ onBackToLanding }) {
   const [streamCleanupRef, setStreamCleanupRef] = useState(null);
   const [simulationSummary, setSimulationSummary] = useState(null);
 
+  // ── GNN Live Graph State (lifted to survive page switches) ──
+  const [liveNodes, setLiveNodes] = useState(new Map());
+  const [liveEdges, setLiveEdges] = useState([]);
+  const [lastProcessedIndex, setLastProcessedIndex] = useState(-1);
+  const [detectedPatterns, setDetectedPatterns] = useState([]);
+  const edgeTimersRef = useRef(new Map());
+
   const handleStartStream = useCallback(() => {
     // If already streaming, stop it
     if (isSimulating && streamCleanupRef) {
@@ -111,12 +118,37 @@ function DashboardLayout({ onBackToLanding }) {
             transaction_id: tx.id,
             type: tx.decision === 'BLOCK' ? 'critical' : 'warning',
             title: tx.decision === 'BLOCK' ? 'Pencegahan Otomatis' : 'Transaksi Ditandai',
-            description: `${tx.senderName} (${tx.senderBank}) mengirim ke ${tx.destination}. Alasan: ${tx.reason}`,
+            description: `${tx.senderName} (${tx.senderBank}) mengirim ke ${tx.receiver_name || tx.destination}. Alasan: ${tx.description || tx.reason}`,
             time: tx.timestamp,
             rawTimestamp: tx.timestamp,
-            riskScore: tx.riskScore,
+            riskScore: tx.risk_score || tx.riskScore,
             metricCode: tx.metric_code,
             metricName: tx.metric_name,
+            indicatorId: tx.indicator_id,
+            senderAccount: tx.senderAccount || tx.sender_account,
+            senderName: tx.senderName || tx.sender_name,
+            senderBank: tx.sender_bank || tx.senderBank,
+            destinationAccount: tx.destinationAccount || tx.receiver_account,
+            receiverName: tx.receiver_name,
+            receiverBank: tx.receiver_bank,
+            amount: tx.amount,
+            fanoutGroup: tx.fanout_group || null,
+            // GNN entity data for direct navigation to Workbench
+            gnnEntity: {
+              senderAccount: tx.senderAccount || tx.sender_account,
+              senderName: tx.senderName || tx.sender_name,
+              senderBank: tx.sender_bank || tx.senderBank,
+              destinationAccount: tx.destinationAccount || tx.receiver_account,
+              receiverName: tx.receiver_name,
+              receiverBank: tx.receiver_bank,
+              amount: tx.amount,
+              riskScore: tx.risk_score || tx.riskScore,
+              metric_code: tx.metric_code,
+              metric_name: tx.metric_name,
+              indicator_id: tx.indicator_id,
+              reason: tx.description || tx.reason,
+              xai_explanation: tx.xai_explanation,
+            },
           };
           setAlerts(prev => {
             const storedResolved = JSON.parse(localStorage.getItem('resolved_alert_ids') || '[]');
@@ -391,6 +423,15 @@ function DashboardLayout({ onBackToLanding }) {
                   simulationSummary={simulationSummary}
                   onStartStream={handleStartStream}
                   onStopStream={handleStopStream}
+                  liveNodes={liveNodes}
+                  setLiveNodes={setLiveNodes}
+                  liveEdges={liveEdges}
+                  setLiveEdges={setLiveEdges}
+                  lastProcessedIndex={lastProcessedIndex}
+                  setLastProcessedIndex={setLastProcessedIndex}
+                  detectedPatterns={detectedPatterns}
+                  setDetectedPatterns={setDetectedPatterns}
+                  edgeTimersRef={edgeTimersRef}
                   onNavigateToGNN={(txn) => {
                     setSelectedGnnEntity(txn);
                     setActivePage('analysis');
@@ -413,6 +454,15 @@ function DashboardLayout({ onBackToLanding }) {
                   isMasked={privacyMasking}
                   selectedEntity={selectedGnnEntity}
                   isSimulating={isSimulating}
+                  liveNodes={liveNodes}
+                  setLiveNodes={setLiveNodes}
+                  liveEdges={liveEdges}
+                  setLiveEdges={setLiveEdges}
+                  lastProcessedIndex={lastProcessedIndex}
+                  setLastProcessedIndex={setLastProcessedIndex}
+                  detectedPatterns={detectedPatterns}
+                  setDetectedPatterns={setDetectedPatterns}
+                  edgeTimersRef={edgeTimersRef}
                   onCreateCase={handleCreateInvestigationCase}
                   onOpenCustomer360={(acc) => {
                     setCustomer360Account(acc);

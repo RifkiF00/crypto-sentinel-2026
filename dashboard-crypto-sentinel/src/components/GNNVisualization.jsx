@@ -668,16 +668,29 @@ const SCENARIOS = {
 // 2. KOMPONEN UTAMA GNN VISUALIZATION (MAPS STYLE + DRAGGABLE + PINCH ZOOM)
 // ============================================================================
 
-export default function GNNVisualization({ addToast, onOpenCustomer360, onCreateCase, selectedEntity, streamingTransactions = [], isStreaming = false }) {
+export default function GNNVisualization({ addToast, onOpenCustomer360, onCreateCase, selectedEntity, streamingTransactions = [], isStreaming = false, liveNodes: liveNodesProp, setLiveNodes: setLiveNodesProp, liveEdges: liveEdgesProp, setLiveEdges: setLiveEdgesProp, lastProcessedIndex: lastProcessedIndexProp, setLastProcessedIndex: setLastProcessedIndexProp, detectedPatterns: detectedPatternsProp, setDetectedPatterns: setDetectedPatternsProp, edgeTimersRef: edgeTimersRefProp }) {
   const { theme } = useTheme();
   const { currentUser, can } = useAuth();
   const isLight = theme === 'light';
 
-  // ── Live Streaming GNN State ──
-  const [liveNodes, setLiveNodes] = useState(new Map());
-  const [liveEdges, setLiveEdges] = useState([]);
-  const [lastProcessedIndex, setLastProcessedIndex] = useState(-1);
-  const [detectedPatterns, setDetectedPatterns] = useState([]);
+  // ── Live Streaming GNN State (lifted to App.jsx for page-switch persistence) ──
+  // Use props if provided (from App.jsx), otherwise fall back to local state
+  const [localLiveNodes, setLocalLiveNodes] = useState(new Map());
+  const [localLiveEdges, setLocalLiveEdges] = useState([]);
+  const [localLastProcessedIndex, setLocalLastProcessedIndex] = useState(-1);
+  const [localDetectedPatterns, setLocalDetectedPatterns] = useState([]);
+  const localEdgeTimersRef = useRef(new Map());
+
+  const liveNodes = liveNodesProp ?? localLiveNodes;
+  const setLiveNodes = setLiveNodesProp ?? setLocalLiveNodes;
+  const liveEdges = liveEdgesProp ?? localLiveEdges;
+  const setLiveEdges = setLiveEdgesProp ?? setLocalLiveEdges;
+  const lastProcessedIndex = lastProcessedIndexProp ?? localLastProcessedIndex;
+  const setLastProcessedIndex = setLastProcessedIndexProp ?? setLocalLastProcessedIndex;
+  const detectedPatterns = detectedPatternsProp ?? localDetectedPatterns;
+  const setDetectedPatterns = setDetectedPatternsProp ?? setLocalDetectedPatterns;
+  const edgeTimersRef = edgeTimersRefProp ?? localEdgeTimersRef;
+
   const [hoveredNode, setHoveredNode] = useState(null);
   const [liveGnnZoom, setLiveGnnZoom] = useState(1);
   const [liveGnnPan, setLiveGnnPan] = useState({ x: 0, y: 0 });
@@ -688,7 +701,6 @@ export default function GNNVisualization({ addToast, onOpenCustomer360, onCreate
 
   // Edge fade-out timer: normal edges disappear after 4 seconds, fraud edges persist
   const EDGE_LIFETIME_MS = 4000;
-  const edgeTimersRef = useRef(new Map()); // edgeId -> timeoutId
 
   // Force-directed layout simulation
   const runForceLayout = useCallback((nodesMap, edges) => {

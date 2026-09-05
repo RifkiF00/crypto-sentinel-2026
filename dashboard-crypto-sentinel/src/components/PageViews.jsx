@@ -72,7 +72,7 @@ import { maskName, maskAccount, maskNik, maskIp } from '../utils/masking';
 // ==========================================
 // 1. LIVE MONITORING VIEW
 // ==========================================
-export function MonitoringView({ transactions, setTransactions, setAlerts, addToast, rules, isMasked = true, isSimulating = false, streamProgress = { current: 0, total: 300 }, simulationSummary = null, onStartStream, onStopStream, onNavigateToGNN, onOpenCustomer360 }) {
+export function MonitoringView({ transactions, setTransactions, setAlerts, addToast, rules, isMasked = true, isSimulating = false, streamProgress = { current: 0, total: 300 }, simulationSummary = null, onStartStream, onStopStream, liveNodes, setLiveNodes, liveEdges, setLiveEdges, lastProcessedIndex, setLastProcessedIndex, detectedPatterns, setDetectedPatterns, edgeTimersRef, onNavigateToGNN, onOpenCustomer360 }) {
   const [isLive, setIsLive] = useState(true);
   const [autoBlock] = useState(rules.autoBlockEnabled);
   const [timeFilter, setTimeFilter] = useState('1day'); // '1day' | '7days' | 'all'
@@ -1039,6 +1039,26 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, on
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--border-color)', paddingTop: 14 }}>
+                      {/* GNN Network Workbench Investigation Button — available for all roles on fraud alerts */}
+                      {selectedAlert.gnnEntity && onNavigateToGNN && (
+                        <button
+                          className="btn btn-primary"
+                          style={{
+                            background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+                            border: '1px solid #6d28d9',
+                            justifyContent: 'center',
+                            fontSize: '0.78rem',
+                            boxShadow: '0 2px 8px rgba(124, 58, 237, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8
+                          }}
+                          onClick={() => onNavigateToGNN(selectedAlert)}
+                        >
+                          🧠 Buka GNN Network Workbench & XAI Analysis
+                        </button>
+                      )}
+
                       <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 2 }}>
                         WEWENANG OPERASIONAL ({currentUser?.role === 'compliance_officer' ? 'PEJABAT KEPATUHAN / MLRO' : currentUser?.role === 'analyst' ? 'ANALIS AML LEVEL 1' : 'PENGAWAS REGULASI OJK'})
                       </div>
@@ -1561,7 +1581,20 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, on
             {/* Modal Body with full view inside */}
             <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4 }}>
               {modalTab === 'gnn' ? (
-                <GNNVisualization addToast={addToast} />
+                <GNNVisualization
+                  addToast={addToast}
+                  streamingTransactions={transactions}
+                  isStreaming={isSimulating}
+                  liveNodes={liveNodes}
+                  setLiveNodes={setLiveNodes}
+                  liveEdges={liveEdges}
+                  setLiveEdges={setLiveEdges}
+                  lastProcessedIndex={lastProcessedIndex}
+                  setLastProcessedIndex={setLastProcessedIndex}
+                  detectedPatterns={detectedPatterns}
+                  setDetectedPatterns={setDetectedPatterns}
+                  edgeTimersRef={edgeTimersRef}
+                />
               ) : (
                 <MuleAccountAnalysis addToast={addToast} />
               )}
@@ -1799,7 +1832,7 @@ export function AlertsView({ alerts, setAlerts, addToast, setBlockedEntities, on
 // ==========================================
 // 3. TRANSACTION ANALYSIS VIEW
 // ==========================================
-export function AnalysisView({ transactions, addToast, isMasked = true, onOpenCustomer360, selectedEntity, isSimulating = false }) {
+export function AnalysisView({ transactions, addToast, isMasked = true, onOpenCustomer360, selectedEntity, isSimulating = false, liveNodes, setLiveNodes, liveEdges, setLiveEdges, lastProcessedIndex, setLastProcessedIndex, detectedPatterns, setDetectedPatterns, edgeTimersRef }) {
   const chartTheme = useChartTheme();
   const [analysisRange, setAnalysisRange] = useState('30days');
   const [isExporting, setIsExporting] = useState(false);
@@ -2123,6 +2156,15 @@ AUDITOR SYSTEM    : CRYPTO-SENTINEL FDS ENGINE v3.2
               selectedEntity={selectedEntity}
               streamingTransactions={transactions}
               isStreaming={isSimulating}
+              liveNodes={liveNodes}
+              setLiveNodes={setLiveNodes}
+              liveEdges={liveEdges}
+              setLiveEdges={setLiveEdges}
+              lastProcessedIndex={lastProcessedIndex}
+              setLastProcessedIndex={setLastProcessedIndex}
+              detectedPatterns={detectedPatterns}
+              setDetectedPatterns={setDetectedPatterns}
+              edgeTimersRef={edgeTimersRef}
             />
           </motion.div>
         )}
